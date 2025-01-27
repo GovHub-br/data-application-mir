@@ -13,9 +13,9 @@ class ClienteBase(object):
     DEFAULT_SLEEP_SECONDS = 1
     DEFAULT_TIMEOUT = 30
 
-    def __init__(self, base_url: str) -> None:
+    def __init__(self, base_url: str, **kwargs: Optional[dict]) -> None:
         self.base_url = base_url
-        self.client = httpx.Client(base_url=base_url)
+        self.client = httpx.Client(base_url=base_url, **kwargs)
 
     def request(
         self, method: http.HTTPMethod, path: str, **kwargs: Any

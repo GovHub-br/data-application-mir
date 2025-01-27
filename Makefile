@@ -10,15 +10,15 @@ setup:
 format:
 	poetry run black .
 	poetry run ruff check --fix .
-	poetry run sqlfmt ./src/dbt
-	poetry run sqlfluff fix ./src/dbt
+	poetry run sqlfmt ./dbt
+	poetry run sqlfluff fix ./dbt
 
 lint:
 	poetry run black . --check
 	poetry run ruff check .
 	poetry run mypy .
-	poetry run sqlfmt ./src/dbt --check
-	poetry run sqlfluff lint ./src/dbt
+	poetry run sqlfmt ./dbt --check
+	poetry run sqlfluff lint ./dbt
 
 test:
 	poetry run pytest tests
