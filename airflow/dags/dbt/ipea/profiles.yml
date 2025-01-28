@@ -1,0 +1,11 @@
+ipea:
+  target: prod
+  outputs:
+    prod:
+      type: postgres
+      host: 10.0.0.73
+      user: analytics
+      password: xQ3hxNJThsVx3WqEp6Yr0hhtptSMbmbFWyL2
+      port: 5432
+      dbname: analytics
+      schema: ipea
