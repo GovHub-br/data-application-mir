@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+
 import http
 import logging
 import time

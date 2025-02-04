@@ -7,8 +7,8 @@ x-airflow-common: &airflow-common
   env_file:
     - .env
   volumes:
-    - ./dags:${AIRFLOW_HOME}/dags/
-    - ./plugins:${AIRFLOW_HOME}/plugins/
+    - ./airflow/dags:${AIRFLOW_HOME}/dags/
+    - ./airflow/plugins:${AIRFLOW_HOME}/plugins/
   depends_on: &airflow-common-depends-on
     postgres:
       condition: service_healthy
@@ -35,6 +35,8 @@ x-airflow-environment: &airflow-common-env
   _AIRFLOW_WWW_USER_CREATE: 'true'
   _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
   _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+  AIRFLOW__CORE__PLUGINS_FOLDER: ${AIRFLOW_HOME}/plugins
+  AIRFLOW__CORE__DAGS_FOLDER: ${AIRFLOW_HOME}/dags
 
 services:
   postgres:

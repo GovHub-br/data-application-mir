@@ -4,7 +4,7 @@ from typing import Any
 import requests
 from httpx import HTTPStatusError
 
-from .cliente_base import ClienteBase
+from cliente_base import ClienteBase
 
 
 class ClienteSiafi(ClienteBase):

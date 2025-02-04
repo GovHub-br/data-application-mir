@@ -1,6 +1,6 @@
 import http
 
-from .cliente_base import ClienteBase
+from cliente_base import ClienteBase
 
 
 class ClienteContratos(ClienteBase):

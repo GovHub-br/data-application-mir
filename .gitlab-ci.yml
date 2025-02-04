@@ -1,6 +1,8 @@
 image: python:3.11-slim
 
 variables:
+  PYTHONPATH: "${CI_PROJECT_DIR}/dags:${CI_PROJECT_DIR}/plugins:./airflow/dags:./airflow/plugins"
+  MYPYPATH: "${CI_PROJECT_DIR}/plugins"
   POETRY_HOME: "/opt/poetry"
   POETRY_VERSION: "1.8.5"
   POETRY_VIRTUALENVS_IN_PROJECT: "true"
