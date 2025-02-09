@@ -138,7 +138,8 @@ class ClientPostgresDB:
 
         if conflict_fields:
             conflict_str = ", ".join(conflict_fields)
-            sql += f" ON CONFLICT ({conflict_str}) DO NOTHING"
+            update_str = ", ".join([f"{col} = EXCLUDED.{col}" for col in columns])
+            sql += f" ON CONFLICT ({conflict_str}) DO UPDATE SET {update_str}"
 
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
