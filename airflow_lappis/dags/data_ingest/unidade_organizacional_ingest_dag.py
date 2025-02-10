@@ -2,8 +2,8 @@ import logging
 from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from datetime import datetime, timedelta
-from ...plugins.cliente_estrutura import ClienteEstrutura
-from ...plugins.cliente_postgres import ClientPostgresDB
+from cliente_estrutura import ClienteEstrutura
+from cliente_postgres import ClientPostgresDB
 
 
 def get_postgres_conn() -> str:

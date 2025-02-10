@@ -6,9 +6,9 @@ from airflow.models import Variable
 from datetime import datetime, timedelta
 import logging
 import json
-from ...plugins.cliente_email import fetch_and_process_emails
-from ...plugins.cliente_postgres import ClientPostgresDB
-from ...helpers.postgres_helpers import get_postgres_conn
+from cliente_email import fetch_and_process_emails
+from cliente_postgres import ClientPostgresDB
+from postgres_helpers import get_postgres_conn
 
 # Configurações básicas da DAG
 default_args = {

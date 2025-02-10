@@ -16,7 +16,7 @@ format:
 lint:
 	poetry run black . --check
 	poetry run ruff check .
-	poetry run mypy .
+	poetry run mypy . --explicit-package-bases --exclude 'airflow_lappis/helpers/__init__.py|airflow_lappis/plugins/__init__.py'
 	poetry run sqlfmt ./dbt --check
 	poetry run sqlfluff lint ./dbt
 

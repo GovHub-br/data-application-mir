@@ -1,9 +1,9 @@
 import logging
 from airflow.decorators import dag, task
 from datetime import datetime, timedelta
-from ...plugins.cliente_contratos import ClienteContratos
-from ...plugins.cliente_postgres import ClientPostgresDB
-from ...helpers.postgres_helpers import get_postgres_conn
+from cliente_contratos import ClienteContratos
+from cliente_postgres import ClientPostgresDB
+from postgres_helpers import get_postgres_conn
 
 
 @dag(

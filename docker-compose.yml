@@ -7,8 +7,9 @@ x-airflow-common: &airflow-common
   env_file:
     - .env
   volumes:
-    - ./airflow/dags:${AIRFLOW_HOME}/dags/
-    - ./airflow/plugins:${AIRFLOW_HOME}/plugins/
+    - ./airflow_lappis/dags:${AIRFLOW_HOME}/dags/
+    - ./airflow_lappis/plugins:${AIRFLOW_HOME}/plugins/
+    - ./airflow_lappis/helpers:${AIRFLOW_HOME}/helpers/
   depends_on: &airflow-common-depends-on
     postgres:
       condition: service_healthy
@@ -30,7 +31,7 @@ x-airflow-environment: &airflow-common-env
   AIRFLOW__WEBSERVER__NAVBAR_COLOR: '#98DFFF'
   AIRFLOW__WEBSERVER__RELOAD_ON_PLUGIN_CHANGE: 'true'
   AIRFLOW__WEBSERVER__SECRET_KEY: '42'
-  PYTHONPATH: '${AIRFLOW_HOME}/dags:${AIRFLOW_HOME}/plugins'
+  PYTHONPATH: '${AIRFLOW_HOME}/dags:${AIRFLOW_HOME}/plugins:${AIRFLOW_HOME}/helpers'
   _AIRFLOW_DB_MIGRATE: 'true'
   _AIRFLOW_WWW_USER_CREATE: 'true'
   _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
