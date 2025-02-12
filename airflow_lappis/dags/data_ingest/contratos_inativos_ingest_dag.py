@@ -37,7 +37,7 @@ def api_contratos_inativos_dag() -> None:
                 )
                 db.insert_data(
                     contratos,
-                    "contratos_inativos",
+                    "contratos",
                     conflict_fields=["id"],
                     primary_key=["id"],
                     schema="compras_gov",

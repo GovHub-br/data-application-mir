@@ -1,5 +1,6 @@
 import logging
 from airflow.decorators import dag, task
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from datetime import datetime, timedelta
 from postgres_helpers import get_postgres_conn
 from cliente_contratos import ClienteContratos
@@ -50,7 +51,13 @@ def api_contratos_dag() -> None:
                     f"[contratos_ingest_dag.py] No contratos found for UG code: {ug_code}"
                 )
 
-    fetch_and_store_contratos()
+    trigger_contratos_inativos = TriggerDagRunOperator(
+        task_id="trigger_contratos_inativos",
+        trigger_dag_id="api_contratos_inativos_dag",
+        wait_for_completion=False,
+    )
+
+    fetch_and_store_contratos() >> trigger_contratos_inativos
 
 
 dag_instance = api_contratos_dag()
