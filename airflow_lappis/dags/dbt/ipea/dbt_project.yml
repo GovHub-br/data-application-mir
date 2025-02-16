@@ -30,3 +30,5 @@ models:
       +database: analytics
       +schema: pessoas
 
+on-run-start:
+  - '{{create_udfs()}}'

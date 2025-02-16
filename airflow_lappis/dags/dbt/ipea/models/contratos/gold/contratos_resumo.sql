@@ -1,35 +1,52 @@
-WITH 
+with
 
-valores_pagos_contratos AS (
-  SELECT contrato_id AS id,
-        SUM(despesas_pagas_movim_liquido) AS despesas_pagas
-  -- FROM public_silver.silver_contratos_empenhos
-  FROM {{ ref('contratos_empenhos')}}
-  WHERE contrato_id IS NOT NULL
-  GROUP BY contrato_id),
-     
-     
-contratos_gold AS (
-  SELECT *,
-        CASE
-            WHEN vp.despesas_pagas = c.valor_global THEN 'Sim'
-            ELSE 'Não'
-  END AS pendente_baixa
-  -- FROM public_raw.contratos c
-  FROM {{ ref('contratos')}}
-  LEFT JOIN valores_pagos_contratos vp USING(id)) --
+    valores_pagos_contratos as (
+        select contrato_id as id, sum(despesas_pagas_movim_liquido) as despesas_pagas
+        from {{ ref("contratos_empenhos") }}
+        where contrato_id is not null
+        group by contrato_id
+    ),
 
-SELECT 
-  id AS contrato_id,
-  numero AS numero,
-  modalidade AS modalidade,
-  situacao AS situacao,
-  pendente_baixa AS pendente_baixa,
-  CONCAT(contratante_orgao_origem_unidade_gestora_origem_codigo, ' - ', contratante_orgao_origem_unidade_gestora_origem_nome_resumido) AS "Unidade",
-  fornecedor_nome AS fornecedor_nome,
-  objeto AS objeto,
-  valor_global AS valor_global,
-  despesas_pagas AS despesas_pagas,
-  vigencia_inicio AS vigencia_inicio,
-  vigencia_fim AS vigencia_fim
-FROM contratos_gold
+    contratos_gold as (
+        select
+            *,
+            case
+                when vp.despesas_pagas = c.valor_global then 'Sim' else 'Não'
+            end as pendente_baixa
+        from {{ ref("contratos") }} as c
+        left join valores_pagos_contratos as vp on c.id = vp.id
+    )
+
+--
+select
+    id as contrato_id,
+    fornecedor_cnpj_cpf_idgener as fornecedor_cnpj_cpf,
+    numero,
+    categoria,
+    modalidade,
+    tipo,
+    situacao,
+    pendente_baixa,
+    fornecedor_nome,
+    objeto,
+    valor_global,
+    despesas_pagas,
+    vigencia_inicio,
+    vigencia_fim,
+    num_parcelas,
+    case
+        when fornecedor_tipo = 'IDGENERICO'
+        then 'Empresa do Exterior'
+        else fornecedor_tipo
+    end as fornecedor_tipo,
+    concat(
+        contratante_orgao_origem_unidade_gestora_origem_codigo,
+        ' - ',
+        contratante_orgao_origem_unidade_gestora_origem_nome_resumido
+    ) as "Unidade",
+    case
+        when vigencia_fim - vigencia_inicio >= 730 and num_parcelas > 1
+        then 'Sim'
+        else 'Não'
+    end as continuado
+from contratos_gold

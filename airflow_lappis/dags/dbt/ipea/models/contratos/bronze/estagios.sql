@@ -1,10 +1,5 @@
-create or replace function parse_number(in_text text) returns numeric as $$
-	select
-		case when in_text like '(%' then regexp_replace(replace(coalesce(in_text, '0'), '.', ''), '(\()?(\d+),(\d+)(\))?', '-\2.\3')::numeric(15,2)
-			else replace(replace(coalesce(in_text, '0'), '.', ''), ',', '.')::numeric(15,2) end as result
-$$ language sql;
-
--- Comentário: O erro indica que há valores com parênteses "(660000.00)" que não podem ser convertidos para double precision
+-- Comentário: O erro indica que há valores com parênteses "(660000.00)" que não podem
+-- ser convertidos para double precision
 -- O erro está ocorrendo nas colunas de valores monetários, especificamente em:
 -- - despesas_empenhadas_controle_empenho_saldo_moeda_origem
 -- - despesas_empenhadas_controle_empenho_movim_liquido_moeda_origem
@@ -12,63 +7,79 @@ $$ language sql;
 -- - despesas_liquidadas_controle_empenho_movim_liquido_moeda_origem
 -- - despesas_pagas_controle_empenho_saldo_moeda_origem
 -- - despesas_pagas_controle_empenho_movim_liquido_moeda_origem
+-- Precisamos modificar o CAST dessas colunas para tratar valores entre parênteses como
+-- números negativos
+with
+    estagios_raw as (
+        select
+            id::integer as id,
+            ne_ccor,
+            ne_informacao_complementar::text,
 
--- Precisamos modificar o CAST dessas colunas para tratar valores entre parênteses como números negativos
+            -- Remove o "0" inicial e pontos, barras e hífens do número do processo
+            case
+                when length(ne_num_processo::text) > 3
+                then regexp_replace(ltrim(ne_num_processo::text, '0'), '[\./-]', '', 'g')
+                else ne_num_processo::text
+            end as ne_num_processo,
 
+            ne_ccor_descricao::text,
+            doc_observacao::text,
 
+            case
+                when natureza_despesa::text ~ '^\d+$'
+                then cast(natureza_despesa as integer)
+                else null
+            end as natureza_despesa,
 
-WITH estagios_raw AS (
-    SELECT
-        id::INTEGER as id,
-        ne_ccor,
-        ne_informacao_complementar :: TEXT,
+            natureza_despesa_1,
 
-        -- Remove o "0" inicial e pontos, barras e hífens do número do processo
-        CASE 
-            WHEN LENGTH(ne_num_processo::text) > 3 THEN REGEXP_REPLACE(LTRIM(ne_num_processo::text, '0'), '[\./-]', '', 'g')
-            ELSE ne_num_processo::text
-        END AS ne_num_processo,
+            case
+                when natureza_despesa_detalhada::text ~ '^\d+$'
+                then cast(natureza_despesa_detalhada as integer)
+                else null
+            end as natureza_despesa_detalhada,
 
-        ne_ccor_descricao :: TEXT,
-        doc_observacao :: TEXT,
+            natureza_despesa_detalhada_1,
+            ne_ccor_favorecido,
+            ne_ccor_favorecido_1,
 
-        CASE
-            WHEN natureza_despesa::text ~ '^\d+$' THEN CAST(natureza_despesa AS INTEGER)
-            ELSE NULL
-        END AS natureza_despesa,
+            case
+                when ano_lancamento::text ~ '^\d+$'
+                then cast(ano_lancamento as integer)
+                else null
+            end as ano_lancamento,
 
-        natureza_despesa_1,
+            ne_ccor_mes_emissao,
 
-        CASE
-            WHEN natureza_despesa_detalhada::text ~ '^\d+$' THEN CAST(natureza_despesa_detalhada AS INTEGER)
-            ELSE NULL
-        END AS natureza_despesa_detalhada,
+            case
+                when ne_ccor_ano_emissao::text ~ '^\d+$'
+                then cast(ne_ccor_ano_emissao as integer)
+                else null
+            end as ne_ccor_ano_emissao,
 
-        natureza_despesa_detalhada_1,
-        ne_ccor_favorecido,
-        ne_ccor_favorecido_1,
+            mes_lancamento,
+            {{ target.schema }}.parse_number(
+                despesas_empenhadas_controle_empenho_saldo_moeda_origem
+            ) as despesas_empenhadas_controle_empenho_saldo_moeda_origem,
+            {{ target.schema }}.parse_number(
+                despesas_empenhadas_controle_empenho_movim_liquido_moeda_origem
+            ) as despesas_empenhadas_controle_empenho_movim_liquido_moeda_origem,
+            {{ target.schema }}.parse_number(
+                despesas_liquidadas_controle_empenho_saldo_moeda_origem
+            ) as despesas_liquidadas_controle_empenho_saldo_moeda_origem,
+            {{ target.schema }}.parse_number(
+                despesas_liquidadas_controle_empenho_movim_liquido_moeda_origem
+            ) as despesas_liquidadas_controle_empenho_movim_liquido_moeda_origem,
+            {{ target.schema }}.parse_number(
+                despesas_pagas_controle_empenho_saldo_moeda_origem
+            ) as despesas_pagas_controle_empenho_saldo_moeda_origem,
+            {{ target.schema }}.parse_number(
+                despesas_pagas_controle_empenho_movim_liquido_moeda_origem
+            ) as despesas_pagas_controle_empenho_movim_liquido_moeda_origem
 
-        CASE
-            WHEN ano_lancamento::text ~ '^\d+$' THEN CAST(ano_lancamento AS INTEGER)
-            ELSE NULL
-        END AS ano_lancamento,
+        from {{ source("siafi", "estagios") }}
+    )
 
-        ne_ccor_mes_emissao,
-
-        CASE
-            WHEN ne_ccor_ano_emissao::text ~ '^\d+$' THEN CAST(ne_ccor_ano_emissao AS INTEGER)
-            ELSE NULL
-        END AS ne_ccor_ano_emissao,
-
-        mes_lancamento,
-        parse_number(despesas_empenhadas_controle_empenho_saldo_moeda_origem) AS despesas_empenhadas_controle_empenho_saldo_moeda_origem,
-        parse_number(despesas_empenhadas_controle_empenho_movim_liquido_moeda_origem) AS despesas_empenhadas_controle_empenho_movim_liquido_moeda_origem,
-        parse_number(despesas_liquidadas_controle_empenho_saldo_moeda_origem) AS despesas_liquidadas_controle_empenho_saldo_moeda_origem,
-        parse_number(despesas_liquidadas_controle_empenho_movim_liquido_moeda_origem) AS despesas_liquidadas_controle_empenho_movim_liquido_moeda_origem,
-        parse_number(despesas_pagas_controle_empenho_saldo_moeda_origem) AS despesas_pagas_controle_empenho_saldo_moeda_origem,
-        parse_number(despesas_pagas_controle_empenho_movim_liquido_moeda_origem) AS despesas_pagas_controle_empenho_movim_liquido_moeda_origem
-
-    FROM raw.estagios
-)
-
-SELECT * FROM estagios_raw
+select *
+from estagios_raw

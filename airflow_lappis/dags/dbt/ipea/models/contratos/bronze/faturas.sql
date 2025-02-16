@@ -1,49 +1,49 @@
+with
+    faturas_raw as (
+        select
+            id::integer as id,
+            contrato_id::integer as contrato_id,
+            tipolistafatura_id::text as tipolistafatura_id,
+            justificativafatura_id::text as justificativafatura_id,
+            sfadrao_id::text as sfadrao_id,
+            numero::text as numero,
+            emissao::date as emissao,
+            prazo::date as prazo,
+            vencimento::date as vencimento,
+            -- Limpar o formato numérico das colunas que têm problemas
+            replace(replace(valor::text, '.', ''), ',', '.')::numeric(15, 2) as valor,
+            replace(replace(juros::text, '.', ''), ',', '.')::numeric(15, 2) as juros,
+            replace(replace(multa::text, '.', ''), ',', '.')::numeric(15, 2) as multa,
+            replace(replace(glosa::text, '.', ''), ',', '.')::numeric(15, 2) as glosa,
+            replace(replace(valorliquido::text, '.', ''), ',', '.')::numeric(
+                15, 2
+            ) as valorliquido,
+            processo::text as processo,
+            protocolo::date as protocolo,
+            ateste::date as ateste,
+            repactuacao::text as repactuacao,
+            infcomplementar::text as infcomplementar,
+            mesref::integer as mesref,
+            anoref::integer as anoref,
+            situacao::text as situacao,
+            chave_nfe::text as chave_nfe,
+            dados_referencia::text as dados_referencia,
+            dados_item_faturado::text as dados_item_faturado,
+            jsonb_array_elements(dados_empenho::jsonb) as dados_empenho
+        from {{ source("compras_gov", "faturas") }}
+    ),
 
-
-WITH faturas_raw AS (
-    SELECT
-        id::INTEGER AS id,
-        contrato_id::INTEGER AS contrato_id,
-        tipolistafatura_id::TEXT AS tipolistafatura_id,
-        justificativafatura_id::TEXT AS justificativafatura_id,
-        sfadrao_id::TEXT AS sfadrao_id,
-        numero::TEXT AS numero,
-        emissao::DATE AS emissao,
-        prazo::DATE AS prazo,
-        vencimento::DATE AS vencimento,
-        -- Limpar o formato numérico das colunas que têm problemas
-        REPLACE(REPLACE(valor::TEXT, '.', ''), ',', '.')::NUMERIC(15, 2) AS valor,
-        REPLACE(REPLACE(juros::TEXT, '.', ''), ',', '.')::NUMERIC(15, 2) AS juros,
-        REPLACE(REPLACE(multa::TEXT, '.', ''), ',', '.')::NUMERIC(15, 2) AS multa,
-        REPLACE(REPLACE(glosa::TEXT, '.', ''), ',', '.')::NUMERIC(15, 2) AS glosa,
-        REPLACE(REPLACE(valorliquido::TEXT, '.', ''), ',', '.')::NUMERIC(15, 2) AS valorliquido,
-        processo::TEXT AS processo,
-        protocolo::DATE AS protocolo,
-        ateste::DATE AS ateste,
-        repactuacao::TEXT AS repactuacao,
-        infcomplementar::TEXT AS infcomplementar,
-        mesref::INTEGER AS mesref,
-        anoref::INTEGER AS anoref,
-        situacao::TEXT AS situacao,
-        chave_nfe::TEXT AS chave_nfe,
-        jsonb_array_elements(dados_empenho::jsonb) AS dados_empenho,
-        dados_referencia::TEXT AS dados_referencia,
-        dados_item_faturado::TEXT AS dados_item_faturado
-    FROM raw.faturas
-),
-
--- Extrai os campos do JSON e transforma em colunas individuais
-faturas_dados_empenho AS (
-    SELECT
-        f.*,
-        dados_empenho->>'id_empenho' AS id_empenho,
-        upper(dados_empenho->>'numero_empenho') AS numero_empenho,
-        dados_empenho->>'valor_empenho' AS valor_empenho,
-        dados_empenho->>'subelemento' AS subelemento
-    FROM faturas_raw AS f
-)
+    -- Extrai os campos do JSON e transforma em colunas individuais
+    faturas_dados_empenho as (
+        select
+            f.*,
+            f.dados_empenho ->> 'id_empenho' as id_empenho,
+            upper(f.dados_empenho ->> 'numero_empenho') as numero_empenho,
+            f.dados_empenho ->> 'valor_empenho' as valor_empenho,
+            f.dados_empenho ->> 'subelemento' as subelemento
+        from faturas_raw as f
+    )
 
 --
-
-SELECT *
-FROM faturas_dados_empenho 
+select *
+from faturas_dados_empenho

@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: compras_gov
+    schema: raw
+    tables:
+      - name: contratos
+      - name: faturas
+      - name: empenhos
+      - name: cronogramas
+  
+  - name: siafi
+    schema: raw
+    tables:
+      - name: empenhos_tesouro
+      - name: estagios
+
