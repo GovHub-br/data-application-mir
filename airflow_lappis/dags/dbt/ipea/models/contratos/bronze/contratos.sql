@@ -49,11 +49,32 @@ with
             licitacao_numero,
             sistema_origem_licitacao,
             cast(num_parcelas as int) as num_parcelas,
+            cast(
+                replace(
+                    replace(cast(valor_inicial as text), '.', ''), ',', '.'
+                ) as numeric(15, 2)
+            ) as valor_inicial,
+            -- Tratar valores nulos ou inválidos nas colunas de data
+            cast(
+                replace(
+                    replace(cast(valor_global as text), '.', ''), ',', '.'
+                ) as numeric(15, 2)
+            ) as valor_global,
+            cast(
+                replace(
+                    replace(cast(valor_parcela as text), '.', ''), ',', '.'
+                ) as numeric(15, 2)
+            ) as valor_parcela,
+            cast(
+                replace(
+                    replace(cast(valor_acumulado as text), '.', ''), ',', '.'
+                ) as numeric(15, 2)
+            ) as valor_acumulado,
             regexp_replace(
                 fornecedor_cnpj_cpf_idgener, '[^0-9A-Za-z]', '', 'g'
             ) as fornecedor_cnpj_cpf_idgener,
-            -- Tratar valores nulos ou inválidos nas colunas de data
             regexp_replace(processo, '[^0-9A-Za-z]', '', 'g') as processo,
+            -- Conversão de valores numéricos para FLOAT ou INT
             case
                 when data_assinatura is null
                 then null
@@ -91,7 +112,6 @@ with
                 -- Retorna NULL se não for uma data válida
                 then to_date(cast(vigencia_inicio as text), 'YYYY-MM-DD')
             end as vigencia_inicio,
-            -- Conversão de valores numéricos para FLOAT ou INT
             case
                 when vigencia_fim is null
                 then null
@@ -101,26 +121,6 @@ with
                 -- Retorna NULL se não for uma data válida
                 then to_date(cast(vigencia_fim as text), 'YYYY-MM-DD')
             end as vigencia_fim,
-            cast(
-                replace(
-                    replace(cast(valor_inicial as text), '.', ''), ',', '.'
-                ) as numeric(15, 2)
-            ) as valor_inicial,
-            cast(
-                replace(
-                    replace(cast(valor_global as text), '.', ''), ',', '.'
-                ) as numeric(15, 2)
-            ) as valor_global,
-            cast(
-                replace(
-                    replace(cast(valor_parcela as text), '.', ''), ',', '.'
-                ) as numeric(15, 2)
-            ) as valor_parcela,
-            cast(
-                replace(
-                    replace(cast(valor_acumulado as text), '.', ''), ',', '.'
-                ) as numeric(15, 2)
-            ) as valor_acumulado,
             now() as updated_at
         from {{ source("compras_gov", "contratos") }}
     )  --

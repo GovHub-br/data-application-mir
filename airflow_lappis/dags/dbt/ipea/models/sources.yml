@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: compras_gov
-    schema: raw
+    schema: compras_gov
     tables:
       - name: contratos
       - name: faturas
@@ -10,7 +10,7 @@ sources:
       - name: cronogramas
   
   - name: siafi
-    schema: raw
+    schema: siafi
     tables:
       - name: empenhos_tesouro
       - name: estagios

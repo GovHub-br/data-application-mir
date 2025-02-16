@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Base configuration for Airflow services
 x-airflow-common: &airflow-common
   build: .
@@ -7,9 +5,11 @@ x-airflow-common: &airflow-common
   env_file:
     - .env
   volumes:
+    - ./airflow_lappis/airflow.cfg:${AIRFLOW_HOME}/airflow.cfg
     - ./airflow_lappis/dags:${AIRFLOW_HOME}/dags/
     - ./airflow_lappis/plugins:${AIRFLOW_HOME}/plugins/
     - ./airflow_lappis/helpers:${AIRFLOW_HOME}/helpers/
+    - ./airflow_lappis/dags/dbt/ipea/profiles.yml:${AIRFLOW_HOME}/.dbt/profiles.yml
   depends_on: &airflow-common-depends-on
     postgres:
       condition: service_healthy
@@ -31,7 +31,7 @@ x-airflow-environment: &airflow-common-env
   AIRFLOW__WEBSERVER__NAVBAR_COLOR: '#98DFFF'
   AIRFLOW__WEBSERVER__RELOAD_ON_PLUGIN_CHANGE: 'true'
   AIRFLOW__WEBSERVER__SECRET_KEY: '42'
-  PYTHONPATH: '${AIRFLOW_HOME}/dags:${AIRFLOW_HOME}/plugins:${AIRFLOW_HOME}/helpers'
+  PYTHONPATH: "/opt/airflow/dags:/opt/airflow/plugins:/opt/airflow/helpers:$PYTHONPATH"
   _AIRFLOW_DB_MIGRATE: 'true'
   _AIRFLOW_WWW_USER_CREATE: 'true'
   _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
@@ -40,6 +40,26 @@ x-airflow-environment: &airflow-common-env
   AIRFLOW__CORE__DAGS_FOLDER: ${AIRFLOW_HOME}/dags
 
 services:
+  # Airflow Services
+  airflow:
+    <<: *airflow-common
+    # Usamos o comando de standalone aqui para não rodar múltiplos containers
+    # do airflow localmente e assim melhorar a velocidade inicialização
+    # doc do standalone: https://airflow.apache.org/docs/apache-airflow/2.8.1/start.html
+    command: standalone
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "http://localhost:8080/health" ]
+      interval: 10s
+      timeout: 60s
+      start_period: 60s
+      retries: 5
+    restart: always
+    environment:
+      <<: *airflow-common-env
+
+  # Postgres database
   postgres:
     image: postgres:15-alpine
     env_file:
@@ -59,25 +79,6 @@ services:
       timeout: 5s
       retries: 5
     restart: always
-
-  # Airflow Services
-  airflow:
-    <<: *airflow-common
-    # Usamos o comando de standalone aqui para não rodar múltiplos containers
-    # do airflow localmente e assim melhorar a velocidade inicialização
-    # doc do standalone: https://airflow.apache.org/docs/apache-airflow/2.8.1/start.html
-    command: standalone
-    ports:
-      - "8080:8080"
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
-      interval: 10s
-      timeout: 60s
-      start_period: 60s
-      retries: 5
-    restart: always
-    environment:
-      <<: *airflow-common-env
 
   # Analytics Tools
   superset:

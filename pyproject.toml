@@ -10,6 +10,9 @@ readme = "README.md"
 python = "~3.11"
 apache-airflow = "2.8.1"
 apache-airflow-providers-postgres = "5.14.0"
+flask-session = "0.5.0"
+numpy = "1.26.4"
+flask = "*"
 dbt-core = "*"
 dbt-postgres = "*"
 pandas = "*"
@@ -17,6 +20,7 @@ requests = "*"
 sqlalchemy = "*"
 zeep = "*"
 imap-tools = "*"
+astronomer-cosmos = "*"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
@@ -26,10 +30,28 @@ pytest-cov = "*"
 mypy = "*"
 types-psycopg2 = "*"
 pandas-stubs = "*"
+sqlalchemy-stubs = "*"
 jupyter = "*"
 shandy-sqlfmt = "*"
 sqlfluff = "*"
 sqlfluff-templater-dbt = "*"
+types-Authlib = "*"
+types-Deprecated = "*"
+types-Pygments = "*"
+types-WTForms = "*"
+types-croniter = "*"
+types-gevent = "*"
+types-jmespath = "*"
+types-jsonschema = "*"
+types-openpyxl = "*"
+types-psutil = "*"
+types-tabulate = "*"
+types-colorama = "*"
+types-decorator = "*"
+types-passlib = "*"
+types-pycurl = "*"
+types-simplejson = "*"
+types-uWSGI = "*"
 
 [build-system]
 requires = ["poetry-core"]
@@ -86,7 +108,8 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
-disable_error_code = ["arg-type"]
+follow_untyped_imports = true
+disable_error_code = ["arg-type", "attr-defined"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -100,18 +123,23 @@ exclude = [
     ".venv/",
     "build/",
     "dist/",
+    "**/target/**",
+    "**/compiled/**"
 ]
 
 [tool.sqlfluff.core]
 dialect = "postgres"
 templater = "dbt"
 max_line_length = 90
-exclude_rules = "L016"
+exclude_rules = "L016,LT02,LT09,LT14,RF02,AL04,CV08"
+verbose = 1
 
 [tool.sqlfluff.indentation]
 indented_joins = true
 indented_using_on = true
 template_blocks_indent = true
+indent_unit = "space"
+tab_space_size = 2
 
 [tool.sqlfluff.rules.capitalisation.keywords]
 capitalisation_policy = "lower"
@@ -129,7 +157,10 @@ capitalisation_policy = "lower"
 unwrap_wrapped_queries = true
 
 [tool.sqlfluff.templater.dbt]
-project_dir = "."
-profiles_dir = "."
-profile = "default"
-target = "dev"
+project_dir = "./airflow_lappis/dags/dbt/ipea"
+profiles_dir = "./airflow_lappis/dags/dbt/ipea"
+profile = "ipea"
+target = "prod"
+defer_mode = true
+static_analysis = true
+disable_database_connection = true

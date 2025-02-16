@@ -5,7 +5,6 @@ with
             id::integer as id,
             ne_ccor::text as ne_ccor,
             ne_informacao_complementar::text as ne_informacao_complementar,
-            regexp_replace(ne_num_processo, '[./-]', '') as ne_num_processo,
             ne_ccor_descricao::text as ne_ccor_descricao,
             doc_observacao::text as doc_observacao,
             natureza_despesa::integer as natureza_despesa,
@@ -16,6 +15,7 @@ with
             ne_ccor_favorecido_1::text as ne_ccor_favorecido_1,
             ne_ccor_ano_emissao::integer as ne_ccor_ano_emissao,
             item_informacao::integer as ne_ccor_ano_emissao_1,
+            regexp_replace(ne_num_processo, '[./-]', '') as ne_num_processo,
             -- Aplicando NULLIF e removendo parênteses antes de converter para NUMERIC
             {{ target.schema }}.parse_number(
                 despesas_empenhadas_controle_empenho_saldo_moeda_origem

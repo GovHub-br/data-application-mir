@@ -30,13 +30,11 @@ RUN apt-get update \
   && sed -i 's/^# pt_BR.UTF-8 UTF-8$/pt_BR.UTF-8 UTF-8/g' /etc/locale.gen \
   && locale-gen en_US.UTF-8 pt_BR.UTF-8 \
   && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+
 USER airflow
+WORKDIR ${AIRFLOW_HOME}
 
 # Para rodar o airflow só precisamos instalar as dependências visto que o código
-# sempre será sincronizado via git sync ou via volumes localmente 
-RUN pip install --no-cache-dir poetry
-WORKDIR /opt
-COPY poetry.lock pyproject.toml ./
-RUN poetry install --no-root
-
-WORKDIR ${AIRFLOW_HOME}
+# sempre será sincronizado via git sync ou via volumes localmente
+COPY requirements.txt .
+RUN pip install -r requirements.txt

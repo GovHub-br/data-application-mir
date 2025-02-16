@@ -17,48 +17,41 @@ with
             ne_informacao_complementar::text,
 
             -- Remove o "0" inicial e pontos, barras e hífens do número do processo
+            ne_ccor_descricao::text,
+
+            doc_observacao::text,
+            natureza_despesa_1,
+
+            natureza_despesa_detalhada_1,
+
+            ne_ccor_favorecido,
+
+            ne_ccor_favorecido_1,
+
+            ne_ccor_mes_emissao,
+            mes_lancamento,
             case
                 when length(ne_num_processo::text) > 3
                 then regexp_replace(ltrim(ne_num_processo::text, '0'), '[\./-]', '', 'g')
                 else ne_num_processo::text
             end as ne_num_processo,
 
-            ne_ccor_descricao::text,
-            doc_observacao::text,
-
             case
-                when natureza_despesa::text ~ '^\d+$'
-                then cast(natureza_despesa as integer)
-                else null
+                when natureza_despesa::text ~ '^\d+$' then natureza_despesa::integer
             end as natureza_despesa,
-
-            natureza_despesa_1,
 
             case
                 when natureza_despesa_detalhada::text ~ '^\d+$'
-                then cast(natureza_despesa_detalhada as integer)
-                else null
+                then natureza_despesa_detalhada::integer
             end as natureza_despesa_detalhada,
 
-            natureza_despesa_detalhada_1,
-            ne_ccor_favorecido,
-            ne_ccor_favorecido_1,
-
             case
-                when ano_lancamento::text ~ '^\d+$'
-                then cast(ano_lancamento as integer)
-                else null
+                when ano_lancamento::text ~ '^\d+$' then ano_lancamento::integer
             end as ano_lancamento,
 
-            ne_ccor_mes_emissao,
-
             case
-                when ne_ccor_ano_emissao::text ~ '^\d+$'
-                then cast(ne_ccor_ano_emissao as integer)
-                else null
+                when ne_ccor_ano_emissao::text ~ '^\d+$' then ne_ccor_ano_emissao::integer
             end as ne_ccor_ano_emissao,
-
-            mes_lancamento,
             {{ target.schema }}.parse_number(
                 despesas_empenhadas_controle_empenho_saldo_moeda_origem
             ) as despesas_empenhadas_controle_empenho_saldo_moeda_origem,

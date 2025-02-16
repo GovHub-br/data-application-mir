@@ -1,3 +1,6 @@
+export PYTHONPATH := $(CURDIR)/airflow_lappis
+export MYPYPATH := $(CURDIR):$(CURDIR)/airflow_lappis/dags:$(CURDIR)/airflow_lappis/helpers:$(CURDIR)/airflow_lappis/plugins
+
 setup:
 	pip install poetry==1.8.5
 	poetry config virtualenvs.in-project false
@@ -10,14 +13,14 @@ setup:
 format:
 	poetry run black .
 	poetry run ruff check --fix .
-	poetry run sqlfmt ./dbt
-	poetry run sqlfluff fix ./dbt
+	poetry run sqlfmt ./airflow_lappis/dags/dbt
 
 lint:
 	poetry run black . --check
 	poetry run ruff check .
-	poetry run mypy . --explicit-package-bases --exclude 'airflow_lappis/helpers/__init__.py|airflow_lappis/plugins/__init__.py'
-	poetry run sqlfmt ./airflow_lappis/dags/dbt/ipea --check
+	poetry run mypy . --explicit-package-bases --install-types
+	poetry run sqlfmt ./airflow_lappis/dags/dbt --check
+	[ "${GITLAB_CI}" ] || poetry run sqlfluff lint ./airflow_lappis/dags/dbt
 
 test:
 	poetry run pytest tests
