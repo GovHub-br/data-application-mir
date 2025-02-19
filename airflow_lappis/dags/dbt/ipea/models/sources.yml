@@ -7,7 +7,7 @@ sources:
       - name: contratos
       - name: faturas
       - name: empenhos
-      - name: cronogramas
+      - name: cronograma
   
   - name: siafi
     schema: siafi

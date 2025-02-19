@@ -25,6 +25,7 @@ models:
       +schema: contratos
       bronze:
         +materialized: incremental
+        +unique_key: id
     pessoas:
       +materialized: table
       +database: analytics

@@ -40,7 +40,8 @@ with
             f.dados_empenho ->> 'id_empenho' as id_empenho,
             upper(f.dados_empenho ->> 'numero_empenho') as numero_empenho,
             f.dados_empenho ->> 'valor_empenho' as valor_empenho,
-            f.dados_empenho ->> 'subelemento' as subelemento
+            f.dados_empenho ->> 'subelemento' as subelemento,
+            now() as inserted_at
         from faturas_raw as f
     )
 

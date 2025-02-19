@@ -1,3 +1,5 @@
+{{ config(materialized="table") }}
+
 with
 
     ids_from_empenhos as (
