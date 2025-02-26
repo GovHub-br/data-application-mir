@@ -39,7 +39,7 @@ class ClienteEstrutura(ClienteBase):
 
         status, data = self.request(http.HTTPMethod.GET, endpoint, params=params)
         return (
-            data.get("unidades", [])
-            if status == http.HTTPStatus.OK and type(data) is dict
+            data.get("unidades")
+            if status == http.HTTPStatus.OK and type(data) is dict and "unidades" in data
             else None
         )

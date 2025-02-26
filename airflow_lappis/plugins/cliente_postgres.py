@@ -4,6 +4,7 @@ import psycopg2
 from pandas import json_normalize
 import pandas as pd
 import io
+import psycopg2.extras
 
 
 class ClientPostgresDB:
