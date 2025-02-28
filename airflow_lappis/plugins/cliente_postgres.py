@@ -190,6 +190,16 @@ class ClientPostgresDB:
                 contratos_ids = [row[0] for row in cursor.fetchall()]
                 return contratos_ids
 
+    def get_id_programas(self) -> List[int]:
+        """Extrai todos os IDs de programas da tabela beneficiário."""
+        query = "SELECT id_programa FROM ted.beneficiario"
+
+        with psycopg2.connect(self.conn_str) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query)
+                id_programas = [row[0] for row in cursor.fetchall()]
+                return id_programas
+
     def drop_table_if_exists(self, table_name: str, schema: str = "raw") -> None:
         """Remove a tabela se ela existir."""
         conn = psycopg2.connect(self.conn_str)
