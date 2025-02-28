@@ -18,7 +18,7 @@ format:
 lint:
 	poetry run black . --check
 	poetry run ruff check .
-	poetry run mypy airflow_lappis --explicit-package-bases --install-types
+	poetry run mypy . --explicit-package-bases --install-types
 	poetry run sqlfmt ./airflow_lappis/dags/dbt --check
 	[ "${GITLAB_CI}" ] || poetry run sqlfluff lint ./airflow_lappis/dags/dbt
 

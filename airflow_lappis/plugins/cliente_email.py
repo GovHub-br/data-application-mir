@@ -3,6 +3,7 @@ import io
 import zipfile
 from typing import Optional
 from typing_extensions import Buffer
+
 import pandas as pd
 from imap_tools import MailBox, AND, MailMessage
 import chardet

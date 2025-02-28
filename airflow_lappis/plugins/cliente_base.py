@@ -52,7 +52,7 @@ class ClienteBase:
                     f"[cliente_base.py] API failed with status {status} on "
                     f"attempt {attempt + 1}. Error: {str(e)}"
                 )
-                if attempt < self.DEFAULT_MAX_RETRIES - 1:
+                if attempt < self.DEFAULT_MAX_RETRIES:
                     time.sleep(attempt**2 * self.DEFAULT_SLEEP_SECONDS)
                 else:
                     logging.error(
