@@ -51,3 +51,31 @@ class ClienteTed(ClienteBase):
                 f"{id_programa} with status: {status}"
             )
             return None
+
+    def get_notas_de_credito_by_ug(self, ug_code: int) -> list | None:
+        endpoint_1 = f"nota_credito?cd_ug_favorecida_nota=eq.{ug_code}"
+        endpoint_2 = f"nota_credito?cd_ug_emitente_nota=eq.{ug_code}"
+
+        logging.info(f"Buscando notas de crédito para UG: {ug_code}")
+
+        status_1, data_1 = self.request(
+            http.HTTPMethod.GET, endpoint_1, headers=self.BASE_HEADER
+        )
+        status_2, data_2 = self.request(
+            http.HTTPMethod.GET, endpoint_2, headers=self.BASE_HEADER
+        )
+
+        if status_1 == http.HTTPStatus.OK and isinstance(data_1, list):
+            logging.info(f"Notas de crédito (favorecida) obtidas para UG {ug_code}")
+        else:
+            logging.warning(f"Falha ao buscar notas de crédito - Status: {status_1}")
+            data_1 = []
+
+        if status_2 == http.HTTPStatus.OK and isinstance(data_2, list):
+            logging.info(f"Notas de crédito (emitente) obtidas para UG {ug_code}")
+        else:
+            logging.warning(f"Falha ao buscar notas de crédito - Status: {status_2}")
+            data_2 = []
+
+        data = data_1 + data_2
+        return data if data else None
