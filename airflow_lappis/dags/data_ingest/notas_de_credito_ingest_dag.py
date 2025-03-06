@@ -15,7 +15,7 @@ from cliente_ted import ClienteTed
         "retries": 1,
         "retry_delay": timedelta(minutes=5),
     },
-    tags=["notas de credito", "ted"],
+    tags=["notas de credito", "ted_api"],
 )
 def notas_de_credito_dag() -> None:
 

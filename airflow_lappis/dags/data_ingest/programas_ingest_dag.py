@@ -35,6 +35,8 @@ def api_programas_dag() -> None:
                 db.insert_data(
                     programas,
                     "programas",
+                    primary_key=["tx_codigo_programa"],
+                    conflict_fields=["tx_codigo_programa"],
                     schema="ted",
                 )
             else:

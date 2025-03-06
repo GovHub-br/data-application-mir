@@ -41,6 +41,8 @@ def api_programa_beneficiario_dag() -> None:
             db.insert_data(
                 unique_id_programas,
                 "beneficiario",
+                primary_key=["id_programa"],
+                conflict_fields=["id_programa"],
                 schema="ted",
             )
         else:
