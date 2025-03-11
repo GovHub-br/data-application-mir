@@ -191,7 +191,7 @@ class ClientPostgresDB:
 
     def get_id_programas(self) -> List[int]:
         """Extrai todos os IDs de programas da tabela beneficiário."""
-        query = "SELECT id_programa FROM ted.beneficiario"
+        query = "SELECT id_programa FROM transfere_gov.beneficiario"
 
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
