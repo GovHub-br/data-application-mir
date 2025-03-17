@@ -1,90 +1,114 @@
-import json
+import os
 import logging
-from typing import Any
-import requests
-from httpx import HTTPStatusError
+from zeep import Client
+from zeep.transports import Transport
+from zeep.wsse.username import UsernameToken
+from requests import Session
+from typing import Dict, Any, Optional
 
-from cliente_base import ClienteBase
+# Configuração do logger
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 
-class ClienteSiafi(ClienteBase):
-
-    BEARER_ENDPOINT = "***REMOVED***"
-    SIAFI_ENDPOINT = "https://gateway.apiserpro.serpro.gov.br/api-integra-siafi/api/v2"
-
-    def __init__(
-        self, bearer_key: str, bearer_secret: str, siafi_credential: str
-    ) -> None:
-        headers = ClienteSiafi._setup_headers(
-            ClienteSiafi.BEARER_ENDPOINT, bearer_key, bearer_secret, siafi_credential
-        )
-        super().__init__(base_url=ClienteSiafi.SIAFI_ENDPOINT, headers=headers)
-
-    @staticmethod
-    def _get_token(url: str, consumer_key: str, consumer_secret: str) -> str:
+class ClienteSiafi:
+    def __init__(self) -> None:
         """
-        Gets token from token endpoint.
+        Inicializa o cliente SIAFI com as configurações necessárias.
+        """
+        self.base_url = "https://servicos-siafi.tesouro.gov.br/siafi"
+        self.cert_path = os.getenv("SIAFI_CERT_PATH")
+        self.key_path = os.getenv("SIAFI_KEY_PATH")
+        self.siafi_username = os.getenv("SIAFI_USERNAME")
+        self.siafi_password = os.getenv("SIAFI_PASSWORD")
+
+    def _criar_cliente_soap(self, ano: int, endpoint: str) -> Optional[Client]:
+        """
+        Cria e retorna um cliente SOAP para comunicação com o serviço SIAFI
+        com a URL específica para o ano e endpoint informados.
 
         Args:
-            url: Token endpoint.
-            consumer_key: Consumer key.
-            consumer_secret: Consumer secret.
+            ano (int): Ano para formar a URL do WSDL
+            endpoint (str): Endpoint específico do serviço SIAFI
 
         Returns:
-            str: The token.
+            Client: Cliente SOAP configurado ou None em caso de falha.
         """
-        response = requests.post(
-            url,
-            data={"grant_type": "client_credentials"},
-            auth=(consumer_key, consumer_secret),
-        )
-        data = response.json()
-        return str(data.get("access_token", ""))
+        wsdl_url = f"{self.base_url}{ano}/{endpoint}?wsdl"
+        logger.info(f"Criando cliente SOAP com URL: {wsdl_url}")
 
-    @staticmethod
-    def _setup_headers(
-        bearer_endpoint: str, bearer_key: str, bearer_secret: str, siafi_credential: str
-    ) -> dict:
-        """
-        Setups the headers for the client.
+        if not isinstance(self.cert_path, str) or not isinstance(self.key_path, str):
+            logger.error("Certificados SSL inválidos.")
+            return None
 
-        Args:
-            bearer_endpoint: Bearer endpoint.
-            bearer_key: Bearer key.
-            bearer_secret: Bearer secret.
-            siafi_credential: Credencial SIAFI.
+        session = Session()
+        session.verify = self.cert_path
+        session.cert = (self.cert_path, self.key_path)
 
-        Returns:
-            dict: The headers.
-        """
-        bearer_token = ClienteSiafi._get_token(
-            url=bearer_endpoint, consumer_key=bearer_key, consumer_secret=bearer_secret
-        )
-        headers = {
-            "Authorization": f"Bearer {bearer_token}",
-            "Content-Type": "application/json",
-            "x-credencial": siafi_credential,
-        }
-        return headers
-
-    def get(self, endpoint: str) -> Any:
-        """
-        Makes a GET request to the siafi endpoint.
-
-        Args:
-            endpoint: The endpoint.
-
-        Returns:
-            Any: The response data.
-        """
+        transport = Transport(session=session)
+        wsse = UsernameToken(self.siafi_username, self.siafi_password, use_digest=False)
 
         try:
-            response = self.client.get(url=endpoint)
-            response.raise_for_status()
-            data = response.json()
-            return data
-        except HTTPStatusError as http_err:
-            logging.error(f"HTTP error occurred: {http_err}")
-        except json.decoder.JSONDecodeError:
-            logging.warning(f"Could not decode response from {endpoint}")
-        return None
+            client = Client(wsdl_url, transport=transport, wsse=wsse)
+            logger.info(
+                f"Cliente SOAP para o ano {ano} e endpoint {endpoint} criado com sucesso."
+            )
+            return client
+        except Exception as e:
+            logger.error(
+                f"Erro ao criar o cliente SOAP para ano {ano} e endpoint {endpoint}: {e}"
+            )
+            return None
+
+    def consultar_programacao_financeira(
+        self, ug_emitente: str, ano: int, num_lista: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Consulta programações financeiras no SIAFI.
+
+        Args:
+            ug_emitente (str): UG emitente da programação financeira.
+            ano (int): Ano da programação financeira.
+            num_lista (str): Número do documento da programação financeira.
+
+        Returns:
+            dict: Resposta da consulta ou None em caso de falha.
+        """
+        endpoint = "services/pf/manterProgramacaoFinanceira"
+
+        # Cria um cliente específico para o ano e endpoint da consulta
+        client = self._criar_cliente_soap(ano, endpoint)
+        if not client:
+            logger.error(
+                f"Não foi possível criar cliente SOAP ano {ano} e endpoint {endpoint}."
+            )
+            return None
+
+        soap_headers = {
+            "cabecalhoSIAFI": {
+                "nomeSistemaSIAFI": f"SIAFI{str(ano)}",
+                "ug": ug_emitente,
+                "bilhetador": {"nonce": "nonce123456"},
+            }
+        }
+
+        try:
+            logger.info(
+                f"Consultando Programação Financeira: UG {ug_emitente}, Ano {ano}, "
+                f"Documento {num_lista}..."
+            )
+            response = client.service.pfDetalharProgramacaoFinanceira(
+                _soapheaders=soap_headers,
+                ano=ano,
+                numeroDocumento=num_lista,
+                codUgEmit=ug_emitente,
+            )
+            logger.info(f"Resposta recebida: {response}")
+
+            response_dict: Dict[str, Any] = dict(response) if response else {}
+            return response_dict
+        except Exception as e:
+            logger.error(f"Erro na consulta: {e}")
+            return None

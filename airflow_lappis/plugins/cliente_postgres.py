@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 import psycopg2
+import psycopg2.extras  # Added import for execute_values
 from pandas import json_normalize
 import pandas as pd
 import io
@@ -237,3 +238,19 @@ class ClientPostgresDB:
 
         # Insere os novos dados
         self.insert_data(data, table_name, primary_key=None, schema=schema)
+
+    def get_programacao_financeira(self) -> List[Tuple[Any, ...]]:
+        """Extrai o numero_programacao e ug_emitente da tabela programacao_financeira.
+
+        Returns:
+            List[Tuple[Any, ...]]: Lista de tuplas com numero_programacao e ug_emitente
+        """
+        query = (
+            "SELECT tx_numero_programacao, ug_emitente_programacao "
+            "FROM transfere_gov.programacao_financeira"
+        )
+        with psycopg2.connect(self.conn_str) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query)
+                programacao_financeira = cursor.fetchall()
+                return programacao_financeira
