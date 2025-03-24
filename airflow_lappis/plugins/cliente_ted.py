@@ -111,3 +111,25 @@ class ClienteTed(ClienteBase):
 
         data = data_1 + data_2
         return data if data else None
+
+    def get_planos_acao_by_id_programa(self, id_programa: str) -> list | None:
+
+        endpoint = f"plano_acao?id_programa=eq.{id_programa}"
+        logging.info(
+            f"[cliente_ted.py] Fetching planos de ação for id_programa: {id_programa}"
+        )
+        status, data = self.request(
+            http.HTTPMethod.GET, endpoint, headers=self.BASE_HEADER
+        )
+        if status == http.HTTPStatus.OK and isinstance(data, list):
+            logging.info(
+                "[cliente_ted.py] Successfully fetched planos de ação for id_programa: "
+                f"{id_programa}"
+            )
+            return data
+        else:
+            logging.warning(
+                "[cliente_ted.py] Failed to fetch planos de ação for id_programa: "
+                f"{id_programa} with status: {status}"
+            )
+            return None
