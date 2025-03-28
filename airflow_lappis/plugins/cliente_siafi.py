@@ -43,7 +43,9 @@ class ClienteSiafi:
         logger.info(f"Criando cliente SOAP com URL: {wsdl_url}")
 
         if not isinstance(self.cert_path, str) or not isinstance(self.key_path, str):
-            logger.error("Certificados SSL inválidos.")
+            logger.error(
+                f"Certificados inválidos. cert={self.cert_path}, key={self.key_path}"
+            )
             return None
 
         session = Session()
@@ -59,11 +61,21 @@ class ClienteSiafi:
                 f"Cliente SOAP para o ano {ano} e endpoint {endpoint} criado com sucesso."
             )
             return client
+        except requests.exceptions.SSLError as ssl_error:
+            logger.error(
+                f"Erro de SSL ao criar cliente SOAP. Verifique os certificados. "
+                f"cert_path={self.cert_path}, key_path={self.key_path}, erro={ssl_error}"
+            )
+        except requests.exceptions.ConnectionError as conn_error:
+            logger.error(
+                f"Erro ao criar cliente SOAP. wsdl_url={wsdl_url}, erro={conn_error}"
+            )
         except Exception as e:
             logger.error(
-                f"Erro ao criar o cliente SOAP para ano {ano} e endpoint {endpoint}: {e}"
+                f"Erro ao criar cliente SOAP para ano {ano} e endpoint {endpoint}. "
+                f"wsdl_url={wsdl_url}, erro={e}"
             )
-            return None
+        return None
 
     @retry_on_exception(max_attempts=3, initial_delay=2.0, backoff_factor=2.0)
     def consultar_programacao_financeira(
@@ -82,11 +94,11 @@ class ClienteSiafi:
         """
         endpoint = "services/pf/manterProgramacaoFinanceira"
 
-        # Cria um cliente específico para o ano e endpoint da consulta
         client = self._criar_cliente_soap(ano, endpoint)
         if not client:
             logger.error(
-                f"Não foi possível criar cliente SOAP ano {ano} e endpoint {endpoint}."
+                f"Falha ao criar cliente SOAP para consultar programação financeira. "
+                f"ug={ug_emitente}, ano={ano}, num_lista={num_lista}, endpoint={endpoint}"
             )
             return None
 
@@ -100,8 +112,7 @@ class ClienteSiafi:
 
         try:
             logger.info(
-                f"Consultando Programação Financeira: UG {ug_emitente}, Ano {ano}, "
-                f"Documento {num_lista}..."
+                f"Consultando PF: UG={ug_emitente}, Ano={ano}, Documento={num_lista}"
             )
             response = client.service.pfDetalharProgramacaoFinanceira(
                 _soapheaders=soap_headers,
@@ -113,9 +124,17 @@ class ClienteSiafi:
 
             response_dict: Dict[str, Any] = dict(response) if response else {}
             return response_dict
+        except requests.exceptions.Timeout as timeout_error:
+            logger.error(
+                f"Timeout ao consultar programação financeira. "
+                f"ug={ug_emitente}, ano={ano}, num_list={num_lista}, erro={timeout_error}"
+            )
         except Exception as e:
-            logger.error(f"Erro na consulta: {e}")
-            return None
+            logger.error(
+                f"Erro inesperado ao consultar programação financeira. "
+                f"ug_emitente={ug_emitente}, ano={ano}, num_lista={num_lista}, erro={e}"
+            )
+        return None
 
     @retry_on_exception(max_attempts=3, initial_delay=2.0, backoff_factor=2.0)
     def consultar_nota_empenho(
@@ -136,7 +155,9 @@ class ClienteSiafi:
         client = self._criar_cliente_soap(ano_empenho, endpoint)
         if not client:
             logger.error(
-                f"Não foi possível criar cliente ano {ano_empenho} e endpoint {endpoint}."
+                f"Falha ao criar cliente SOAP para consultar nota de empenho. "
+                f"ug={ug_emitente}, ano={ano_empenho}, "
+                f"numero={num_empenho}, endpoint={endpoint}"
             )
             return None
 
@@ -156,7 +177,7 @@ class ClienteSiafi:
 
         try:
             logger.info(
-                f"Consultando Nota de Empenho {parametros_consulta['numEmpenho']}..."
+                f"Consultando NE: UG={ug_emitente}, Ano={ano_empenho}, Num={num_empenho}"
             )
             response = client.service.orcDetalharEmpenho(
                 parametros_consulta, _soapheaders=soap_headers
@@ -165,11 +186,17 @@ class ClienteSiafi:
 
             response_dict: Dict[str, Any] = dict(response) if response else {}
             return response_dict
+        except requests.exceptions.Timeout as te:
+            logger.error(
+                f"Timeout ao consultar nota de empenho. "
+                f"ug={ug_emitente}, ano={ano_empenho}, num={num_empenho}, erro={te}"
+            )
         except Exception as e:
             logger.error(
-                f"Erro consulta da Nota Empenho {parametros_consulta['numEmpenho']}: {e}"
+                f"Erro inesperado ao consultar nota de empenho. "
+                f"ug={ug_emitente}, ano={ano_empenho}, num={num_empenho}, erro={e}"
             )
-            return None
+        return None
 
     @retry_on_exception(max_attempts=3, initial_delay=2.0, backoff_factor=2.0)
     def get_access_token(self) -> Optional[str]:
@@ -229,7 +256,7 @@ class ClienteSiafi:
     @retry_on_exception(max_attempts=3, initial_delay=2.0, backoff_factor=2.0)
     def consultar_nota_credito(
         self, ug: str, gestao: str, ano: str, numero: str
-    ) -> Dict[str, Any]:
+    ) -> Optional[Dict[str, Any]]:
         """
         Consulta a nota de crédito na API SIAFI.
 
@@ -240,7 +267,7 @@ class ClienteSiafi:
             numero (str): Número da nota.
 
         Returns:
-            dict: JSON da resposta ou erro.
+            Optional[dict]: JSON da resposta ou None em caso de erro.
         """
 
         cpf = os.getenv("SIAFI_CPF_SERPRO")
@@ -284,12 +311,12 @@ class ClienteSiafi:
                     return response_json
                 else:
                     logger.error("Resposta não é um JSON válido.")
-                    return {"error": "Resposta inválida."}
+                    return None
             else:
                 logger.error(
                     f"Erro na consulta: {response.status_code} - {response.text}"
                 )
-                return {"error": f"Erro {response.status_code}: {response.text}"}
+                return None
         except Exception as e:
             logger.error(f"Erro ao consultar a nota de crédito: {e}")
-            return {"error": f"Erro na requisição: {e}"}
+            return None
