@@ -1,32 +1,11 @@
 import os
 from datetime import datetime
-from typing import Any
-
-from airflow.utils.context import Context
 from cosmos import DbtDag, ProjectConfig, ProfileConfig, ExecutionConfig
-from cosmos.operators.local import DbtRunLocalOperator
+from cosmos.constants import DBT_LOG_PATH_ENVVAR
 
-
-class CustomDbtRunLocalOperator(DbtRunLocalOperator):
-    def build_and_run_cmd(
-        self,
-        context: Context,
-        cmd_flags: list[str] | None = None,
-        run_as_async: bool = False,
-        async_context: dict[str, Any] | None = None,
-    ) -> Any:
-        try:
-            return super().build_and_run_cmd(
-                context, cmd_flags, run_as_async, async_context
-            )
-        except OSError as e:
-            if "Directory not empty: 'logs'" in str(e):
-                self.log.info(
-                    "Ignoring non-empty logs directory error. Task was successful."
-                )
-                return None
-            raise
-
+dbt_log_path = "/tmp/dbt_logs"
+os.makedirs(dbt_log_path, exist_ok=True)
+os.environ[DBT_LOG_PATH_ENVVAR] = dbt_log_path
 
 profile_config = ProfileConfig(
     profiles_yml_filepath=f"{os.environ['AIRFLOW_REPO_BASE']}/dags/dbt/ipea/profiles.yml",
@@ -45,5 +24,4 @@ my_cosmos_dag = DbtDag(
     catchup=False,
     dag_id="ipea_cosmos_dag",
     default_args={"retries": 2},
-    operator_class=CustomDbtRunLocalOperator,
 )
