@@ -1,5 +1,4 @@
 import logging
-import os
 import yaml
 from airflow.decorators import dag, task
 from airflow.models import Variable
@@ -21,24 +20,19 @@ from cliente_ted import ClienteTed
     tags=["notas de credito", "ted_api"],
 )
 def notas_de_credito_dag() -> None:
-
     @task
     def fetch_and_store_notas_de_credito() -> None:
         logging.info("Iniciando fetch_and_store_notas_de_credito")
 
-        orgao_alvo = Variable.get("ORGAO_ALVO", default_var=None)
+        orgao_alvo = Variable.get("airflow_orgao", default_var=None)
         if not orgao_alvo:
-            logging.error("Variável ORGAO_ALVO não definida no Airflow!")
-            raise ValueError("ORGAO_ALVO não definida no Airflow")
+            logging.error("Variável airflow_orgao não definida!")
+            raise ValueError("airflow_orgao não definida")
 
-        config_path = os.path.join(
-            os.environ.get("AIRFLOW_HOME", "/opt/airflow"), "configs/orgaos.yaml"
-        )
-        with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
+        orgaos_config_str = Variable.get("airflow_variables", default_var="{}")
+        orgaos_config = yaml.safe_load(orgaos_config_str)
 
-        orgaos = config.get("orgaos", {})
-        ug_codes = orgaos.get(orgao_alvo, {}).get("codigos_ug", [])
+        ug_codes = orgaos_config.get(orgao_alvo, {}).get("codigos_ug", [])
 
         if not ug_codes:
             logging.warning(f"Nenhum código UG encontrado para o órgão '{orgao_alvo}'")
@@ -59,7 +53,7 @@ def notas_de_credito_dag() -> None:
                     schema="transfere_gov",
                 )
             else:
-                logging.warning(f"No notas de credito found for UG code: {ug_code}")
+                logging.warning(f"Nenhuma nota de crédito encontrada para UG {ug_code}")
 
     fetch_and_store_notas_de_credito()
 
