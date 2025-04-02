@@ -10,7 +10,6 @@ x-airflow-common: &airflow-common
     - ./airflow_lappis/plugins:${AIRFLOW_HOME}/plugins/
     - ./airflow_lappis/helpers:${AIRFLOW_HOME}/helpers/
     - ./airflow_lappis/dags/dbt/ipea/profiles.yml:${AIRFLOW_HOME}/.dbt/profiles.yml
-    - ./airflow_lappis/configs:${AIRFLOW_HOME}/configs/
   depends_on: &airflow-common-depends-on
     postgres:
       condition: service_healthy
