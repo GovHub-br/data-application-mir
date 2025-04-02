@@ -1,5 +1,4 @@
 import logging
-import os
 import yaml
 from airflow.decorators import dag, task
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
@@ -28,19 +27,15 @@ def api_contratos_dag() -> None:
     def fetch_and_store_contratos() -> None:
         logging.info("[contratos_ingest_dag.py] Iniciando extração")
 
-        orgao_alvo = Variable.get("ORGAO_ALVO", default_var=None)
+        orgao_alvo = Variable.get("airflow_orgao", default_var=None)
         if not orgao_alvo:
-            logging.error("Variável ORGAO_ALVO não definida!")
-            raise ValueError("ORGAO_ALVO não definida")
+            logging.error("Variável airflow_orgao não definida!")
+            raise ValueError("airflow_orgao não definida")
 
-        config_path = os.path.join(
-            os.environ.get("AIRFLOW_HOME", "/opt/airflow"), "configs/orgaos.yaml"
-        )
-        with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
+        orgaos_config_str = Variable.get("airflow_variables", default_var="{}")
+        orgaos_config = yaml.safe_load(orgaos_config_str)
 
-        orgaos = config.get("orgaos", {})
-        codigos_ug = orgaos.get(orgao_alvo, {}).get("codigos_ug", [])
+        codigos_ug = orgaos_config.get(orgao_alvo, {}).get("codigos_ug", [])
 
         if not codigos_ug:
             logging.warning(f"Nenhum código UG encontrado para o órgão '{orgao_alvo}'")
