@@ -1,4 +1,4 @@
-{{ config(unikey_key="id") }}
+{{ config(materialized="table") }}
 
 with
     empenhos as (
@@ -50,7 +50,7 @@ with
                 -- Retorna NULL se não for uma data válida
                 then to_date(data_emissao::text, 'YYYY-MM-DD')
             end as data_emissao,
-            now() as inserted_at
+            now() as updated_at
 
         from {{ source("compras_gov", "empenhos") }}
     )

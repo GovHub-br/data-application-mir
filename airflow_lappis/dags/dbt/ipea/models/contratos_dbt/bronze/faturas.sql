@@ -1,4 +1,4 @@
-{{ config(unikey_key="id") }}
+{{ config(materialized="table") }}
 
 with
     faturas_raw as (
@@ -44,7 +44,7 @@ with
             upper(f.dados_empenho ->> 'numero_empenho') as numero_empenho,
             f.dados_empenho ->> 'valor_empenho' as valor_empenho,
             f.dados_empenho ->> 'subelemento' as subelemento,
-            now() as inserted_at
+            now() as updated_at
         from faturas_raw as f
     )  --
 select *
