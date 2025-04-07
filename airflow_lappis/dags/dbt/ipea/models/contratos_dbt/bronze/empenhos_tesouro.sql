@@ -2,9 +2,11 @@
     config(
         unique_key=[
             "ne_ccor",
-            "natureza_despesa_detalhada",
+            "natureza_despesa",
             "doc_observacao",
             "ne_ccor_ano_emissao",
+            "emissao_dia",
+            "emissao_mes",
         ],
         incremental_strategy="merge",
     )
@@ -13,50 +15,28 @@
 with
     empenhos_raw as (
         select
+            emissao_mes::text as emissao_mes,
+            emissao_dia::text as emissao_dia,
             ne_ccor::text as ne_ccor,
-            ne_informacao_complementar::text as ne_informacao_complementar,
+            regexp_replace(ne_num_processo, '[./-]', '') as ne_num_processo,
+            ne_info_complementar::text as ne_info_complementar,
             ne_ccor_descricao::text as ne_ccor_descricao,
             doc_observacao::text as doc_observacao,
             natureza_despesa::integer as natureza_despesa,
-            natureza_despesa_1::text as natureza_despesa_1,
-            natureza_despesa_detalhada::integer as natureza_despesa_detalhada,
-            natureza_despesa_detalhada_1::text as natureza_despesa_detalhada_1,
+            natureza_despesa_descricao::text as natureza_despesa_descricao,
             ne_ccor_favorecido::text as ne_ccor_favorecido,
-            ne_ccor_favorecido_1::text as ne_ccor_favorecido_1,
+            ne_ccor_favorecido_descricao::text as ne_ccor_favorecido_descricao,
             ne_ccor_ano_emissao::integer as ne_ccor_ano_emissao,
-            item_informacao::integer as ne_ccor_ano_emissao_1,
-            regexp_replace(ne_num_processo, '[./-]', '') as ne_num_processo,
-            -- Aplicando NULLIF e removendo parênteses antes de converter para NUMERIC
-            {{
-                parse_financial_value(
-                    "despesas_empenhadas_controle_empenho_saldo_moeda_origem"
-                )
-            }} as despesas_empenhadas_saldo,
-            {{
-                parse_financial_value(
-                    "despesas_empenhadas_controle_empenho_movim_liquido_moeda_origem"
-                )
-            }} as despesas_empenhadas_movim_liquido,
-            {{
-                parse_financial_value(
-                    "despesas_liquidadas_controle_empenho_saldo_moeda_origem"
-                )
-            }} as despesas_liquidadas_saldo,
-            {{
-                parse_financial_value(
-                    "despesas_liquidadas_controle_empenho_movim_liquido_moeda_origem"
-                )
-            }} as despesas_liquidadas_movim_liquido,
-            {{
-                parse_financial_value(
-                    "despesas_pagas_controle_empenho_saldo_moeda_origem"
-                )
-            }} as despesas_pagas_saldo,
-            {{
-                parse_financial_value(
-                    "despesas_pagas_controle_empenho_movim_liquido_moeda_origem"
-                )
-            }} as despesas_pagas_movim_liquido
+            ptres::text as ptres,
+            fonte_recursos_detalhada::text as fonte_recursos_detalhada,
+            fonte_recursos_detalhada_descricao::text
+            as fonte_recursos_detalhada_descricao,
+            {{ parse_financial_value("despesas_empenhadas") }} as despesas_empenhadas,
+            {{ parse_financial_value("despesas_liquidadas") }} as despesas_liquidadas,
+            {{ parse_financial_value("despesas_pagas") }} as despesas_pagas,
+            {{ parse_financial_value("restos_a_pagar_inscritos") }}
+            as restos_a_pagar_inscritos,
+            {{ parse_financial_value("restos_a_pagar_pagos") }} as restos_a_pagar_pagos
         from {{ source("siafi", "empenhos_tesouro") }}
         where ne_ccor != 'Total'
     )

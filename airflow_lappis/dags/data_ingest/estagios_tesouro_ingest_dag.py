@@ -8,7 +8,7 @@ import logging
 import json
 
 from postgres_helpers import get_postgres_conn
-from cliente_email import fetch_and_process_emails
+from cliente_email import fetch_and_process_email
 from cliente_postgres import ClientPostgresDB
 
 # Configurações básicas da DAG
@@ -66,7 +66,7 @@ with DAG(
 
         try:
             logging.info("Iniciando o processamento dos emails...")
-            csv_data = fetch_and_process_emails(
+            csv_data = fetch_and_process_email(
                 EMAIL,
                 PASSWORD,
                 IMAP_SERVER,
@@ -81,7 +81,7 @@ with DAG(
             logging.info(
                 "CSV processado com sucesso. Dados encontrados: %s", len(csv_data)
             )
-            return csv_data
+            return str(csv_data) if csv_data is not None else None
         except Exception as e:
             logging.error("Erro no processamento dos emails: %s", str(e))
             raise

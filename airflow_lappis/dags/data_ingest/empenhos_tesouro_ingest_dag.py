@@ -1,12 +1,11 @@
 from typing import Dict, Any, Optional
-
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.models import Variable
 from datetime import datetime, timedelta
 import logging
 import json
-from cliente_email import fetch_and_process_emails
+from cliente_email import fetch_and_process_email
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
 
@@ -19,28 +18,29 @@ default_args = {
 }
 
 COLUMN_MAPPING = {
-    0: "ne_ccor",
-    1: "ne_informacao_complementar",
-    2: "ne_num_processo",
-    3: "ne_ccor_descricao",
-    4: "doc_observacao",
-    5: "natureza_despesa",
-    6: "natureza_despesa_1",
-    7: "natureza_despesa_detalhada",
-    8: "natureza_despesa_detalhada_1",
+    0: "emissao_mes",
+    1: "emissao_dia",
+    2: "ne_ccor",
+    3: "ne_num_processo",
+    4: "ne_info_complementar",
+    5: "ne_ccor_descricao",
+    6: "doc_observacao",
+    7: "natureza_despesa",
+    8: "natureza_despesa_descricao",
     9: "ne_ccor_favorecido",
-    10: "ne_ccor_favorecido_1",
+    10: "ne_ccor_favorecido_descricao",
     11: "ne_ccor_ano_emissao",
-    12: "item_informacao",
-    13: "despesas_empenhadas_controle_empenho_saldo_moeda_origem",
-    14: "despesas_empenhadas_controle_empenho_movim_liquido_moeda_origem",
-    15: "despesas_liquidadas_controle_empenho_saldo_moeda_origem",
-    16: "despesas_liquidadas_controle_empenho_movim_liquido_moeda_origem",
-    17: "despesas_pagas_controle_empenho_saldo_moeda_origem",
-    18: "despesas_pagas_controle_empenho_movim_liquido_moeda_origem",
+    12: "ptres",
+    13: "fonte_recursos_detalhada",
+    14: "fonte_recursos_detalhada_descricao",
+    15: "despesas_empenhadas",
+    16: "despesas_liquidadas",
+    17: "despesas_pagas",
+    18: "restos_a_pagar_inscritos",
+    19: "restos_a_pagar_pagos",
 }
 
-EMAIL_SUBJECT = "consulta_por_execução_emp_liq_pago"
+EMAIL_SUBJECT = "notas_de_empenhos_a_partir_de_2024"
 
 
 # Configurações da DAG
@@ -63,10 +63,10 @@ with DAG(
 
         try:
             logging.info("Iniciando o processamento dos emails...")
-            csv_data = fetch_and_process_emails(
+            csv_data = fetch_and_process_email(
+                IMAP_SERVER,
                 EMAIL,
                 PASSWORD,
-                IMAP_SERVER,
                 SENDER_EMAIL,
                 EMAIL_SUBJECT,
                 COLUMN_MAPPING,
