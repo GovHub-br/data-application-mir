@@ -1,24 +1,9 @@
 import logging
 from airflow.decorators import dag, task
-from airflow.providers.postgres.hooks.postgres import PostgresHook
 from datetime import datetime, timedelta
+from postgres_helpers import get_postgres_conn
 from cliente_estrutura import ClienteEstrutura
 from cliente_postgres import ClientPostgresDB
-
-
-def get_postgres_conn() -> str:
-    hook = PostgresHook(postgres_conn_id="postgres_default")
-    conn = hook.connection
-    port = conn.port
-    schema = conn.schema
-    logging.info(
-        f"[unidade_organizacional_ingest_dag.py] Obtained PostgreSQL connection: "
-        f"dbname={schema}, user={conn.login}, host={conn.host}, port={port}"
-    )
-    return (
-        f"dbname={schema} user={conn.login} password={conn.password} "
-        f"host={conn.host} port={port}"
-    )
 
 
 @dag(
