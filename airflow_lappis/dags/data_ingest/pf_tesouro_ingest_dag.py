@@ -124,7 +124,7 @@ with DAG(
                     PASSWORD,
                     SENDER_EMAIL,
                     EMAIL_SUBJECT_RECEBIDAS,
-                    COLUMN_MAPPING,
+                    column_mapping=None,
                     skiprows=SKIPROWS,
                 ),
             )

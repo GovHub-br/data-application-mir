@@ -15,14 +15,17 @@ logging.basicConfig(
 
 
 def format_csv(
-    csv_data: str, column_mapping: Dict[int, str], skiprows: int
+    csv_data: str, column_mapping: Optional[Dict[int, str]], skiprows: int
 ) -> pd.DataFrame:
     """Formata um arquivo CSV conforme mapeamento de colunas."""
-    df = pd.read_csv(io.StringIO(csv_data), skiprows=skiprows, header=None)
-    column_names: List[str] = [
-        column_mapping.get(i, f"col_{i}") for i in range(len(df.columns))
-    ]
-    df.columns = pd.Index(column_names)
+    if column_mapping:
+        df = pd.read_csv(io.StringIO(csv_data), skiprows=skiprows, header=None)
+        column_names: List[str] = [
+            column_mapping.get(i, f"col_{i}") for i in range(len(df.columns))
+        ]
+        df.columns = pd.Index(column_names)
+    else:
+        df = pd.read_csv(io.StringIO(csv_data), skiprows=skiprows, header=0)
     return df
 
 
