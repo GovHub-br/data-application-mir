@@ -14,7 +14,7 @@ snapshots:
     config:
       schema: snapshots
       database: analytics
-      unique_key: id, id_empenho
+      unique_key: [id, id_empenho]
       strategy: timestamp
       updated_at: updated_at
       dbt_valid_to_current: "to_timestamp('9999-12-31', 'YYYY-MM-DD')"

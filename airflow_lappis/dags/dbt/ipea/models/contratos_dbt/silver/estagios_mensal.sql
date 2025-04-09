@@ -3,16 +3,15 @@ with
     parsed_estagios as (
         select
             right(ne_ccor, 12) as ne,
-            mes_lancamento,
+            emissao_mes as mes_lancamento,
             ne_ccor_favorecido as cnpj_cpf,
-            substring(ne_informacao_complementar, '(^[0-9]+)') as info_complementar,
+            substring(ne_info_complementar, '(^[0-9]+)') as info_complementar,
             ne_num_processo,
-            despesas_empenhadas_controle_empenho_saldo_moeda_origem valor_empenhado,
-            despesas_liquidadas_controle_empenho_movim_liquido_moeda_origem
-            as valor_liquidado,
-            despesas_pagas_controle_empenho_movim_liquido_moeda_origem as valor_pago
-        from {{ ref("estagios") }}
-        where true and ne_ccor != 'Total' and mes_lancamento not like '01%'
+            despesas_empenhadas as valor_empenhado,
+            despesas_liquidadas as valor_liquidado,
+            despesas_pagas as valor_pago
+        from {{ ref("empenhos_tesouro") }}
+        where true and ne_ccor != 'Total' and emissao_mes not like '00%'
     ),
 
     grouped_estagios as (

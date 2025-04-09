@@ -15,7 +15,7 @@ with
             replace(replace(valor::text, '.', ''), ',', '.')::numeric(15, 2) as valor,
             vencimento::date as vencimento
         from {{ source("compras_gov", "cronograma") }}
-    )
+    ),
 
     distinct_cronogramas as (select distinct * from cronogramas)
 

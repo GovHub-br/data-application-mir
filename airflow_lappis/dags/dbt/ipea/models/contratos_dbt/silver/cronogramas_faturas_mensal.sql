@@ -19,7 +19,7 @@ with
             ) as valorliquido,
             situacao::text as situacao
         from {{ source("compras_gov", "faturas") }}
-    )
+    ),
 
     faturas_pago as (
         select

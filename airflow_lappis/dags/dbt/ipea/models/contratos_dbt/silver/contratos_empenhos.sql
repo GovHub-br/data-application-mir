@@ -38,24 +38,17 @@ with
             contrato_id,
             coalesce(ne_transformed, ne) as ne_transformed,
             ne_ccor,
-            ne_informacao_complementar,
+            ne_info_complementar,
             ne_num_processo,
             ne_ccor_descricao,
             doc_observacao,
             natureza_despesa,
-            natureza_despesa_1,
-            natureza_despesa_detalhada,
-            natureza_despesa_detalhada_1,
+            natureza_despesa_descricao,
             ne_ccor_favorecido,
-            ne_ccor_favorecido_1,
             ne_ccor_ano_emissao,
-            ne_ccor_ano_emissao_1,
-            despesas_empenhadas_saldo,
-            despesas_empenhadas_movim_liquido,
-            despesas_liquidadas_saldo,
-            despesas_liquidadas_movim_liquido,
-            despesas_pagas_saldo,
-            despesas_pagas_movim_liquido
+            despesas_empenhadas,
+            despesas_liquidadas,
+            despesas_pagas
         from full_join
         where origem = 'both' or origem = 'left only'
     -- contrato_id nulo significa lacuna no lado esquerdo do RIGHT JOIN, 
@@ -95,24 +88,17 @@ with
             contrato_id,
             ne_transformed,
             ne_ccor,
-            ne_informacao_complementar,
+            ne_info_complementar,
             ne_num_processo,
             ne_ccor_descricao,
             doc_observacao,
             natureza_despesa,
-            natureza_despesa_1,
-            natureza_despesa_detalhada,
-            natureza_despesa_detalhada_1,
+            natureza_despesa_descricao,
             ne_ccor_favorecido,
-            ne_ccor_favorecido_1,
             ne_ccor_ano_emissao,
-            ne_ccor_ano_emissao_1,
-            despesas_empenhadas_saldo,
-            despesas_empenhadas_movim_liquido,
-            despesas_liquidadas_saldo,
-            despesas_liquidadas_movim_liquido,
-            despesas_pagas_saldo,
-            despesas_pagas_movim_liquido
+            despesas_empenhadas,
+            despesas_liquidadas,
+            despesas_pagas
         from juncao_processo
         -- WHERE origem = 'both'
         where contrato_id is not null
@@ -146,24 +132,17 @@ with
             contrato_id,
             ne_transformed,
             ne_ccor,
-            ne_informacao_complementar,
+            ne_info_complementar,
             ne_num_processo,
             ne_ccor_descricao,
             doc_observacao,
             natureza_despesa,
-            natureza_despesa_1,
-            natureza_despesa_detalhada,
-            natureza_despesa_detalhada_1,
+            natureza_despesa_descricao,
             ne_ccor_favorecido,
-            ne_ccor_favorecido_1,
             ne_ccor_ano_emissao,
-            ne_ccor_ano_emissao_1,
-            despesas_empenhadas_saldo,
-            despesas_empenhadas_movim_liquido,
-            despesas_liquidadas_saldo,
-            despesas_liquidadas_movim_liquido,
-            despesas_pagas_saldo,
-            despesas_pagas_movim_liquido
+            despesas_empenhadas,
+            despesas_liquidadas,
+            despesas_pagas
         from juncao_cnpjs
         where contrato_id is not null
     ),
@@ -173,7 +152,7 @@ with
         select
             *,
             -- garantir que ambos os lados estão no mesmo formato
-            substring(ne_informacao_complementar from '^([0-9]+) -') as info_complementar
+            substring(ne_info_complementar from '^([0-9]+) -') as info_complementar
         from empenhos_restantes_2
         where ne_ccor not in (select ne_ccor from resultado_3)
     ),
@@ -195,24 +174,17 @@ with
             contrato_id,
             ne_transformed,
             ne_ccor,
-            ne_informacao_complementar,
+            ne_info_complementar,
             ne_num_processo,
             ne_ccor_descricao,
             doc_observacao,
             natureza_despesa,
-            natureza_despesa_1,
-            natureza_despesa_detalhada,
-            natureza_despesa_detalhada_1,
+            natureza_despesa_descricao,
             ne_ccor_favorecido,
-            ne_ccor_favorecido_1,
             ne_ccor_ano_emissao,
-            ne_ccor_ano_emissao_1,
-            despesas_empenhadas_saldo,
-            despesas_empenhadas_movim_liquido,
-            despesas_liquidadas_saldo,
-            despesas_liquidadas_movim_liquido,
-            despesas_pagas_saldo,
-            despesas_pagas_movim_liquido
+            despesas_empenhadas,
+            despesas_liquidadas,
+            despesas_pagas
         from juncao_info_complementar
         where contrato_id is not null
     ),

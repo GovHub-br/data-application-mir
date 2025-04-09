@@ -6,12 +6,12 @@ select
 
     -- Indicador de Orçamento a Executar:
     sum(
-        case when comprasgov_valor_faturas = 0 then valor_cronograma else 0 end
-    ) as orcamento_a_executar
+        case when comprasgov_valor_faturas = 0 then comprasgov_valor_cronograma else 0 end
+    ) as orcamento_a_executar,
 
     sum(siafi_valor_empenhado) as total_empenhado,
     sum(siafi_valor_liquidado) as total_liquidado,
     sum(siafi_valor_pago) as total_pago
 
-from {{ ref("cronogramas_faturas_mensal") }}
+from {{ ref("contratos_comparativo_mensal") }}
 group by contrato_id

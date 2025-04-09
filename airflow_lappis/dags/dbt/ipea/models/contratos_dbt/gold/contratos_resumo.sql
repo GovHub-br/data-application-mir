@@ -1,7 +1,7 @@
 with
 
     valores_pagos_contratos as (
-        select contrato_id as id, sum(despesas_pagas_movim_liquido) as despesas_pagas
+        select contrato_id as id, sum(despesas_pagas) as despesas_pagas
         from {{ ref("contratos_empenhos") }}
         where contrato_id is not null
         group by contrato_id
