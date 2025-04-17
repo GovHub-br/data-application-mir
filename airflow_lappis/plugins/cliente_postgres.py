@@ -324,3 +324,56 @@ class ClientPostgresDB:
                 cursor.execute(query)
                 nota_credito = cursor.fetchall()
                 return nota_credito
+
+    def remove_duplicates(
+        self, table_name: str, column_mapping: Dict[int, str], schema: str = "siafi"
+    ) -> None:
+        """
+        Remove duplicados de uma tabela e otimiza a tabela.
+
+        Args:
+            table_name (str): Nome da tabela no banco de dados.
+            column_mapping (Dict[int, str]): Mapeamento das colunas.
+            schema (str): Schema do banco de dados (padrão: "siafi").
+        """
+        try:
+            columns = ", ".join(column_mapping.values())
+            delete_query = f"""
+            DELETE FROM {schema}.{table_name}
+            WHERE ctid NOT IN (
+                SELECT MIN(ctid)
+                FROM {schema}.{table_name}
+                GROUP BY {columns}
+            );
+            """
+            vacuum_query = f"VACUUM {schema}.{table_name};"
+
+            logging.info(
+                f"Executando query para remover duplicados em {schema}.{table_name}"
+            )
+
+            with psycopg2.connect(self.conn_str) as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(delete_query)
+                    conn.commit()
+                    logging.info(
+                        f"Duplicados removidos com sucesso de {schema}.{table_name}"
+                    )
+
+            conn = psycopg2.connect(self.conn_str)
+            conn.autocommit = True
+            cursor = conn.cursor()
+            try:
+                cursor.execute(vacuum_query)
+                logging.info(
+                    f"VACUUM FULL executado com sucesso em {schema}.{table_name}"
+                )
+            finally:
+                cursor.close()
+                conn.close()
+
+        except Exception as e:
+            logging.error(
+                f"Erro ao remover duplicados ou otimizar {schema}.{table_name}: {str(e)}"
+            )
+            raise

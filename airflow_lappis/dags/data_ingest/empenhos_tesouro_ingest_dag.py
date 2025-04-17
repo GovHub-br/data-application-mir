@@ -8,6 +8,8 @@ import json
 from cliente_email import fetch_and_process_email
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
+import pandas as pd
+import io
 
 # Configurações básicas da DAG
 default_args = {
@@ -97,10 +99,29 @@ with DAG(
                 logging.warning("Nenhum dado para inserir no banco.")
                 return
 
+            df = pd.read_csv(io.StringIO(csv_data))
+            df = df[df["ne_ccor_ano_emissao"].astype(str).str.startswith("20")]
+            data = df.to_dict(orient="records")
+
             postgres_conn_str = get_postgres_conn()
             db = ClientPostgresDB(postgres_conn_str)
 
-            db.insert_csv_data(csv_data, "empenhos_tesouro", schema="siafi")
+            unique_key = [
+                "ne_ccor",
+                "natureza_despesa",
+                "doc_observacao",
+                "ne_ccor_ano_emissao",
+                "emissao_dia",
+                "emissao_mes",
+            ]
+
+            db.insert_data(
+                data,
+                "empenhos_tesouro",
+                conflict_fields=unique_key,
+                primary_key=unique_key,
+                schema="siafi",
+            )
             logging.info("Dados inseridos com sucesso no banco de dados.")
         except Exception as e:
             logging.error("Erro ao inserir dados no banco: %s", str(e))

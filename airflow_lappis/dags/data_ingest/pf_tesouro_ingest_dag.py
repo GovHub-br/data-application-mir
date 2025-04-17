@@ -5,6 +5,8 @@ from airflow.models import Variable
 from datetime import datetime, timedelta
 import logging
 import json
+import pandas as pd
+import io
 from cliente_email import fetch_and_process_email
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
@@ -179,13 +181,29 @@ with DAG(
                 logging.warning("Nenhum dado para inserir no banco.")
                 return
 
+            df = pd.read_csv(io.StringIO(combined_data))
+            data = df.to_dict(orient="records")
+
             postgres_conn_str = get_postgres_conn()
             db = ClientPostgresDB(postgres_conn_str)
 
-            db.insert_csv_data(combined_data, "pf_tesouro", schema="siafi")
+            db.insert_data(data, "pf_tesouro", schema="siafi")
             logging.info("Dados inseridos com sucesso no banco de dados.")
         except Exception as e:
             logging.error("Erro ao inserir dados no banco: %s", str(e))
+            raise
+
+    def clean_duplicates(**context: Dict[str, Any]) -> None:
+        """
+        Task para remover duplicados da tabela 'siafi.pf_tesouro'.
+        """
+        try:
+            postgres_conn_str = get_postgres_conn()
+            db = ClientPostgresDB(postgres_conn_str)
+            db.remove_duplicates("pf_tesouro", COLUMN_MAPPING, schema="siafi")
+
+        except Exception as e:
+            logging.error(f"Erro ao executar a limpeza de duplicados: {str(e)}")
             raise
 
     # Tarefa 1: Processar os e-mails de programações enviadas/devolvidas
@@ -209,10 +227,17 @@ with DAG(
         provide_context=True,
     )
 
-    # Tarefa 4: Inserir os dados no banco de dados
+    # Tarefa 4: Inserir os dados no db
     insert_to_db_task = PythonOperator(
         task_id="insert_to_db",
         python_callable=insert_data_to_db,
+        provide_context=True,
+    )
+
+    # Tarefa 5: Limpar duplicados no banco de dados
+    clean_duplicates_task = PythonOperator(
+        task_id="clean_duplicates",
+        python_callable=clean_duplicates,
         provide_context=True,
     )
 
@@ -221,4 +246,5 @@ with DAG(
         [process_emails_enviadas_task, process_emails_recebidas_task]
         >> combine_data_task
         >> insert_to_db_task
+        >> clean_duplicates_task
     )
