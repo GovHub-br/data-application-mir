@@ -5,6 +5,7 @@ from airflow.models import Variable
 from datetime import datetime, timedelta
 import logging
 import json
+from schedule_loader import get_dynamic_schedule
 from cliente_email import fetch_and_process_email
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
@@ -50,7 +51,7 @@ with DAG(
     dag_id="email_empenhos_tesouro_ingest",
     default_args=default_args,
     description="Processa anexos dos empenhos vindo do email, formata e insere no db",
-    schedule_interval="0 13 * * 1-6",
+    schedule_interval=get_dynamic_schedule("empenhos_tesouro_ingest_dag"),
     start_date=datetime(2023, 12, 1),
     catchup=False,
     tags=["email", "empenhos", "tesouro"],

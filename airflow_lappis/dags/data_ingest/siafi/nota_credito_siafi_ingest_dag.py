@@ -1,12 +1,13 @@
 from airflow.decorators import dag, task
 from datetime import datetime, timedelta
+from schedule_loader import get_dynamic_schedule
 from cliente_siafi import ClienteSiafi
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
 
 
 @dag(
-    schedule_interval="@daily",
+    schedule_interval=get_dynamic_schedule("nota_credito_siafi_ingest_dag"),
     start_date=datetime(2024, 3, 12),
     catchup=False,
     default_args={
