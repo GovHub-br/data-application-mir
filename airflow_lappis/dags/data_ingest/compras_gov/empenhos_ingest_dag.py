@@ -1,13 +1,14 @@
 import logging
 from airflow.decorators import dag, task
 from datetime import datetime, timedelta
+from schedule_loader import get_dynamic_schedule
 from postgres_helpers import get_postgres_conn
 from cliente_contratos import ClienteContratos
 from cliente_postgres import ClientPostgresDB
 
 
 @dag(
-    schedule_interval="@daily",
+    schedule_interval=get_dynamic_schedule("empenhos_ingest_dag"),
     start_date=datetime(2023, 1, 1),
     catchup=False,
     default_args={

@@ -7,6 +7,7 @@ import logging
 import json
 import pandas as pd
 import io
+from schedule_loader import get_dynamic_schedule
 from cliente_email import fetch_and_process_email
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
@@ -62,7 +63,7 @@ with DAG(
     dag_id="email_notas_credito_ingest",
     default_args=default_args,
     description="Processa anexos das NCs vindo de dois emails, formata e insere no db",
-    schedule_interval="0 13 * * 1-6",
+    schedule_interval=get_dynamic_schedule("nc_tesouro_ingest_dag"),
     start_date=datetime(2023, 12, 1),
     catchup=False,
     tags=["email", "ncs", "tesouro"],

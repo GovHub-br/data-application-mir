@@ -9,6 +9,7 @@ import pandas as pd
 import io
 import re
 import zipfile
+from schedule_loader import get_dynamic_schedule
 from cliente_email import fetch_email_with_zip
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
@@ -65,7 +66,7 @@ with DAG(
         "DAG processa anexos da visão orçamentária total IPEA "
         "vindo do email, formata e insere no db"
     ),
-    schedule_interval="0 13 * * 1-6",
+    schedule_interval=get_dynamic_schedule("visao_orcamentaria_ingest"),
     start_date=datetime(2023, 12, 1),
     catchup=False,
     tags=["email", "visao_orcamentaria", "tesouro"],
