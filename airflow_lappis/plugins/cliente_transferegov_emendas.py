@@ -186,6 +186,54 @@ class ClienteTransfereGov(ClienteBase):
         )
         return all_data
 
+    def get_executores_especiais_by_plano_acao(
+        self, id_plano_acao: int, limit: int = 1000, offset: int = 0
+    ) -> Optional[list]:
+
+        endpoint = f"executor_especial?id_plano_acao=eq.{id_plano_acao}"
+        params = {"select": "*", "limit": limit, "offset": offset}
+
+        logging.info(
+            f"[cliente_transfere_gov.py] Fetching executores especiais "
+            f"for id_plano_acao={id_plano_acao}, limit={limit}, offset={offset}"
+        )
+
+        status, data = self.request(
+            http.HTTPMethod.GET,
+            endpoint,
+            headers=self.BASE_HEADER,
+            params=params,
+        )
+
+        if status == http.HTTPStatus.OK and isinstance(data, list):
+            return data
+        else:
+            logging.warning(
+                f"[cliente_transfere_gov.py] Failed to fetch executores especiais "
+                f"for plano_acao {id_plano_acao} with status {status}"
+            )
+            return None
+
+    def get_all_executores_especiais_by_plano_acao(
+        self, id_plano_acao: int, page_size: int = 1000
+    ) -> list:
+
+        all_data = []
+        offset = 0
+        page = 1
+
+        logging.info(
+            f"[cliente_transfere_gov.py] Starting extraction of executores especiais "
+            f"for plano_acao={id_plano_acao}"
+        )
+
+        while True:
+            logging.info(
+                f"[cliente_transfere_gov.py] Fetching page {page} (offset: {offset}) "
+                f"for plano_acao={id_plano_acao}"
+            )
+
+            data = self.get_executores_especiais_by_plano_acao(
     def get_empenhos_especiais_by_plano_acao(
         self, id_plano_acao: int, limit: int = 1000, offset: int = 0
     ) -> Optional[list]:
@@ -255,6 +303,13 @@ class ClienteTransfereGov(ClienteBase):
                 break
 
             offset += page_size
+            page += 1
+
+        logging.info(
+            f"[cliente_transfere_gov.py] Finished extraction. "
+            f"Total executores especiais for plano_acao {id_plano_acao}: {len(all_data)}"
+        )
+
 
         logging.info(
             f"[cliente_transfere_gov.py] Total empenhos especiais for plano de ação "
