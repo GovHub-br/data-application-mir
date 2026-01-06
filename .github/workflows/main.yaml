@@ -21,7 +21,8 @@ env:
   POETRY_CACHE_DIR: "/home/runner/.cache/poetry"
   DBT_PROJECT_DIR: "${{ github.workspace }}/airflow_lappis/dags/dbt/ipea"
 
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/airflow-ipea
+  IMAGE_REGISTRY_OWNER: govhub-br
+  IMAGE_NAME: ghcr.io/govhub-br/airflow-ipea
   IMAGE_TAG_SHA: ${{ github.sha }}
 
 jobs:
