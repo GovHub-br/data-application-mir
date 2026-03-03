@@ -59,8 +59,7 @@ def api_empenhos_especiais_dag() -> None:
             )
         else:
             logging.warning(
-                "[empenhos_especiais_ingest_dag.py] Nenhum empenho " \
-                "especial encontrado"
+                "[empenhos_especiais_ingest_dag.py] Nenhum empenho " "especial encontrado"
             )
 
     fetch_and_store_empenhos_especiais()
