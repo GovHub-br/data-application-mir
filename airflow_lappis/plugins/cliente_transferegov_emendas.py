@@ -762,6 +762,293 @@ class ClienteTransfereGov(ClienteBase):
         )
         return all_data
 
+    def get_finalidades_especiais(
+        self, limit: int = 1000, offset: int = 0
+    ) -> Optional[list]:
+        """
+        Obter finalidades especiais com paginação.
+
+        Args:
+            limit (int): Quantidade de registros por página (padrão: 1000)
+            offset (int): Deslocamento inicial (padrão: 0)
+
+        Returns:
+            list: lista de finalidades especiais ou None se falhar
+        """
+        endpoint = "finalidade_especial"
+        params = {
+            "select": "*",
+            "order": "id_executor.asc",
+            "limit": limit,
+            "offset": offset,
+        }
+
+        logging.info(
+            f"[cliente_transfere_gov.py] Fetching finalidades especiais with "
+            f"limit={limit}, offset={offset}"
+        )
+
+        status, data = self.request(
+            http.HTTPMethod.GET, endpoint, headers=self.BASE_HEADER, params=params
+        )
+
+        if status == http.HTTPStatus.OK and isinstance(data, list):
+            logging.info(
+                f"[cliente_transfere_gov.py] Successfully fetched {len(data)} "
+                "finalidades especiais"
+            )
+            return data
+        else:
+            logging.warning(
+                f"[cliente_transfere_gov.py] Failed to fetch finalidades especiais "
+                f"with status: {status}"
+            )
+            return None
+
+    def get_all_finalidades_especiais(self, page_size: int = 1000) -> list:
+        """
+        Obter todas as finalidades especiais com paginação automática.
+
+        Args:
+            page_size (int): Quantidade de registros por requisição (padrão: 1000)
+
+        Returns:
+            list: lista completa de finalidades especiais
+        """
+        all_data = []
+        offset = 0
+        page = 1
+
+        logging.info(
+            "[cliente_transfere_gov.py] Starting full extraction of "
+            "finalidades especiais"
+        )
+
+        while True:
+            logging.info(
+                f"[cliente_transfere_gov.py] Fetching page {page} " f"(offset: {offset})"
+            )
+
+            data = self.get_finalidades_especiais(limit=page_size, offset=offset)
+
+            if not data or len(data) == 0:
+                logging.info(
+                    "[cliente_transfere_gov.py] No more data received. "
+                    "Extraction complete."
+                )
+                break
+
+            all_data.extend(data)
+            logging.info(
+                f"[cliente_transfere_gov.py] Page {page} fetched: {len(data)} records. "
+                f"Total so far: {len(all_data)}"
+            )
+
+            # Se recebemos menos registros que o limite, é a última página
+            if len(data) < page_size:
+                logging.info("[cliente_transfere_gov.py] Last page reached.")
+                break
+
+            offset += page_size
+            page += 1
+
+        logging.info(
+            f"[cliente_transfere_gov.py] Extraction completed. "
+            f"Total records: {len(all_data)}"
+        )
+        return all_data
+      
+    
+    def get_ordens_bancarias_especiais(
+        self, limit: int = 1000, offset: int = 0
+    ) -> Optional[list]:
+        """
+        Obter ordens bancárias especiais com paginação.
+
+        Args:
+            limit (int): Quantidade de registros por página (padrão: 1000)
+            offset (int): Deslocamento inicial (padrão: 0)
+
+        Returns:
+            list: lista de ordens bancárias especiais ou None se falhar
+        """
+        endpoint = "ordem_pagamento_ordem_bancaria_especial"
+        params = {
+            "select": "*",
+            "order": "id_op_ob.asc",
+            "limit": limit,
+            "offset": offset,
+        }
+
+        logging.info(
+            f"[cliente_transfere_gov.py] Fetching ordens bancárias especiais with "
+            f"limit={limit}, offset={offset}"
+        )
+
+        status, data = self.request(
+            http.HTTPMethod.GET, endpoint, headers=self.BASE_HEADER, params=params
+        )
+
+        if status == http.HTTPStatus.OK and isinstance(data, list):
+            logging.info(
+                f"[cliente_transfere_gov.py] Successfully fetched {len(data)} "
+                "ordens bancárias especiais"
+            )
+            return data
+        else:
+            logging.warning(
+                f"[cliente_transfere_gov.py] Failed to fetch ordens bancárias especiais "
+                f"with status: {status}"
+            )
+            return None
+
+    def get_all_ordens_bancarias_especiais(self, page_size: int = 1000) -> list:
+        """
+        Obter todas as ordens bancárias especiais com paginação automática.
+
+        Args:
+            page_size (int): Quantidade de registros por requisição (padrão: 1000)
+
+        Returns:
+            list: lista completa de ordens bancárias especiais
+        """
+        all_data = []
+        offset = 0
+        page = 1
+
+        logging.info(
+            "[cliente_transfere_gov.py] Starting full extraction of "
+            "ordens bancárias especiais"
+        )
+
+        while True:
+            logging.info(
+                f"[cliente_transfere_gov.py] Fetching page {page} " f"(offset: {offset})"
+            )
+
+            data = self.get_ordens_bancarias_especiais(limit=page_size, offset=offset)
+
+            if not data or len(data) == 0:
+                logging.info(
+                    "[cliente_transfere_gov.py] No more data received. "
+                    "Extraction complete."
+                )
+                break
+
+            all_data.extend(data)
+            logging.info(
+                f"[cliente_transfere_gov.py] Page {page} fetched: {len(data)} records. "
+                f"Total so far: {len(all_data)}"
+            )
+
+            # Se recebemos menos registros que o limite, é a última página
+            if len(data) < page_size:
+                logging.info("[cliente_transfere_gov.py] Last page reached.")
+                break
+
+            offset += page_size
+            page += 1
+
+        logging.info(
+            f"[cliente_transfere_gov.py] Extraction completed. "
+            f"Total records: {len(all_data)}"
+        )
+        return all_data
+
+    def get_relatorio_gestao_novo_especial(self, limit: int = 1000, offset: int = 0) -> Optional[list]:
+        """
+        Obter relatórios de gestão novo especial com paginação.
+
+        Args:
+            limit (int): Quantidade de registros por página (padrão: 1000)
+            offset (int): Deslocamento inicial (padrão: 0)
+
+        Returns:
+            list: lista de relatórios de gestão novo especial ou None se falhar
+        """
+        endpoint = "relatorio_gestao_novo_especial"
+        params = {
+            "select": "*",
+            "order": "id_relatorio_gestao_novo.asc",
+            "limit": limit,
+            "offset": offset,
+        }
+
+        logging.info(
+            f"[cliente_transfere_gov.py] Fetching relatórios de gestão novo with "
+            f"limit={limit}, offset={offset}"
+        )
+
+        status, data = self.request(
+            http.HTTPMethod.GET, endpoint, headers=self.BASE_HEADER, params=params
+        )
+
+        if status == http.HTTPStatus.OK and isinstance(data, list):
+            logging.info(
+                f"[cliente_transfere_gov.py] Successfully fetched {len(data)} "
+                "relatórios de gestão novo"
+            )
+            return data
+        else:
+            logging.warning(
+                f"[cliente_transfere_gov.py] Failed to fetch relatórios de gestão novo "
+                f"with status: {status}"
+            )
+            return None
+
+    def get_all_relatorios_gestao_novo_especial(self, page_size: int = 1000) -> list:
+        """
+        Obter todos os relatórios de gestão novo especial com paginação automática.
+
+        Args:
+            page_size (int): Quantidade de registros por requisição (padrão: 1000)
+
+        Returns:
+            list: lista completa de relatórios de gestão novo especial
+        """
+        all_data = []
+        offset = 0
+        page = 1
+
+        logging.info(
+            "[cliente_transfere_gov.py] Starting full extraction of "
+            "relatórios de gestão novo"
+        )
+
+        while True:
+            logging.info(
+                f"[cliente_transfere_gov.py] Fetching page {page} " f"(offset: {offset})"
+            )
+
+            data = self.get_relatorio_gestao_novo_especial(limit=page_size, offset=offset)
+
+            if not data or len(data) == 0:
+                logging.info(
+                    "[cliente_transfere_gov.py] No more data received. "
+                    "Extraction complete."
+                )
+                break
+
+            all_data.extend(data)
+            logging.info(
+                f"[cliente_transfere_gov.py] Page {page} fetched: {len(data)} records. "
+                f"Total so far: {len(all_data)}"
+            )
+
+            # Se recebemos menos registros que o limite, é a última página
+            if len(data) < page_size:
+                logging.info("[cliente_transfere_gov.py] Last page reached.")
+                break
+
+            offset += page_size
+            page += 1
+
+        logging.info(
+            f"[cliente_transfere_gov.py] Extraction completed. "
+            f"Total records: {len(all_data)}"
+        )
+        return all_data
+    
     def get_plano_trabalho_especial(
         self, limit: int = 1000, offset: int = 0
     ) -> Optional[list]:
