@@ -1,0 +1,138 @@
+version: 2
+
+models:
+
+  # Emendas DBT
+
+  ## Bronze
+  - name: programas
+    description: >
+      Tabela com informações sobre programas especiais do TransfereGov relacionados a emendas parlamentares.
+      Contém dados sobre a execução financeira dos programas, incluindo valores de necessidade financeira,
+      disponibilização, impedimentos e documentos hábeis gerados.
+      Os dados são extraídos da tabela programas_especiais do TransfereGov Emendas, com formatação adequada
+      de valores numéricos e datas.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: id_programa
+        description: >
+          Identificador único do programa no TransfereGov.
+      - name: ano_programa
+        description: >
+          Ano de referência do programa.
+      - name: modalidade_programa
+        description: >
+          Modalidade do programa (ex: ESPECIAL).
+      - name: codigo_programa
+        description: >
+          Código identificador do programa no sistema.
+      - name: id_orgao_superior_programa
+        description: >
+          Identificador do órgão superior responsável pelo programa.
+      - name: sigla_orgao_programa
+        description: >
+          Sigla do órgão responsável pelo programa.
+      - name: nome_orgao_programa
+        description: >
+          Nome completo do órgão responsável pelo programa.
+      - name: id_unidade_gestora_programa
+        description: >
+          Identificador da unidade gestora responsável pelo programa.
+      - name: documentos_origem_programa
+        description: >
+          Documentos de origem associados ao programa.
+      - name: id_unidade_orcamentaria_responsavel_programa
+        description: >
+          Identificador da unidade orçamentária responsável pelo programa.
+      - name: data_inicio_ciencia_programa
+        description: >
+          Data de início de ciência do programa.
+      - name: data_fim_ciencia_programa
+        description: >
+          Data de fim de ciência do programa.
+      - name: valor_necessidade_financeira_programa
+        description: >
+          Valor da necessidade financeira do programa.
+      - name: valor_total_disponibilizado_programa
+        description: >
+          Valor total disponibilizado para o programa.
+      - name: valor_impedido_programa
+        description: >
+          Valor impedido do programa.
+      - name: valor_a_disponibilizar_programa
+        description: >
+          Valor ainda a ser disponibilizado para o programa.
+      - name: valor_documentos_habeis_gerados_programa
+        description: >
+          Valor dos documentos hábeis gerados para o programa.
+      - name: valor_obs_geradas_programa
+        description: >
+          Valor das ordens bancárias geradas para o programa.
+      - name: valor_disponibilidade_atual_programa
+        description: >
+          Valor da disponibilidade financeira atual do programa.
+      - name: dt_ingest
+        description: >
+          Data e hora (UTC-3 Brasília) em que os dados foram ingeridos da fonte original para a camada raw.
+    data_tests:
+      - row_count_match:
+          source_table: transferegov_emendas.programas_especiais
+          target_table: emendas.programas
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'id_programa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'ano_programa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'id_orgao_superior_programa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'id_unidade_gestora_programa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'id_unidade_orcamentaria_responsavel_programa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'data_inicio_ciencia_programa'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'data_fim_ciencia_programa'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_necessidade_financeira_programa'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_total_disponibilizado_programa'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_impedido_programa'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_a_disponibilizar_programa'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_documentos_habeis_gerados_programa'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_obs_geradas_programa'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_disponibilidade_atual_programa'
+          tipo_esperado: 'numeric'
