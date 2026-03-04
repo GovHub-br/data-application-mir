@@ -45,6 +45,9 @@ models:
       +schema: orcamento
       views:
         +materialized: view
+    emendas_dbt:
+      +materialized: table
+      +schema: emendas
     # siape_dbt: 
     #   +materialized: table 
     #   +schema: siape 
