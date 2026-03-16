@@ -186,16 +186,23 @@ class ClienteTransfereGov(ClienteBase):
         )
         return all_data
 
-    def get_executores_especiais_by_plano_acao(
-        self, id_plano_acao: int, limit: int = 1000, offset: int = 0
+    def get_executores_especiais(
+        self, limit: int = 1000, offset: int = 0
     ) -> Optional[list]:
+        """
+        Busca uma fatia global de executores com ordenação para maior performance.
+        """
+        endpoint = "executor_especial"
 
-        endpoint = f"executor_especial?id_plano_acao=eq.{id_plano_acao}"
-        params = {"select": "*", "limit": limit, "offset": offset}
+        params = {
+            "select": "*",
+            "order": "id_executor.asc",  # Ordenação por chave primária
+            "limit": limit,
+            "offset": offset,
+        }
 
         logging.info(
-            f"[cliente_transfere_gov.py] Fetching executores especiais "
-            f"for id_plano_acao={id_plano_acao}, limit={limit}, offset={offset}"
+            f"[cliente_transfere_gov.py] Fetching executores (limit={limit}, offset={offset})"
         )
 
         status, data = self.request(
@@ -206,53 +213,52 @@ class ClienteTransfereGov(ClienteBase):
         )
 
         if status == http.HTTPStatus.OK and isinstance(data, list):
-            return data
-        else:
-            logging.warning(
-                f"[cliente_transfere_gov.py] Failed to fetch executores especiais "
-                f"for plano_acao {id_plano_acao} with status {status}"
+            logging.info(
+                f"[cliente_transfere_gov.py] Sucesso: {len(data)} registros retornados."
             )
-            return None
+            return data
 
-    def get_all_executores_especiais_by_plano_acao(
-        self, id_plano_acao: int, page_size: int = 1000
-    ) -> list:
+        logging.warning(
+            f"[cliente_transfere_gov.py] Falha na requisição. Status: {status}"
+        )
+        return None
 
+    def get_all_executores_especiais(self, limit: int = 1000) -> list:
+        """
+        Extração completa com logs de progresso detalhados.
+        """
         all_data = []
         offset = 0
         page = 1
 
         logging.info(
-            f"[cliente_transfere_gov.py] Starting extraction of executores especiais "
-            f"for plano_acao={id_plano_acao}"
+            "[cliente_transfere_gov.py] Iniciando extração GLOBAL de executores especiais"
         )
 
         while True:
-            logging.info(
-                f"[cliente_transfere_gov.py] Fetching page {page} (offset: {offset}) "
-                f"for plano_acao={id_plano_acao}"
-            )
-
-            data = self.get_executores_especiais_by_plano_acao(
-                id_plano_acao, limit=page_size, offset=offset
-            )
+            data = self.get_executores_especiais(limit=limit, offset=offset)
 
             if not data or len(data) == 0:
+                logging.info("[cliente_transfere_gov.py] Fim dos dados alcançado.")
                 break
 
             all_data.extend(data)
 
-            if len(data) < page_size:
+            logging.info(
+                f"[cliente_transfere_gov.py] Página {page} processada. "
+                f"Total acumulado: {len(all_data)}"
+            )
+
+            if len(data) < limit:
+                logging.info("[cliente_transfere_gov.py] Última página identificada.")
                 break
 
-            offset += page_size
+            offset += limit
             page += 1
 
         logging.info(
-            f"[cliente_transfere_gov.py] Finished extraction. "
-            f"Total executores especiais for plano_acao {id_plano_acao}: {len(all_data)}"
+            f"[cliente_transfere_gov.py] Extração finalizada. Total: {len(all_data)}"
         )
-
         return all_data
 
     def get_empenhos_especiais_by_plano_acao(
@@ -422,79 +428,68 @@ class ClienteTransfereGov(ClienteBase):
         )
         return all_data
 
-    def get_relatorio_gestao_especial_by_plano_acao(
-        self, id_plano_acao: int, limit: int = 1000, offset: int = 0
+    def get_relatorio_gestao_especial(
+        self, limit: int = 1000, offset: int = 0
     ) -> Optional[list]:
-        """
-        Obter relatórios de gestão especial por ID do plano de ação com paginação.
-        Endpoint: /relatorio_gestao_especial
-        """
-        endpoint = f"relatorio_gestao_especial?id_plano_acao=eq.{id_plano_acao}"
-        params = {"select": "*", "limit": limit, "offset": offset}
+        """Busca relatórios de gestão de forma global com paginação."""
+        endpoint = "relatorio_gestao_especial"
+        params = {
+            "select": "*",
+            "order": "id_relatorio_gestao.asc",
+            "limit": limit,
+            "offset": offset,
+        }
 
         logging.info(
-            f"[cliente_transfere_gov.py] Fetching relatorio_gestao_especial for "
-            f"id_plano_acao={id_plano_acao}, limit={limit}, offset={offset}"
+            f"[cliente_transfere_gov.py] Fetching relatorios with limit={limit}, offset={offset}"
         )
 
         status, data = self.request(
-            http.HTTPMethod.GET,
-            endpoint,
-            headers=self.BASE_HEADER,
-            params=params,
+            http.HTTPMethod.GET, endpoint, headers=self.BASE_HEADER, params=params
         )
 
         if status == http.HTTPStatus.OK and isinstance(data, list):
-            return data
-        else:
-            logging.warning(
-                f"[cliente_transfere_gov.py] Failed to fetch relatorio_gestao_especial "
-                f"for plano_acao {id_plano_acao} with status {status}"
+            logging.info(
+                f"[cliente_transfere_gov.py] Successfully fetched {len(data)} records"
             )
-            return None
+            return data
 
-    def get_all_relatorio_gestao_especial_by_plano_acao(
-        self, id_plano_acao: int, page_size: int = 1000
-    ) -> list:
-        """
-        Obter TODOS os relatórios de gestão especial de um plano de ação
-        com paginação automática (While True).
-        """
+        logging.warning(f"[cliente_transfere_gov.py] Failed with status: {status}")
+        return None
+
+    def get_all_relatorio_gestao_especial(self, page_size: int = 1000) -> list:
+        """Obter todos os relatórios com paginação automática global."""
         all_data = []
         offset = 0
         page = 1
 
         logging.info(
-            f"[cliente_transfere_gov.py] Starting extraction of "
-            f"relatorio_gestao_especial for plano_acao={id_plano_acao}"
+            "[cliente_transfere_gov.py] Starting full extraction of relatorio_gestao_especial"
         )
 
         while True:
             logging.info(
-                f"[cliente_transfere_gov.py] Fetching page {page} (offset: {offset}) "
-                f"for plano_acao={id_plano_acao}"
+                f"[cliente_transfere_gov.py] Fetching page {page} (offset: {offset})"
             )
 
-            data = self.get_relatorio_gestao_especial_by_plano_acao(
-                id_plano_acao, limit=page_size, offset=offset
-            )
+            data = self.get_relatorio_gestao_especial(limit=page_size, offset=offset)
 
             if not data or len(data) == 0:
+                logging.info("[cliente_transfere_gov.py] No more data received.")
                 break
 
             all_data.extend(data)
+            logging.info(
+                f"[cliente_transfere_gov.py] Page {page} fetched. Total so far: {len(all_data)}"
+            )
 
-            # Se vier menos registros que o page_size, chegamos ao fim
             if len(data) < page_size:
+                logging.info("[cliente_transfere_gov.py] Last page reached.")
                 break
 
             offset += page_size
             page += 1
 
-        logging.info(
-            f"[cliente_transfere_gov.py] Finished extraction. "
-            f"Total relatorios gestao for plano_acao {id_plano_acao}: {len(all_data)}"
-        )
         return all_data
 
     def get_documentos_habeis_especiais(

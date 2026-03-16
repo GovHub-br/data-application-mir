@@ -6,18 +6,6 @@ from cliente_transferegov_emendas import ClienteTransfereGov
 from cliente_postgres import ClientPostgresDB
 
 
-from typing import Iterator
-
-
-CHUNK_SIZE = 200
-
-
-def chunk_list(lst: list, size: int) -> Iterator[list]:
-    """Divide uma lista em partes menores (chunks) de tamanho fixo."""
-    for i in range(0, len(lst), size):
-        yield lst[i : i + size]
-
-
 @dag(
     schedule_interval="@daily",
     start_date=datetime(2023, 1, 1),
@@ -30,96 +18,57 @@ def chunk_list(lst: list, size: int) -> Iterator[list]:
     tags=["transfere_gov_api", "planos_acao_especiais", "MIR"],
 )
 def api_executor_especial_dag() -> None:
+    """DAG para buscar e armazenar executores especiais do Transfere Gov de forma massiva."""
 
     @task
-    def fetch_planos_acao() -> list:
-        """
-        Busca todos os IDs dos planos de ação na base Postgres.
-        Cada ID será posteriormente usado para buscar executores na API.
-        """
-        logging.info("[executor_especial] Buscando planos de ação...")
-
-        db = ClientPostgresDB(get_postgres_conn("postgres_mir"))
-
-        query = """
-            SELECT DISTINCT id_plano_acao
-            FROM transferegov_emendas.planos_acao_especiais
-        """
-
-        result = db.execute_query(query)
-
-        # Converte lista de tuplas [(123,), (456,)] para [123, 456]
-        return [row[0] for row in result]
-
-    @task
-    def split_chunks(planos_ids: list) -> list:
-        """
-        Divide a lista de planos em múltiplos chunks para paralelizar via Airflow.
-        Ex.: 48k IDs → 240 tasks (se CHUNK_SIZE = 200)
-        """
-        return list(chunk_list(planos_ids, CHUNK_SIZE))
-
-    @task
-    def process_chunk(chunk: list) -> None:
-        """
-        Para cada chunk:
-        - Busca executores de cada plano de ação na API do TransfereGov
-        - Enrica dados com timestamp
-        - Remove duplicados
-        - Insere no Postgres com UPSERT
-        """
-        api = ClienteTransfereGov()
-        db = ClientPostgresDB(get_postgres_conn("postgres_mir"))
-
-        timestamp = datetime.now().isoformat()
-        all_executores = []
-
-        # Processa cada plano de ação pertencente a este chunk
-        for plano_id in chunk:
-            logging.info(f"[executor_especial] Buscando executores do plano {plano_id}")
-
-            executores = api.get_all_executores_especiais_by_plano_acao(plano_id)
-
-            if not executores:
-                # Não há executores para este plano -> pula
-                continue
-
-            # Adiciona metadados aos registros
-            for executor in executores:
-                executor["id_plano_acao"] = plano_id
-                executor["dt_ingest"] = timestamp
-
-            all_executores.extend(executores)
-
-        if not all_executores:
-            logging.info("[executor_especial] Chunk sem resultados.")
-            return
-
+    def fetch_and_store_executores_especiais() -> None:
         logging.info(
-            f"[executor_especial] Inserindo {len(all_executores)} executores no Postgres."
+            "[executores_especiais_ingest_dag.py] Iniciando extração massiva de executores especiais"
         )
 
-        # Remove duplicatas usando a chave (id_plano_acao, id_executor)
-        unique = {}
-        for row in all_executores:
-            key = (row["id_plano_acao"], row["id_executor"])
-            unique[key] = row  # se já existir, substitui e mantém apenas 1
+        api = ClienteTransfereGov()
+        postgres_conn_str = get_postgres_conn("postgres_mir")
+        db = ClientPostgresDB(postgres_conn_str)
 
-        all_executores = list(unique.values())
+        executores_data = api.get_all_executores_especiais(limit=1000)
 
-        # Insere com UPSERT no Postgres
-        db.insert_data(
-            all_executores,
-            table_name="executor_especial",
-            conflict_fields=["id_plano_acao", "id_executor"],
-            primary_key=["id_plano_acao", "id_executor"],
-            schema="transferegov_emendas",
-        )
+        if executores_data and len(executores_data) > 0:
+            timestamp_atual = datetime.now().isoformat()
 
-    ids = fetch_planos_acao()  # Busca todos os planos de ação
-    chunks = split_chunks(ids)  # Divide em várias listas menores
-    process_chunk.expand(chunk=chunks)  # Executa cada chunk em tasks paralelas
+            unique = {}
+            for row in executores_data:
+                key = (row["id_plano_acao"], row["id_executor"])
+                unique[key] = row  # se já existir, substitui e mantém apenas 1
+
+            executores_data = list(unique.values())
+
+            for executor in executores_data:
+                executor["dt_ingest"] = timestamp_atual
+
+            logging.info(
+                f"[executores_especiais_ingest_dag.py] Inserindo {len(executores_data)} "
+                "executores no schema transferegov_emendas"
+            )
+
+            # Inserção/Update (Upsert)
+            db.insert_data(
+                executores_data,
+                "executor_especial",
+                conflict_fields=["id_plano_acao", "id_executor"],
+                primary_key=["id_plano_acao", "id_executor"],
+                schema="transferegov_emendas",
+            )
+
+            logging.info(
+                f"[executores_especiais_ingest_dag.py] Concluído. Total de "
+                f"{len(executores_data)} executores inseridos/atualizados"
+            )
+        else:
+            logging.warning(
+                "[executores_especiais_ingest_dag.py] Nenhum executor especial encontrado na API"
+            )
+
+    fetch_and_store_executores_especiais()
 
 
-# Instancia a DAG para o Airflow carregar
-dag_instance = api_executor_especial_dag()
+api_executor_especial_dag()
