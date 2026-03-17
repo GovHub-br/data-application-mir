@@ -45,15 +45,16 @@ def extract_csv_from_zip(
 
 def fetch_email_with_zip(
     imap_server: str, email: str, password: str, sender_email: str, subject: str
-) -> Optional[bytes]:
-    """Busca o primeiro e-mail do dia atual com um anexo ZIP."""
+) -> List[bytes]:
+    """Busca todos os e-mails do dia atual e retorna todos os anexos ZIP."""
     today = datetime.now(pytz.timezone("America/Sao_Paulo")).date()
+    zip_payloads: List[bytes] = []
     with MailBox(imap_server).login(email, password) as mailbox:
         for msg in mailbox.fetch(AND(date=today, from_=sender_email, subject=subject)):
             for attachment in msg.attachments:
-                if attachment.filename.endswith(".zip"):
-                    return cast(bytes, attachment.payload)
-    return None
+                if attachment.filename.lower().endswith(".zip"):
+                    zip_payloads.append(cast(bytes, attachment.payload))
+    return zip_payloads
 
 
 def fetch_and_process_email(
@@ -65,15 +66,25 @@ def fetch_and_process_email(
     column_mapping: dict,
     skiprows: int = 0,
 ) -> Optional[str]:
-    """Busca e processa o primeiro e-mail com um ZIP contendo um CSV formatado."""
+    """Busca e processa e-mails do dia, extraindo CSVs de todos os ZIPs anexados."""
     try:
-        zip_payload = fetch_email_with_zip(
+        zip_payloads = fetch_email_with_zip(
             imap_server, email, password, sender_email, subject
         )
-        if zip_payload:
+        if not zip_payloads:
+            logging.warning("Nenhum anexo ZIP encontrado.")
+            return None
+
+        dataframes: List[pd.DataFrame] = []
+        for zip_payload in zip_payloads:
             csv_data = extract_csv_from_zip(zip_payload, column_mapping, skiprows)
             if csv_data is not None:
-                return csv_data.to_csv(index=False)
+                dataframes.append(csv_data)
+
+        if dataframes:
+            combined_df = pd.concat(dataframes, ignore_index=True)
+            return combined_df.to_csv(index=False)
+
         logging.warning("Nenhum CSV processado.")
     except Exception as e:
         logging.error(f"Erro ao processar e-mails: {e}")
