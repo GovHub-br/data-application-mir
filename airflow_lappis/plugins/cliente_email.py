@@ -3,6 +3,7 @@ import io
 import zipfile
 from typing import Optional, cast, List, Dict
 import pandas as pd
+from pandas.errors import EmptyDataError
 from imap_tools import MailBox, AND
 import chardet
 from datetime import datetime
@@ -35,11 +36,27 @@ def extract_csv_from_zip(
     """Extrai e formata o primeiro arquivo CSV encontrado em um ZIP."""
     with zipfile.ZipFile(io.BytesIO(zip_payload)) as zip_file:
         for file_name in zip_file.namelist():
-            if file_name.endswith(".csv"):
+            if file_name.lower().endswith(".csv"):
                 raw_data = zip_file.read(file_name)
                 encoding = chardet.detect(raw_data)["encoding"]
-                decoded_data = raw_data.decode(encoding)
-                return format_csv(decoded_data, column_mapping, skiprows)
+
+                if not raw_data.strip():
+                    logging.warning("CSV vazio no anexo ZIP: %s", file_name)
+                    continue
+
+                try:
+                    decoded_data = raw_data.decode(encoding or "utf-8", errors="replace")
+                    if not decoded_data.strip():
+                        logging.warning("CSV vazio no anexo ZIP: %s", file_name)
+                        continue
+                    return format_csv(decoded_data, column_mapping, skiprows)
+                except EmptyDataError:
+                    logging.warning(
+                        "CSV sem colunas apos skiprows=%s no arquivo: %s",
+                        skiprows,
+                        file_name,
+                    )
+                    continue
     return None
 
 
@@ -75,11 +92,18 @@ def fetch_and_process_email(
             logging.warning("Nenhum anexo ZIP encontrado.")
             return None
 
+        logging.info("Total de anexos ZIP encontrados: %s", len(zip_payloads))
+
         dataframes: List[pd.DataFrame] = []
-        for zip_payload in zip_payloads:
+        for idx, zip_payload in enumerate(zip_payloads, start=1):
             csv_data = extract_csv_from_zip(zip_payload, column_mapping, skiprows)
             if csv_data is not None:
                 dataframes.append(csv_data)
+            else:
+                logging.warning(
+                    "ZIP %s ignorado por nao conter CSV valido.",
+                    idx,
+                )
 
         if dataframes:
             combined_df = pd.concat(dataframes, ignore_index=True)
@@ -88,4 +112,4 @@ def fetch_and_process_email(
         logging.warning("Nenhum CSV processado.")
     except Exception as e:
         logging.error(f"Erro ao processar e-mails: {e}")
-    return None
+        raise

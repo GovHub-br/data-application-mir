@@ -81,7 +81,10 @@ with DAG(
                 skiprows=SKIPROWS,
             )
             if not csv_data:
-                logging.warning("Nenhum e-mail encontrado com o assunto esperado.")
+                logging.warning(
+                    "Nenhum CSV valido foi extraido dos e-mails encontrados "
+                    "para o assunto esperado."
+                )
                 return None
 
             logging.info(
