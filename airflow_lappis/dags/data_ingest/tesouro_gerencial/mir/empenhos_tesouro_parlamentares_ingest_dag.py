@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.models import Variable
@@ -6,11 +6,9 @@ from datetime import datetime, timedelta
 import logging
 import json
 from schedule_loader import get_dynamic_schedule
-from cliente_email import fetch_and_process_email
+from cliente_email import fetch_email_with_zip, extract_csv_from_zip
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
-import pandas as pd
-import io
 
 # Configurações básicas da DAG
 default_args = {
@@ -47,6 +45,18 @@ COLUMN_MAPPING = {
     23: "restos_a_pagar_pagos",
 }
 
+UNIQUE_KEY = [
+    "ne_ccor",
+    "natureza_despesa",
+    "doc_observacao",
+    "ne_ccor_ano_emissao",
+    "emissao_dia",
+    "emissao_mes",
+    "despesas_empenhadas",
+    "despesas_liquidadas",
+    "despesas_pagas",
+]
+
 EMAIL_SUBJECT = "notas_de_empenho_ano_atual"
 SKIPROWS = 8
 
@@ -61,101 +71,59 @@ with DAG(
     tags=["MIR", "email", "empenhos", "tesouro", "parlamentares"],
 ) as dag:
 
-    def process_email_data(**context: Dict[str, Any]) -> Optional[Any]:
+    def _get_db_client() -> ClientPostgresDB:
+        return ClientPostgresDB(get_postgres_conn("postgres_mir"))
+
+    def _insert_dataframe(df, db: ClientPostgresDB) -> int:
+        df = df[df["ne_ccor_ano_emissao"].astype(str).str.startswith("20")]
+        records = df.to_dict(orient="records")
+        for r in records:
+            r["dt_ingest"] = datetime.now().isoformat()
+
+        db.insert_data(
+            records,
+            "empenhos_tesouro_parlamentares",
+            conflict_fields=UNIQUE_KEY,
+            primary_key=UNIQUE_KEY,
+            schema="siafi",
+        )
+        return len(records)
+
+    def fetch_and_ingest(**context: Dict[str, Any]) -> Dict[str, int]:
+        """Processa cada anexo e ingere imediatamente, evitando acúmulo em memória."""
         creds = json.loads(Variable.get("email_credentials"))
 
-        EMAIL = creds["email"]
-        PASSWORD = creds["password"]
-        IMAP_SERVER = creds["imap_server"]
-        SENDER_EMAIL = creds["sender_email"]
+        zip_payloads: List[bytes] = fetch_email_with_zip(
+            creds["imap_server"],
+            creds["email"],
+            creds["password"],
+            creds["sender_email"],
+            EMAIL_SUBJECT,
+        )
 
-        try:
-            logging.info("Iniciando o processamento dos emails...")
-            csv_data = fetch_and_process_email(
-                IMAP_SERVER,
-                EMAIL,
-                PASSWORD,
-                SENDER_EMAIL,
-                EMAIL_SUBJECT,
-                COLUMN_MAPPING,
-                skiprows=SKIPROWS,
-            )
-            if not csv_data:
-                logging.warning(
-                    "Nenhum CSV valido foi extraido dos e-mails encontrados "
-                    "para o assunto esperado."
-                )
-                return None
+        if not zip_payloads:
+            logging.warning("Nenhum anexo ZIP encontrado.")
+            return {"attachments": 0, "records": 0}
 
-            logging.info(
-                "CSV processado com sucesso. Dados encontrados: %s", len(csv_data)
-            )
-            return csv_data
-        except Exception as e:
-            logging.error("Erro no processamento dos emails: %s", str(e))
-            raise
+        logging.info("Total de anexos ZIP encontrados: %s", len(zip_payloads))
 
-    def insert_data_to_db(**context: Dict[str, Any]) -> None:
-        """
-        Função para inserir os dados no banco de dados.
-        Os dados do CSV são recuperados do XCom.
-        """
-        try:
-            task_instance: Any = context["ti"]
-            csv_data: Any = task_instance.xcom_pull(task_ids="process_emails")
+        db = _get_db_client()
+        total_records = 0
 
-            if not csv_data:
-                logging.warning("Nenhum dado para inserir no banco.")
-                return
+        for idx, payload in enumerate(zip_payloads, 1):
+            df = extract_csv_from_zip(payload, COLUMN_MAPPING, SKIPROWS)
+            if df is not None:
+                count = _insert_dataframe(df, db)
+                total_records += count
+                logging.info("Anexo %s: %s registros inseridos", idx, count)
+            else:
+                logging.warning("Anexo %s ignorado (CSV inválido)", idx)
+            del df  # Libera memória imediatamente
 
-            df = pd.read_csv(io.StringIO(csv_data))
-            df = df[df["ne_ccor_ano_emissao"].astype(str).str.startswith("20")]
-            data = df.to_dict(orient="records")
+        logging.info("Total: %s anexos, %s registros", len(zip_payloads), total_records)
+        return {"attachments": len(zip_payloads), "records": total_records}
 
-            # Adicionar dt_ingest a cada registro
-            for record in data:
-                record["dt_ingest"] = datetime.now().isoformat()
-
-            postgres_conn_str = get_postgres_conn("postgres_mir")
-            db = ClientPostgresDB(postgres_conn_str)
-
-            unique_key = [
-                "ne_ccor",
-                "natureza_despesa",
-                "doc_observacao",
-                "ne_ccor_ano_emissao",
-                "emissao_dia",
-                "emissao_mes",
-                "despesas_empenhadas",
-                "despesas_liquidadas",
-                "despesas_pagas",
-            ]
-
-            db.insert_data(
-                data,
-                "empenhos_tesouro_parlamentares",
-                conflict_fields=unique_key,
-                primary_key=unique_key,
-                schema="siafi",
-            )
-            logging.info("Dados inseridos com sucesso no banco de dados.")
-        except Exception as e:
-            logging.error("Erro ao inserir dados no banco: %s", str(e))
-            raise
-
-    # Tarefa 1: Processar os e-mails e retornar CSV
-    process_emails_task = PythonOperator(
-        task_id="process_emails",
-        python_callable=process_email_data,
-        provide_context=True,
+    PythonOperator(
+        task_id="fetch_and_ingest",
+        python_callable=fetch_and_ingest,
     )
-
-    # Tarefa 2: Inserir os dados no banco de dados
-    insert_to_db_task = PythonOperator(
-        task_id="insert_to_db",
-        python_callable=insert_data_to_db,
-        provide_context=True,
-    )
-
-    # Fluxo da DAG
-    process_emails_task >> insert_to_db_task
