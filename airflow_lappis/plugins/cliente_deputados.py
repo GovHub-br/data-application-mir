@@ -50,7 +50,7 @@ class ClienteDeputados(ClienteBase):
         pagina = 1
 
         while True:
-            params = {"pagina": pagina, "itens": 100}
+            params = {"pagina": pagina, "itens": 1000, "dataInicio": "1823-01-01"}
             deputados = self.get_deputados(**params)
 
             if not deputados:

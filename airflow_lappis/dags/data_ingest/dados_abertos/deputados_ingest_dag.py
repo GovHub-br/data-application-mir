@@ -31,9 +31,25 @@ def deputados_ingest_dag() -> None:
 
         deputados_data = api.get_all_deputados()
 
-        if deputados_data and len(deputados_data) > 0:
+        unique_key = ["id", "siglapartido", "idlegislatura"]
+
+        if deputados_data:
+            vistos = set()
+            lista_limpa = []
+
             for item in deputados_data:
-                item["dt_ingest"] = datetime.now().isoformat()
+
+                if item.get("siglaPartido") is None:
+                    item["siglaPartido"] = "Sem Partido"
+
+                chave_unica = tuple(item.get(key) for key in unique_key)
+
+                if chave_unica not in vistos:
+                    item["dt_ingest"] = datetime.now().isoformat()
+                    lista_limpa.append(item)
+                    vistos.add(chave_unica)
+
+            deputados_data = lista_limpa
 
             logging.info(
                 f"[deputados_ingest_dag.py] Inserindo "
@@ -43,8 +59,8 @@ def deputados_ingest_dag() -> None:
             db.insert_data(
                 deputados_data,
                 "deputados",
-                conflict_fields=["id"],
-                primary_key=["id"],
+                conflict_fields=["id", "siglapartido", "idlegislatura"],
+                primary_key=["id", "siglapartido", "idlegislaturax  "],
                 schema="camara_deputados",
             )
 
