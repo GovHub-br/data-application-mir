@@ -31,9 +31,9 @@ class ClienteSenadores(ClienteBase):
         )
 
         if status == http.HTTPStatus.OK and isinstance(data, dict):
-            # A estrutura do JSON do Senado é: ListaParlamentarEmExercicio -> Parlamentares -> Parlamentar
+            # A estrutura do JSON do Senado é: ListaLegislatura -> Parlamentares -> Parlamentar
             try:
-                lista_root = data.get("ListaParlamentarEmExercicio", {})
+                lista_root = data.get("ListaLegislatura", {})
                 parlamentares = lista_root.get("Parlamentares", {}).get("Parlamentar", [])
 
                 if isinstance(parlamentares, dict):
@@ -43,6 +43,39 @@ class ClienteSenadores(ClienteBase):
                     f"[cliente_senadores.py] Successfully fetched {len(parlamentares)} senadores"
                 )
                 return parlamentares
+            except Exception as e:
+                logging.error(
+                    f"[cliente_senadores.py] Erro ao parsear JSON do Senado: {e}"
+                )
+                return []
+        else:
+            logging.warning(f"[cliente_senadores.py] Failed with status: {status}")
+            return []
+
+    def get_periodo_legislacao(self) -> list:
+        """
+        Obtém o período de legislação parlamentar
+        """
+        endpoint = "/dados/ListaLegislatura.json"
+        logging.info("[cliente_senadores.py] Fetching periodos legislação")
+
+        status, data = self.request(
+            http.HTTPMethod.GET, endpoint, headers=self.BASE_HEADER
+        )
+
+        if status == http.HTTPStatus.OK and isinstance(data, dict):
+            # A estrutura do JSON do Senado é: ListaLegislatura -> Parlamentares -> Parlamentar
+            try:
+                lista_root = data.get("ListaLegislatura", {})
+                legislaturas = lista_root.get("Legislaturas", {}).get("Legislatura", [])
+
+                if isinstance(legislaturas, dict):
+                    legislaturas = [legislaturas]
+
+                logging.info(
+                    f"[cliente_senadores.py] Successfully fetched {len(legislaturas)} legislaturas"
+                )
+                return legislaturas
             except Exception as e:
                 logging.error(
                     f"[cliente_senadores.py] Erro ao parsear JSON do Senado: {e}"
