@@ -169,7 +169,7 @@ with DAG(
 
             db.insert_data(
                 data,
-                "empenhos_tesouro_emendas_parlamentares",
+                "ne_tesouro_emendas",
                 conflict_fields=unique_key,
                 primary_key=unique_key,
                 schema="siafi",

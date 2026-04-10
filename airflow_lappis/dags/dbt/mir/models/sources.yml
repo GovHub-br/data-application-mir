@@ -30,5 +30,5 @@ sources:
   - name: siafi
     schema: siafi
     tables:
-        - name: empenhos_tesouro_parlamentares
-        - name: empenhos_tesouro_emendas_parlamentares
+        - name: ne_tesouro
+        - name: ne_tesouro_emendas
