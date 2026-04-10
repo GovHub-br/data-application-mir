@@ -18,7 +18,7 @@ with
             nome_agencia_executor::text as nome_agencia_executor,
             numero_conta_executor::text as numero_conta_executor,
             dv_conta_executor::text as dv_conta_executor,
-            codigo_situacao_dado_bancario_executor::integer as codigo_situacao_dado_bancario_executor,
+            nullif(codigo_situacao_dado_bancario_executor, 'NaN')::numeric::integer as codigo_situacao_dado_bancario_executor,
             descricao_situacao_dado_bancario_executor::text as descricao_situacao_dado_bancario_executor,
             (dt_ingest || '-03:00')::timestamptz as dt_ingest
         from {{ source("transferegov_emendas", "executor_especial") }}
