@@ -213,3 +213,155 @@ models:
           nome_tabela: 'siafi.nc_tesouro_mir'
           nome_coluna: 'despesas_pagas'
           tipo_esperado: 'numeric'
+
+  - name: pf_tesouro
+    description: >
+      Modelo da camada bronze para programacoes financeiras do Tesouro (PF),
+      com padronizacao basica de tipos, conversao do valor financeiro para numeric(15,2)
+      e ajuste de timestamp de ingestao para UTC-3.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: emissao_mes
+        description: "Mes de emissao da programacao financeira."
+      - name: emissao_dia
+        description: "Data de emissao da programacao financeira."
+      - name: ug_emitente
+        description: "Codigo da UG emitente."
+      - name: ug_emitente_descricao
+        description: "Descricao da UG emitente."
+      - name: ug_favorecido
+        description: "Codigo da UG favorecida."
+      - name: ug_favorecido_descricao
+        description: "Descricao da UG favorecida."
+      - name: pf_evento
+        description: "Codigo do evento da PF."
+      - name: pf_evento_descricao
+        description: "Descricao do evento da PF."
+      - name: pf
+        description: "Identificador da programacao financeira."
+      - name: pf_inscricao
+        description: "Numero de inscricao associado a PF (ex.: TED)."
+      - name: pf_acao
+        description: "Codigo da acao registrada na PF."
+      - name: pf_acao_descricao
+        description: "Descricao da acao registrada na PF."
+      - name: pf_fonte_recursos
+        description: "Codigo da fonte de recursos da PF."
+      - name: pf_fonte_recursos_descricao
+        description: "Descricao da fonte de recursos da PF."
+      - name: doc_observacao
+        description: "Observacao textual do documento."
+      - name: pf_valor_linha
+        description: "Valor financeiro da linha, convertido para numeric(15,2)."
+      - name: dt_ingest
+        description: "Timestamp de ingestao ajustado para UTC-3."
+
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.pf_tesouro_mir'
+          nome_coluna: 'emissao_dia'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.pf_tesouro_mir'
+          nome_coluna: 'pf_valor_linha'
+          tipo_esperado: 'numeric'
+
+  - name: pf_ptres
+    description: >
+      Modelo da camada bronze para a programacao de acao por PTRES (SIAFI),
+      com padronizacao de tipos textuais e conversao dos campos de dotacao
+      para numeric(15,2), mantendo timestamp de ingestao em UTC-3.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: programa_governo
+        description: "Codigo do programa de governo."
+      - name: programa_governo_descricao
+        description: "Descricao do programa de governo."
+      - name: plano_orcamentario
+        description: "Codigo do plano orcamentario."
+      - name: plano_orcamentario_descricao_1
+        description: "Descricao 1 do plano orcamentario."
+      - name: plano_orcamentario_descricao_2
+        description: "Descricao 2 do plano orcamentario."
+      - name: plano_orcamentario_descricao_3
+        description: "Descricao 3 do plano orcamentario."
+      - name: plano_orcamentario_descricao_4
+        description: "Descricao 4 do plano orcamentario."
+      - name: plano_orcamentario_descricao_5
+        description: "Descricao 5 do plano orcamentario."
+      - name: plano_orcamentario_descricao_6
+        description: "Descricao 6 do plano orcamentario."
+      - name: acao_governo
+        description: "Codigo da acao de governo."
+      - name: acao_governo_descricao
+        description: "Descricao da acao de governo."
+      - name: ptres
+        description: "Codigo PTRES associado a programacao."
+      - name: natureza_despesa
+        description: "Codigo da natureza de despesa."
+      - name: natureza_despesa_descricao
+        description: "Descricao da natureza de despesa."
+      - name: dotacao_inicial
+        description: "Valor da dotacao inicial convertido para numeric(15,2)."
+      - name: dotacao_suplementar
+        description: "Valor da dotacao suplementar convertido para numeric(15,2)."
+      - name: dotacao_atualizada
+        description: "Valor da dotacao atualizada convertido para numeric(15,2)."
+      - name: dt_ingest
+        description: "Timestamp de ingestao ajustado para UTC-3."
+
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.pf_ptres_mir'
+          nome_coluna: 'dotacao_inicial'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.pf_ptres_mir'
+          nome_coluna: 'dotacao_atualizada'
+          tipo_esperado: 'numeric'
+
+  - name: pf_transfere
+    description: >
+      Modelo da camada bronze para programacao financeira do Transferegov,
+      com padronizacao de tipos de identificadores e campos textuais,
+      alem do ajuste de dt_ingest para timestamp com fuso UTC-3.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: id_programacao
+        description: "Identificador da programacao financeira."
+      - name: id_plano_acao
+        description: "Identificador do plano de acao no Transferegov."
+      - name: tp_pf_tipo_programacao
+        description: "Tipo da programacao financeira (ex.: T)."
+      - name: tx_minuta_programacao
+        description: "Identificador da minuta/programacao (formato MPF)."
+      - name: tx_numero_programacao
+        description: "Numero da programacao financeira."
+      - name: tx_situacao_programacao
+        description: "Situacao da programacao financeira."
+      - name: tx_observacao_programacao
+        description: "Descricao textual/observacao da programacao."
+      - name: ug_emitente_programacao
+        description: "Codigo da UG emitente da programacao."
+      - name: ug_favorecida_programacao
+        description: "Codigo da UG favorecida da programacao."
+      - name: dh_recebimento_programacao
+        description: "Timestamp de recebimento/cadastro da programacao no sistema de origem."
+      - name: dt_ingest
+        description: "Timestamp de ingestao ajustado para UTC-3."
+
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.pf_transfere_mir'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.pf_transfere_mir'
+          nome_coluna: 'id_programacao'
+          tipo_esperado: 'integer'

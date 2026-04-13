@@ -27,6 +27,11 @@ sources:
     tables:
       - name: senadores
 
+  - name: transfere_gov
+    schema: transfere_gov
+    tables:
+      - name: programacao_financeira
+
   - name: siafi
     schema: siafi
     tables:
@@ -34,3 +39,5 @@ sources:
         - name: ne_tesouro_emendas
         - name: nc_tesouro_pos__2026
         - name: nc_tesouro_pre_2026
+        - name: pf_tesouro
+        - name: programacao_acao_ptres
