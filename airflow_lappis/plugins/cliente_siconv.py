@@ -25,7 +25,7 @@ class ClienteSiconv:
                 reader = csv.DictReader(conteudo, delimiter=";")
                 
                 if colunas_esperadas:
-                    colunas_csv = reader.fieldnames
+                    colunas_csv = reader.fieldnames or []
                     faltando = [c for c in colunas_esperadas if c not in colunas_csv]
                     if faltando:
                         raise ValueError(f"[cliente_siconv.py] Colunas faltando em {nome_csv}: {faltando}")
@@ -33,4 +33,8 @@ class ClienteSiconv:
                 for i, row in enumerate(reader):
                     if i < skip_rows:
                         continue
-                    yield {k.lower(): v for k, v in row.items()}
+                    
+                    if colunas_esperadas:
+                        yield {k.lower(): row[k] for k in colunas_esperadas}
+                    else:
+                        yield {k.lower(): v for k, v in row.items() if k is not None}
