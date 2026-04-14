@@ -6,7 +6,7 @@ import requests
 
 class ClienteSiconv:
     URL_ZIP = "https://repositorio.dados.gov.br/seges/detru/siconv.zip"
-    ZIP_PATH = "/opt/airflow/dags/data_ingest/siconv/siconv.zip"
+    ZIP_PATH = "/tmp/siconv.zip"
 
     def baixar_zip(self) -> None:
         logging.info("[cliente_siconv.py] Baixando arquivo SICONV...")
