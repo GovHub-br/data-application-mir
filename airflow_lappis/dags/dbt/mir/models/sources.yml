@@ -30,7 +30,10 @@ sources:
   - name: transfere_gov
     schema: transfere_gov
     tables:
+      - name: programas
+      - name: planos_acao
       - name: programacao_financeira
+      - name: notas_de_credito
 
   - name: siafi
     schema: siafi
