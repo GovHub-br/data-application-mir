@@ -84,3 +84,47 @@ models:
           nome_tabela: 'siafi_dbt.pf_unificado'
           nome_coluna: 'id_plano_acao'
           tipo_esperado: 'integer'
+
+  - name: pf_unificado_planos_acao
+    description: >
+      Tabela silver que enriquece a base pf_unificado com os dados de planos de acao
+      do Transferegov, por meio do id_plano_acao. O cruzamento preserva todas as
+      linhas de PF e deduplica planos de acao por id_plano_acao, mantendo o registro
+      mais recente por dt_ingest.
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: id_programacao
+        description: "Identificador da programacao financeira no Transferegov."
+      - name: id_plano_acao
+        description: "Identificador do plano de acao usado como chave de cruzamento."
+      - name: id_programa
+        description: "Identificador do programa associado ao plano de acao."
+      - name: pf
+        description: "Identificador completo da programacao financeira no Tesouro."
+      - name: tx_numero_programacao
+        description: "Numero da programacao financeira no Transferegov."
+      - name: tx_situacao_plano_acao
+        description: "Situacao do plano de acao no Transferegov."
+      - name: vl_total_plano_acao
+        description: "Valor total informado para o plano de acao."
+      - name: dt_ingest
+        description: "Maior timestamp de ingestao entre pf_unificado e planos_acao_ted."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
+          nome_coluna: 'id_programacao'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
+          nome_coluna: 'id_programa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
+          nome_coluna: 'vl_total_plano_acao'
+          tipo_esperado: 'numeric'
