@@ -128,3 +128,98 @@ models:
           nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
           nome_coluna: 'vl_total_plano_acao'
           tipo_esperado: 'numeric'
+          
+  - name: nc_unificado
+    description: >
+      Tabela silver que parte da nc_tesouro_mir e enriquece os campos de programa e ação
+      com mapeamento por PTRES (programa_por_ptres/pf_ptres).
+      O modelo mantém o layout principal de NC do SIAFI e aplica COALESCE para preencher
+      programa_governo, programa_governo_descricao, acao_governo e acao_governo_descricao
+      quando estiverem ausentes na base original.
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: programa_governo
+        description: "Código do programa de governo (SIAFI com fallback do mapeamento por PTRES)."
+      - name: programa_governo_descricao
+        description: "Descrição do programa de governo (SIAFI com fallback do mapeamento por PTRES)."
+      - name: acao_governo
+        description: "Código da ação de governo (SIAFI com fallback do mapeamento por PTRES)."
+      - name: acao_governo_descricao
+        description: "Descrição da ação de governo (SIAFI com fallback do mapeamento por PTRES)."
+      - name: nc
+        description: "Número identificador da Nota de Crédito (NC)."
+      - name: nc_transferencia
+        description: "Número/identificador de transferência da NC."
+      - name: nc_fonte_recursos
+        description: "Código da fonte de recursos."
+      - name: nc_fonte_recursos_descricao
+        description: "Descrição da fonte de recursos."
+      - name: ptres
+        description: "Programa de Trabalho Resumido (PTRES) no SIAFI."
+      - name: nc_evento_descricao
+        description: "Descrição do evento (mapeada para Tipo NC na harmonização de layouts)."
+      - name: nc_ug_responsavel
+        description: "Código da UG responsável."
+      - name: nc_ug_responsavel_descricao
+        description: "Nome da UG responsável."
+      - name: nc_natureza_despesa
+        description: "Código da natureza de despesa."
+      - name: nc_natureza_despesa_descricao
+        description: "Descrição da natureza de despesa."
+      - name: nc_plano_interno
+        description: "Código do plano interno."
+      - name: nc_plano_interno_descricao1
+        description: "Descrição 1 do plano interno."
+      - name: favorecido_doc
+        description: "Documento (CPF/CNPJ) do favorecido."
+      - name: favorecido_doc_descricao
+        description: "Nome/razão social do favorecido."
+      - name: favorecido_municipio
+        description: "Código do município do favorecido."
+      - name: favorecido_municipio_descricao
+        description: "Descrição do município do favorecido."
+      - name: valor_celula
+        description: "Valor financeiro da célula/linha da NC no SIAFI."
+      - name: movimento_liquido_moeda_origem
+        description: "Movimento líquido na moeda de origem."
+      - name: descricao
+        description: "Descrição geral da NC (quando disponível)."
+      - name: nc_plano_interno_descricao2
+        description: "Descrição 2 do plano interno."
+      - name: nc_evento
+        description: "Código do evento contábil (quando disponível)."
+      - name: nc_item_detalhamento
+        description: "Detalhamento da NC (S/N), quando disponível."
+      - name: emissao_dia
+        description: "Data de emissão da Nota de Crédito (SIAFI, quando disponível)."
+      - name: emissao_mes
+        description: "Mês de emissão da Nota de Crédito (SIAFI, quando disponível)."
+      - name: emissao_ano
+        description: "Ano de emissão da Nota de Crédito (SIAFI, quando disponível)."
+      - name: ro
+        description: "Registro de operação associado."
+      - name: dc
+        description: "Indicador débito/crédito."
+      - name: total_lista
+        description: "Valor total da lista."
+      - name: esfera_orcamentaria_codigo
+        description: "Código da esfera orçamentária."
+      - name: esfera_orcamentaria_nome
+        description: "Nome da esfera orçamentária."
+      - name: dt_ingest
+        description: "Timestamp de ingestão do SIAFI (UTC-3)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.nc_unificado'
+          nome_coluna: 'valor_celula'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.nc_unificado'
+          nome_coluna: 'emissao_dia'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.nc_unificado'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'

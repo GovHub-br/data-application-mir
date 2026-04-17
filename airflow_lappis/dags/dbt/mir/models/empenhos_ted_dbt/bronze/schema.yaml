@@ -107,112 +107,101 @@ models:
       abrangendo os períodos anteriores e posteriores a 2026. 
       Realiza a unificação (UNION ALL) das bases históricas e atuais, preenchendo com valores nulos 
       (ou zero para campos financeiros) as colunas inexistentes em cada tabela original para garantir a integridade do schema. 
-      O processamento inclui:
-        - Casting de tipos para texto e numérico;
-        - Limpeza de caracteres especiais em números de processo via Regex;
-        - Padronização de nomes de favorecidos para caixa alta;
-        - Conversão de valores financeiros para **numeric(15,2)** via macro;
-        - Filtro de segurança para processar apenas anos de emissão válidos (4 dígitos).
+      Também aplica o casamento semântico entre colunas equivalentes de 2025 e 2026
+      (ex.: evento/tipo_nc, UG responsável/emitente, natureza/GND, plano interno/descrição),
+      mantendo um layout único para consumo nas camadas seguintes.
     meta:
       tags:
         - bronze
     columns:
-      - name: nc
-        description: "Número identificador da Nota de Crédito (NC)."
-      - name: ptres
-        description: "Programa de Trabalho Resumido (PTRES)."
-      - name: nc_transferencia
-        description: "Informações sobre transferência da Nota de Crédito."
-      - name: ugr_codigo
-        description: "Código da Unidade Gestora Responsável."
-      - name: ugr_nome
-        description: "Nome da Unidade Gestora Responsável."
-      - name: fonte_codigo
-        description: "Código da fonte de recursos."
-      - name: fonte_nome
-        description: "Descrição da fonte de recursos."
-      - name: pi_codigo
-        description: "Código do Plano Interno."
-      - name: pi_nome
-        description: "Descrição do Plano Interno."
-      - name: favorecido_codigo
-        description: "Identificador (CPF/CNPJ) do favorecido."
-      - name: favorecido_nome
-        description: "Nome ou razão social do favorecido."
-      - name: valor_celula
-        description: "Valor financeiro consolidado da transação."
-      - name: dt_ingest
-        description: "Timestamp da ingestão dos dados (UTC-3)."
       - name: programa_governo
-        description: "Código identificador do programa de governo."
+        description: "Somente pré-2026. Código identificador do programa de governo."
       - name: programa_governo_descricao
-        description: "Descrição detalhada do programa de governo."
+        description: "Somente pré-2026. Descrição detalhada do programa de governo."
       - name: acao_governo
-        description: "Código da ação orçamentária."
+        description: "Somente pré-2026. Código da ação orçamentária."
       - name: acao_governo_descricao
-        description: "Descrição da ação orçamentária."
-      - name: nc_evento
-        description: "Código do evento contábil."
+        description: "Somente pré-2026. Descrição da ação orçamentária."
+      - name: nc
+        description: "Comum (pré e pós-2026). Número identificador da Nota de Crédito (NC)."
+      - name: nc_transferencia
+        description: "Comum (pré e pós-2026). Número/identificador de transferência associado à NC."
+      - name: nc_fonte_recursos
+        description: "Comum (pré e pós-2026). Código da fonte de recursos (na pós-2026 vem de fonte_codigo)."
+      - name: nc_fonte_recursos_descricao
+        description: "Comum (pré e pós-2026). Descrição da fonte de recursos (na pós-2026 vem de fonte_nome)."
+      - name: ptres
+        description: "Comum (pré e pós-2026). Programa de Trabalho Resumido (PTRES)."
       - name: nc_evento_descricao
-        description: "Descrição do evento contábil."
+        description: "Comum (pré e pós-2026). NC - Evento Desc (na pós-2026 mapeado a partir de tipo_nc)."
+      - name: nc_ug_responsavel
+        description: "Comum (pré e pós-2026). NC - UG Responsável (na pós-2026 mapeado a partir de emitente_codigo)."
+      - name: nc_ug_responsavel_descricao
+        description: "Comum (pré e pós-2026). NC - UG Responsável Descrição (na pós-2026 mapeado a partir de emitente_nome)."
       - name: nc_natureza_despesa
-        description: "Código da natureza de despesa."
+        description: "Comum (pré e pós-2026). NC - Natureza Despesa (na pós-2026 mapeado a partir de gnd_codigo)."
       - name: nc_natureza_despesa_descricao
-        description: "Descrição da natureza de despesa."
-      - name: nc_plano_interno_descricao2
-        description: "Segunda descrição detalhada do Plano Interno."
+        description: "Comum (pré e pós-2026). NC - Natureza Despesa Descrição (na pós-2026 mapeado a partir de gnd_nome)."
+      - name: nc_plano_interno
+        description: "Comum (pré e pós-2026). NC - Plano Interno (na pós-2026 mapeado a partir de pi_codigo)."
+      - name: nc_plano_interno_descricao1
+        description: "Comum (pré e pós-2026). NC - Plano Interno Descrição 1 (na pós-2026 mapeado a partir de pi_nome)."
+      - name: favorecido_doc
+        description: "Comum (pré e pós-2026). Favorecido Doc (na pós-2026 mapeado a partir de favorecido_codigo)."
+      - name: favorecido_doc_descricao
+        description: "Comum (pré e pós-2026). Favorecido Doc Desc (na pós-2026 mapeado a partir de favorecido_nome)."
       - name: favorecido_municipio
-        description: "Código do município do favorecido."
+        description: "Somente pré-2026. Código do município do favorecido."
       - name: favorecido_municipio_descricao
-        description: "Nome do município do favorecido."
+        description: "Somente pré-2026. Nome do município do favorecido."
+      - name: valor_celula
+        description: "Comum (pré e pós-2026). Valor financeiro (na pré-2026 vem de nc_valor_linha; na pós-2026 vem de valor_celula)."
       - name: movimento_liquido_moeda_origem
-        description: "Valor do movimento líquido na moeda de origem."
-      - name: emissao_dia
-        description: "Dia da emissão da nota de crédito."
-      - name: emissao_mes
-        description: "Mês de emissão da nota de crédito."
-      - name: emissao_ano
-        description: "Ano de emissão da nota de crédito."
-      - name: dc
-        description: "Indicador de Débito ou Crédito (D/C)."
-      - name: emitente_codigo
-        description: "Código da Unidade Gestora emitente."
-      - name: emitente_nome
-        description: "Nome da Unidade Gestora emitente."
-      - name: gnd_codigo
-        description: "Código do Grupo de Natureza de Despesa."
-      - name: gnd_nome
-        description: "Nome do Grupo de Natureza de Despesa."
+        description: "Comum (pré e pós-2026). Movimento líquido (na pré-2026 vem de movimento_liquido_moeda_origem; na pós-2026 mapeado a partir de total_lista)."
+      - name: dt_ingest
+        description: "Comum (pré e pós-2026). Timestamp da ingestão (UTC-3)."
       - name: descricao
-        description: "Descrição geral do documento."
-      - name: tipo_nc
-        description: "Classificação do tipo de Nota de Crédito."
+        description: "Somente pós-2026. Descrição geral da NC (campo descricao)."
+      - name: nc_plano_interno_descricao2
+        description: "Somente pré-2026. NC - Plano Interno Descrição 2."
+      - name: nc_evento
+        description: "Somente pré-2026. NC - Evento (sem match na base pós-2026)."
       - name: nc_item_detalhamento
-        description: "Detalhamento dos itens contidos na NC."
+        description: "Somente pós-2026. NC Item - Detalhamento (S/N) (sem match na base pré-2026)."
+      - name: emissao_dia
+        description: "Somente pós-2026. Dia da emissão da NC."
+      - name: emissao_mes
+        description: "Somente pós-2026. Mês da emissão da NC."
+      - name: emissao_ano
+        description: "Somente pós-2026. Ano da emissão da NC."
       - name: ro
-        description: "Registro de Operação associado."
-      - name: item_total
-        description: "Valor total do item."
+        description: "Somente pós-2026. Registro de Operação associado."
+      - name: dc
+        description: "Somente pós-2026. Indicador de Débito ou Crédito (D/C)."
       - name: total_lista
-        description: "Valor total da lista de itens."
+        description: "Somente pós-2026. Valor total da lista de itens."
       - name: esfera_orcamentaria_codigo
-        description: "Código da esfera orçamentária."
+        description: "Somente pós-2026. Código da esfera orçamentária."
       - name: esfera_orcamentaria_nome
-        description: "Nome da esfera orçamentária."
+        description: "Somente pós-2026. Nome da esfera orçamentária."
 
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'siafi.nc_tesouro_mir'
-          nome_coluna: 'ne_ccor_ano_emissao'
-          tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.nc_tesouro_mir'
+          nome_coluna: 'ptres'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'siafi.nc_tesouro_mir'
-          nome_coluna: 'despesas_empenhadas'
+          nome_tabela: 'siafi_dbt.nc_tesouro_mir'
+          nome_coluna: 'valor_celula'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'siafi.nc_tesouro_mir'
-          nome_coluna: 'despesas_pagas'
+          nome_tabela: 'siafi_dbt.nc_tesouro_mir'
+          nome_coluna: 'movimento_liquido_moeda_origem'
           tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.nc_tesouro_mir'
+          nome_coluna: 'emissao_dia'
+          tipo_esperado: 'date'
 
   - name: pf_tesouro
     description: >
