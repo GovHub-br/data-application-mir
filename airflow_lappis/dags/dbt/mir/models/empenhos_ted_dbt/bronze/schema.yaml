@@ -365,3 +365,208 @@ models:
           nome_tabela: 'siafi_dbt.pf_transfere_mir'
           nome_coluna: 'id_programacao'
           tipo_esperado: 'integer'
+
+  - name: notas_de_credito
+    description: >
+      Modelo da camada bronze para Notas de Crédito do TransfereGov (módulo TED),
+      com padronização de tipos e ajuste do timestamp de ingestão para UTC-3.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: id_nota
+        description: "Identificador único da Nota de Crédito."
+      - name: id_plano_acao
+        description: "Identificador único do Plano de Ação associado."
+      - name: tx_minuta_nota
+        description: "Minuta/identificador textual da Nota de Crédito."
+      - name: tx_numero_nota
+        description: "Número da Nota de Crédito."
+      - name: dt_emissao_nota
+        description: "Data/hora de emissão da Nota de Crédito."
+      - name: cd_gestao_emitente_nota
+        description: "Código da gestão emitente da Nota de Crédito."
+      - name: cd_gestao_favorecida_nota
+        description: "Código da gestão favorecida da Nota de Crédito."
+      - name: tx_situacao_nota
+        description: "Situação da Nota de Crédito."
+      - name: cd_ug_emitente_nota
+        description: "Código da Unidade Gestora emitente da Nota de Crédito."
+      - name: cd_ug_favorecida_nota
+        description: "Código da Unidade Gestora favorecida da Nota de Crédito."
+      - name: tx_observacao_nota
+        description: "Observações/texto livre da Nota de Crédito."
+      - name: dt_ingest
+        description: "Timestamp de ingestão ajustado para UTC-3."
+
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.notas_de_credito_mir'
+          nome_coluna: 'id_nota'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.notas_de_credito_mir'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.notas_de_credito_mir'
+          nome_coluna: 'dt_emissao_nota'
+          tipo_esperado: 'timestamp without time zone'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.notas_de_credito_mir'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
+
+  - name: programas_ted
+    description: >
+      Modelo da camada bronze para Programas do TransfereGov (módulo TED),
+      com padronização de tipos e ajuste do timestamp de ingestão para UTC-3.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: id_programa
+        description: "Identificador único do Programa."
+      - name: tx_codigo_programa
+        description: "Código do Programa."
+      - name: aa_ano_programa
+        description: "Ano do Programa."
+      - name: tx_situacao_programa
+        description: "Situação do Programa."
+      - name: tx_nome_programa
+        description: "Nome do Programa."
+      - name: sigla_unidade_descentralizadora
+        description: "Sigla da unidade descentralizadora."
+      - name: unidade_descentralizadora
+        description: "Unidade descentralizadora."
+      - name: sigla_unidade_responsavel_acompanhamento
+        description: "Sigla da unidade responsável pelo acompanhamento."
+      - name: unidade_responsavel_acompanhamento
+        description: "Unidade responsável pelo acompanhamento."
+      - name: tx_nome_institucional_programa
+        description: "Nome institucional do Programa."
+      - name: tx_objetivo_programa
+        description: "Objetivo do Programa."
+      - name: tx_descricao_programa
+        description: "Descrição do Programa."
+      - name: in_grupo_investimento_obra
+        description: "Indicador do grupo de investimento (obra)."
+      - name: in_grupo_investimento_servico
+        description: "Indicador do grupo de investimento (serviço)."
+      - name: in_grupo_investimento_equipamento
+        description: "Indicador do grupo de investimento (equipamento)."
+      - name: in_autoriza_subdescentralizacao_outro
+        description: "Indicador/flag de autorização de subdescentralização (outro)."
+      - name: in_autoriza_realizacao_despesas
+        description: "Indicador/flag de autorização para realização de despesas."
+      - name: in_autoriza_execucao_creditos_descentralizada
+        description: "Indicador/flag de autorização para execução de créditos descentralizada."
+      - name: in_beneficiario_especifico
+        description: "Indicador de beneficiário específico."
+      - name: dt_recebimento_plano_beneficiario_inicio
+        description: "Data de início do recebimento do plano de beneficiário."
+      - name: dt_recebimento_plano_beneficiario_fim
+        description: "Data final do recebimento do plano de beneficiário."
+      - name: in_chamamento_publico
+        description: "Indicador de chamamento público."
+      - name: dt_recebimento_plano_chamamento_inicio
+        description: "Data de início do recebimento do plano de chamamento."
+      - name: dt_recebimento_plano_chamamento_fim
+        description: "Data final do recebimento do plano de chamamento."
+      - name: dt_ingest
+        description: "Timestamp de ingestão ajustado para UTC-3."
+
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.programas_mir'
+          nome_coluna: 'id_programa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.programas_mir'
+          nome_coluna: 'aa_ano_programa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.programas_mir'
+          nome_coluna: 'in_beneficiario_especifico'
+          tipo_esperado: 'boolean'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.programas_mir'
+          nome_coluna: 'dt_recebimento_plano_beneficiario_inicio'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.programas_mir'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
+
+  - name: planos_acao_ted
+    description: >
+      Modelo da camada bronze para Planos de Ação do TransfereGov (módulo TED),
+      com padronização de tipos e ajuste do timestamp de ingestão para UTC-3.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: id_plano_acao
+        description: "Identificador único do Plano de Ação."
+      - name: id_programa
+        description: "Identificador do Programa associado."
+      - name: sigla_unidade_descentralizada
+        description: "Sigla da unidade descentralizada."
+      - name: unidade_descentralizada
+        description: "Unidade descentralizada."
+      - name: sigla_unidade_responsavel_execucao
+        description: "Sigla da unidade responsável pela execução."
+      - name: unidade_responsavel_execucao
+        description: "Unidade responsável pela execução."
+      - name: vl_total_plano_acao
+        description: "Valor total do Plano de Ação."
+      - name: dt_inicio_vigencia
+        description: "Data de início de vigência do Plano de Ação."
+      - name: dt_fim_vigencia
+        description: "Data de fim de vigência do Plano de Ação."
+      - name: tx_objeto_plano_acao
+        description: "Objeto do Plano de Ação."
+      - name: tx_justificativa_plano_acao
+        description: "Justificativa do Plano de Ação."
+      - name: in_forma_execucao_direta
+        description: "Indicador da forma de execução direta."
+      - name: in_forma_execucao_particulares
+        description: "Indicador da forma de execução por particulares."
+      - name: in_forma_execucao_descentralizada
+        description: "Indicador da forma de execução descentralizada."
+      - name: tx_situacao_plano_acao
+        description: "Situação do Plano de Ação."
+      - name: aa_ano_plano_acao
+        description: "Ano do Plano de Ação."
+      - name: vl_beneficiario_especifico
+        description: "Valor do beneficiário específico."
+      - name: vl_chamamento_publico
+        description: "Valor do chamamento público."
+      - name: sq_instrumento
+        description: "Sequencial do instrumento."
+      - name: aa_instrumento
+        description: "Ano do instrumento."
+      - name: dt_ingest
+        description: "Timestamp de ingestão ajustado para UTC-3."
+
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.planos_acao_mir'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.planos_acao_mir'
+          nome_coluna: 'id_programa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.planos_acao_mir'
+          nome_coluna: 'vl_total_plano_acao'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.planos_acao_mir'
+          nome_coluna: 'dt_inicio_vigencia'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.planos_acao_mir'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
