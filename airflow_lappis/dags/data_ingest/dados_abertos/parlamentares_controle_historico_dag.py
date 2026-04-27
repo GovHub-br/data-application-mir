@@ -419,6 +419,20 @@ def parlamentares_controle_historico_dag() -> None:
                 )
 
         if historico_camara:
+            # Proteção contra duplicidade: limpa os registros anteriores antes de inserir o novo batch da API
+            camara_ids = tuple(set(item["parlamentar_id"] for item in historico_camara))
+            with psycopg2.connect(conn_str) as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema=%s AND table_name=%s)",
+                        ("camara_deputados", "deputados_historico")
+                    )
+                    if cursor.fetchone()[0]:
+                        cursor.execute(
+                            "DELETE FROM camara_deputados.deputados_historico WHERE parlamentar_id IN %s",
+                            (camara_ids,)
+                        )
+            
             db.insert_data(
                 historico_camara,
                 table_name="deputados_historico",
@@ -426,6 +440,20 @@ def parlamentares_controle_historico_dag() -> None:
             )
 
         if historico_senado:
+            # Proteção contra duplicidade: limpa os registros anteriores antes de inserir o novo batch da API
+            senado_ids = tuple(set(item["parlamentar_id"] for item in historico_senado))
+            with psycopg2.connect(conn_str) as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema=%s AND table_name=%s)",
+                        ("senado_federal", "senadores_historico")
+                    )
+                    if cursor.fetchone()[0]:
+                        cursor.execute(
+                            "DELETE FROM senado_federal.senadores_historico WHERE parlamentar_id IN %s",
+                            (senado_ids,)
+                        )
+
             db.insert_data(
                 historico_senado,
                 table_name="senadores_historico",
