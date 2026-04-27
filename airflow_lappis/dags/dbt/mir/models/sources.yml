@@ -44,3 +44,23 @@ sources:
         - name: nc_tesouro_pre_2026
         - name: pf_tesouro
         - name: programacao_acao_ptres
+
+  - name: siconv
+    schema: siconv
+    tables:
+      - name: proposta
+      - name: convenio
+      - name: desembolso
+      - name: desbloqueio
+      - name: solicitacao_alteracao
+      - name: termo_aditivo
+      - name: solicitacao_rendimento_aplicacao
+      - name: prorroga_oficio
+      - name: pagamento_tributo
+      - name: pagamento
+      - name: licitacao
+      - name: ingresso_contrapartida
+      - name: empenho
+      - name: historico_situacao
+      - name: cronograma_desembolso
+      - name: meta_crono_fisico

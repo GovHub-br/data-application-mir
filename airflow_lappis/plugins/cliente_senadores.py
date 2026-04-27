@@ -19,13 +19,12 @@ class ClienteSenadores(ClienteBase):
             f"{ClienteSenadores.BASE_URL}"
         )
 
-    def get_senadores_atuais(self) -> list:
+    def get_senadores_por_legislatura(self) -> list:
         """
-        Obtém a lista de senadores em exercício.
-        O Senado geralmente retorna tudo em uma única chamada,
-        sem paginação complexa como a Câmara.
+        Obtém a lista de senadores ativose inativos.
+        O Senado geralmente retorna tudo em uma única chamada, sem paginação complexa como a Câmara.
         """
-        endpoint = "/senador/lista/atual"
+        endpoint = "/senador/lista/legislatura/0/100"
         logging.info("[cliente_senadores.py] Fetching senadores atuais")
 
         status, data = self.request(
@@ -33,10 +32,9 @@ class ClienteSenadores(ClienteBase):
         )
 
         if status == http.HTTPStatus.OK and isinstance(data, dict):
-            # Estrutura esperada: ListaParlamentarEmExercicio ->
-            # Parlamentares -> Parlamentar.
+            # A estrutura do JSON do Senado é: ListaParlamentarLegislatura -> Parlamentares -> Parlamentar
             try:
-                lista_root = data.get("ListaParlamentarEmExercicio", {})
+                lista_root = data.get("ListaParlamentarLegislatura", {})
                 parlamentares = lista_root.get("Parlamentares", {}).get("Parlamentar", [])
 
                 if isinstance(parlamentares, dict):
@@ -47,6 +45,39 @@ class ClienteSenadores(ClienteBase):
                     f"{len(parlamentares)} senadores"
                 )
                 return parlamentares
+            except Exception as e:
+                logging.error(
+                    f"[cliente_senadores.py] Erro ao parsear JSON do Senado: {e}"
+                )
+                return []
+        else:
+            logging.warning(f"[cliente_senadores.py] Failed with status: {status}")
+            return []
+
+    def get_periodo_legislacao(self) -> list:
+        """
+        Obtém o período de legislação parlamentar
+        """
+        endpoint = "/dados/ListaLegislatura.json"
+        logging.info("[cliente_senadores.py] Fetching periodos legislação")
+
+        status, data = self.request(
+            http.HTTPMethod.GET, endpoint, headers=self.BASE_HEADER
+        )
+
+        if status == http.HTTPStatus.OK and isinstance(data, dict):
+            # A estrutura do JSON do Senado é: ListaLegislatura -> Parlamentares -> Parlamentar
+            try:
+                lista_root = data.get("ListaLegislatura", {})
+                legislaturas = lista_root.get("Legislaturas", {}).get("Legislatura", [])
+
+                if isinstance(legislaturas, dict):
+                    legislaturas = [legislaturas]
+
+                logging.info(
+                    f"[cliente_senadores.py] Successfully fetched {len(legislaturas)} legislaturas"
+                )
+                return legislaturas
             except Exception as e:
                 logging.error(
                     f"[cliente_senadores.py] Erro ao parsear JSON do Senado: {e}"

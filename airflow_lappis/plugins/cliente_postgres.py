@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 import psycopg2
-import psycopg2.extras  # Added import for execute_values
+import psycopg2.extras
 from pandas import json_normalize
 import pandas as pd
 import io
@@ -15,27 +15,9 @@ class ClientPostgresDB:
 
     @staticmethod
     def _get_column_type(value: Any) -> str:
-        """
-        Determine PostgreSQL column type from Python value.
-
-        Args:
-            value: Python value to analyze
-
-        Returns:
-            PostgreSQL column type as string
-        """
         return ClientPostgresDB.TYPE_MAP.get(type(value), "TEXT")
 
     def _flatten_data(self, data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """
-        Flatten nested JSON data.
-
-        Args:
-            data (List[Dict[str, Any]]): List of nested dictionaries.
-
-        Returns:
-            List[Dict[str, Any]]: List of flat dictionaries.
-        """
         return list(
             map(
                 lambda d: {
@@ -60,17 +42,10 @@ class ClientPostgresDB:
         table_name: str,
         primary_key: Optional[List[str]] = None,
         schema: str = "raw",
+        conn=None,
     ) -> None:
-        """Create table dynamically based on data structure.
-
-        Args:
-            sample_data: Sample data to determine schema
-            table_name: Name of table to create
-            primary_key: List of primary key column names
-            schema: Database schema name
-        """
-        with psycopg2.connect(self.conn_str) as conn:
-            with conn.cursor() as cursor:
+        def _execute(connection):
+            with connection.cursor() as cursor:
                 cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {schema};")
                 logging.info(f"[cliente_postgres.py] Schema {schema} ensured to exist")
 
@@ -104,6 +79,13 @@ class ClientPostgresDB:
                         f"Failed to create table {schema}.{table_name}"
                     ) from err
 
+        if conn is not None:
+            _execute(conn)
+        else:
+            with psycopg2.connect(self.conn_str) as new_conn:
+                _execute(new_conn)
+                new_conn.commit()
+
     def insert_data(
         self,
         data: List[Dict[str, Any]],
@@ -111,16 +93,8 @@ class ClientPostgresDB:
         conflict_fields: Optional[List[str]] = None,
         primary_key: Optional[List[str]] = None,
         schema: str = "raw",
+        conn=None,
     ) -> None:
-        """Insert data into database table.
-
-        Args:
-            data: List of dictionaries to insert
-            table_name: Target table name
-            conflict_fields: List of column names for conflict resolution
-            primary_key: List of primary key column names
-            schema: Database schema name
-        """
         if not data:
             logging.warning(
                 f"[cliente_postgres.py] No data to insert into {schema}.{table_name}"
@@ -128,7 +102,7 @@ class ClientPostgresDB:
             return
 
         self.create_table_if_not_exists(
-            data[0], table_name, primary_key=primary_key, schema=schema
+            data[0], table_name, primary_key=primary_key, schema=schema, conn=conn
         )
 
         flattened_data = self._flatten_data(data)
@@ -142,14 +116,12 @@ class ClientPostgresDB:
             update_str = ", ".join([f"{col} = EXCLUDED.{col}" for col in columns])
             sql += f" ON CONFLICT ({conflict_str}) DO UPDATE SET {update_str}"
 
-        with psycopg2.connect(self.conn_str) as conn:
-            with conn.cursor() as cursor:
+        def _execute(connection):
+            with connection.cursor() as cursor:
                 try:
                     psycopg2.extras.execute_values(cursor, sql, values)
-                    conn.commit()
                     logging.info(
-                        f"[cliente_postgres.py] Inserted data into {schema}."
-                        f"{table_name}"
+                        f"[cliente_postgres.py] Inserted data into {schema}.{table_name}"
                     )
                 except psycopg2.Error as err:
                     logging.error(
@@ -160,15 +132,14 @@ class ClientPostgresDB:
                         f"Failed to insert data into {schema}.{table_name}"
                     ) from err
 
+        if conn is not None:
+            _execute(conn)
+        else:
+            with psycopg2.connect(self.conn_str) as new_conn:
+                _execute(new_conn)
+                new_conn.commit()
+
     def execute_query(self, query: str) -> List[Tuple[Any, ...]]:
-        """Execute a query and return the results.
-
-        Args:
-            query: SQL query to execute
-
-        Returns:
-            List of tuples containing the query results
-        """
         logging.info(f"[cliente_postgres.py] Executing query: {query}")
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
@@ -181,80 +152,45 @@ class ClientPostgresDB:
                 return results
 
     def get_contratos_ids(self, schema: str = "compras_gov") -> List[int]:
-        """Extrai todos os IDs de contratos da tabela contratos."""
         query = f"SELECT id FROM {schema}.contratos"
-
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query)
-                contratos_ids = [row[0] for row in cursor.fetchall()]
-                return contratos_ids
+                return [row[0] for row in cursor.fetchall()]
 
     def get_id_programas(self) -> List[int]:
-        """Extrai todos os IDs de programas da tabela beneficiário."""
         query = "SELECT id_programa FROM transfere_gov.programas"
-
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query)
-                id_programas = [row[0] for row in cursor.fetchall()]
-                return id_programas
+                return [row[0] for row in cursor.fetchall()]
 
     def get_id_planos_acao(self) -> List[int]:
-        """Extrai todos os IDs de planos de ação da tabela de planos de ação."""
         query = "SELECT id_plano_acao FROM transfere_gov.planos_acao"
-
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query)
-                id_planos_acao = [row[0] for row in cursor.fetchall()]
-                return id_planos_acao
+                return [row[0] for row in cursor.fetchall()]
 
     def drop_table_if_exists(self, table_name: str, schema: str = "raw") -> None:
-        """Remove a tabela se ela existir."""
-        conn = psycopg2.connect(self.conn_str)
-        cursor = conn.cursor()
-        drop_table_query = f"DROP TABLE IF EXISTS {schema}.{table_name};"
-        try:
-            cursor.execute(drop_table_query)
-            conn.commit()
-            print(f"Tabela {schema}.{table_name} removida com sucesso.")
-        except Exception as e:
-            print(f"Erro ao remover a tabela {schema}.{table_name}: {e}")
-        finally:
-            cursor.close()
-            conn.close()
+        with psycopg2.connect(self.conn_str) as conn:
+            with conn.cursor() as cursor:
+                try:
+                    cursor.execute(f"DROP TABLE IF EXISTS {schema}.{table_name};")
+                    conn.commit()
+                    print(f"Tabela {schema}.{table_name} removida com sucesso.")
+                except Exception as e:
+                    print(f"Erro ao remover a tabela {schema}.{table_name}: {e}")
 
     def insert_csv_data(
         self, csv_data: str, table_name: str, schema: str = "raw"
     ) -> None:
-        """
-        Insere dados de um CSV no banco de dados, garantindo que a tabela seja criada.
-        Se a tabela existir, ela será removida antes da inserção dos novos dados.
-
-        Args:
-            csv_data (str): Dados do CSV como string.
-            table_name (str): Nome da tabela de destino.
-            schema (str): Nome do schema do banco (padrão: "raw").
-        """
-        # Converte o CSV para DataFrame
         df = pd.read_csv(io.StringIO(csv_data))
-
-        # Converte o DataFrame para lista de dicionários
         data = df.to_dict(orient="records")
-
-        # Remove a tabela existente
         self.drop_table_if_exists(table_name, schema)
-
-        # Insere os novos dados
         self.insert_data(data, table_name, primary_key=None, schema=schema)
 
     def get_programacao_financeira(self) -> List[Tuple[Any, ...]]:
-        """Extrai o numero_programacao e ug_emitente da tabela programacao_financeira.
-
-        Returns:
-            List[Tuple[Any, ...]]: Lista de tuplas com numero_programacao e ug_emitente
-        """
         query = (
             "SELECT tx_numero_programacao, ug_emitente_programacao "
             "FROM transfere_gov.programacao_financeira"
@@ -262,27 +198,16 @@ class ClientPostgresDB:
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query)
-                programacao_financeira = cursor.fetchall()
-                return programacao_financeira
+                return cursor.fetchall()
 
     def alter_table(
         self, data: Dict[str, Any], table_name: str, schema: str = "raw"
     ) -> None:
-        """
-        Alter table to add columns that exist in the data but not in the table.
-        All new columns will be created as TEXT type.
-
-        Args:
-            data: Sample data containing new columns
-            table_name: Name of table to alter
-            schema: Database schema name
-        """
         flattened_data = self._flatten_data([data])[0]
         columns = list(flattened_data.keys())
 
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
-                # Get existing columns
                 cursor.execute(
                     f"""
                     SELECT column_name
@@ -293,7 +218,6 @@ class ClientPostgresDB:
                 )
                 existing_columns = [row[0] for row in cursor.fetchall()]
 
-                # Add columns that don't exist
                 for column in columns:
                     if column not in existing_columns:
                         alter_query = (
@@ -314,38 +238,22 @@ class ClientPostgresDB:
 
                 conn.commit()
                 logging.info(
-                    f"[cliente_postgres.py] Table {schema}.{table_name} "
-                    f"altered successfully"
+                    f"[cliente_postgres.py] Table {schema}.{table_name} altered successfully"
                 )
 
     def get_nota_credito(self) -> List[Tuple[Any, ...]]:
-        """Extrai o número da nota de crédito e o valor da tabela nota_credito.
-
-        Returns:
-            List[Tuple[Any, ...]]: Lista de tuplas com número da nota de crédito e valor
-        """
         query = (
             "SELECT cd_ug_emitente_nota, cd_gestao_emitente_nota, tx_numero_nota "
             "FROM transfere_gov.notas_de_credito"
         )
-
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query)
-                nota_credito = cursor.fetchall()
-                return nota_credito
+                return cursor.fetchall()
 
     def remove_duplicates(
         self, table_name: str, column_mapping: Dict[int, str], schema: str = "siafi"
     ) -> None:
-        """
-        Remove duplicados de uma tabela e otimiza a tabela.
-
-        Args:
-            table_name (str): Nome da tabela no banco de dados.
-            column_mapping (Dict[int, str]): Mapeamento das colunas.
-            schema (str): Schema do banco de dados (padrão: "siafi").
-        """
         try:
             columns = ", ".join(column_mapping.values())
             delete_query = f"""
@@ -370,17 +278,13 @@ class ClientPostgresDB:
                         f"Duplicados removidos com sucesso de {schema}.{table_name}"
                     )
 
-            conn = psycopg2.connect(self.conn_str)
-            conn.autocommit = True
-            cursor = conn.cursor()
-            try:
-                cursor.execute(vacuum_query)
-                logging.info(
-                    f"VACUUM FULL executado com sucesso em {schema}.{table_name}"
-                )
-            finally:
-                cursor.close()
-                conn.close()
+            with psycopg2.connect(self.conn_str) as conn:
+                conn.autocommit = True
+                with conn.cursor() as cursor:
+                    cursor.execute(vacuum_query)
+                    logging.info(
+                        f"VACUUM FULL executado com sucesso em {schema}.{table_name}"
+                    )
 
         except Exception as e:
             logging.error(
@@ -389,12 +293,10 @@ class ClientPostgresDB:
             raise
 
     def get_codigo_unidade(self) -> list[dict]:
-        """Retorna código da unidade e ordem de grandeza da tabela."""
         query = """
             SELECT codigounidade, ordem_grandeza
             FROM pessoas.unidade_organizacional
         """
-
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query)
@@ -405,12 +307,6 @@ class ClientPostgresDB:
                 ]
 
     def execute_non_query(self, query: str) -> None:
-        """
-        Executa uma query que não retorna resultados (como DDL ou blocos DO $$).
-
-        Args:
-            query (str): Comando SQL que não retorna resultados.
-        """
         logging.info(f"[cliente_postgres.py] Executando non-query: {query}")
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
@@ -425,51 +321,29 @@ class ClientPostgresDB:
                     raise RuntimeError("Erro ao executar comando SQL sem retorno") from e
 
     def get_dashboard_kpis(self) -> Dict[str, int]:
-        """
-        Busca os KPIs do dashboard de servidores.
-
-        Returns:
-            Dict[str, int]: Dicionário com os KPIs
-        """
         query = "SELECT kpi, valor FROM pessoas.kpis_servidores"
-
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query)
-                results = cursor.fetchall()
-                return {row[0]: row[1] for row in results}
+                return {row[0]: row[1] for row in cursor.fetchall()}
 
     def get_dashboard_genero(self) -> Dict[str, float]:
-        """
-        Busca a distribuição por gênero para o dashboard.
-
-        Returns:
-            Dict[str, float]: Dicionário com percentuais por gênero
-        """
         query = """
             SELECT
                 genero,
                 ROUND(percentual_distribuicao * 100, 1) as percentual
             FROM pessoas.distribuicao_genero
         """
-
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query)
-                results = cursor.fetchall()
                 genero_data = {}
-                for row in results:
+                for row in cursor.fetchall():
                     genero = row[0].lower() if row[0] else "n/a"
                     genero_data[f"{genero}_percent"] = float(row[1])
                 return genero_data
 
     def get_dashboard_raca_cor(self) -> List[Dict[str, Any]]:
-        """
-        Busca a distribuição por raça/cor para o dashboard.
-
-        Returns:
-            List[Dict[str, Any]]: Lista de dicionários com raça/cor e quantidade
-        """
         query = """
             SELECT
                 COALESCE(cor_raca, 'NÃO DECLARADA') as nome_cor,
@@ -477,20 +351,12 @@ class ClientPostgresDB:
             FROM pessoas.distribuicao_raca_cor
             ORDER BY quantidade_servidores DESC
         """
-
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query)
-                results = cursor.fetchall()
-                return [{"nome_cor": row[0], "valor": row[1]} for row in results]
+                return [{"nome_cor": row[0], "valor": row[1]} for row in cursor.fetchall()]
 
     def get_dashboard_situacao_funcional(self) -> List[Dict[str, Any]]:
-        """
-        Busca a distribuição por situação funcional para o dashboard.
-
-        Returns:
-            List[Dict[str, Any]]: Lista de dicionários com situação e quantidade
-        """
         query = """
             SELECT
                 situacao_funcional_original as label,
@@ -498,20 +364,12 @@ class ClientPostgresDB:
             FROM pessoas.distribuicao_situacao_funcional
             ORDER BY quantidade_servidores DESC
         """
-
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query)
-                results = cursor.fetchall()
-                return [{"label": row[0], "valor": row[1]} for row in results]
+                return [{"label": row[0], "valor": row[1]} for row in cursor.fetchall()]
 
     def get_dashboard_mapa_uf(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Busca a distribuição geográfica por UF para o dashboard (mapa).
-
-        Returns:
-            Dict[str, Dict[str, Any]]: Dicionário com UF como chave e dados como valor
-        """
         query = """
             SELECT
                 sigla_uf,
@@ -521,26 +379,15 @@ class ClientPostgresDB:
             FROM pessoas.distribuicao_mapa_uf
             ORDER BY sigla_uf
         """
-
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query)
-                results = cursor.fetchall()
                 return {
                     row[0]: {"nome": row[1], "valor": row[2], "percentual": row[3]}
-                    for row in results
+                    for row in cursor.fetchall()
                 }
 
     def get_dashboard_tabela_servidores(self, limit: int = 100) -> List[Dict[str, Any]]:
-        """
-        Busca dados agregados de servidores para exibição em tabela do dashboard.
-
-        Args:
-            limit: Número máximo de registros a retornar (padrão: 100)
-
-        Returns:
-            List[Dict[str, Any]]: Lista de dicionários com dados dos servidores
-        """
         query = """
             SELECT
                 cargo,
@@ -553,11 +400,9 @@ class ClientPostgresDB:
             ORDER BY total DESC
             LIMIT %s
         """
-
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query, (limit,))
-                results = cursor.fetchall()
                 return [
                     {
                         "cargo": row[0],
@@ -567,5 +412,5 @@ class ClientPostgresDB:
                         "estado": row[4],
                         "total": row[5],
                     }
-                    for row in results
+                    for row in cursor.fetchall()
                 ]

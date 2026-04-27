@@ -1,5 +1,6 @@
 import logging
 import re
+import math
 from typing import Any, Dict, List, Tuple
 from airflow.providers.microsoft.mssql.hooks.mssql import MsSqlHook
 
@@ -19,6 +20,18 @@ class ClientSQLServerDB:
     def _sanitize_value(value: Any) -> Any:
         """Normaliza valores vindos do SQL Server para tipos seguros."""
         if value is None:
+            return None
+
+        if isinstance(value, str):
+            cleaned_value = value.replace("\x00", "")
+            if cleaned_value.strip().lower() in {"nat", "nan"}:
+                return None
+            return cleaned_value
+
+        if isinstance(value, float) and math.isnan(value):
+            return None
+
+        if hasattr(value, "is_nan") and value.is_nan():
             return None
 
         if str(value) == "NaT":
