@@ -121,3 +121,40 @@ class ClienteSenadores(ClienteBase):
             f"senador_id={senador_id} with status: {status}"
         )
         return None
+
+    def get_senadores_atuais(self) -> list:
+        """
+        Obtém a lista de senadores em exercício.
+        O Senado geralmente retorna tudo em uma única chamada,
+        sem paginação complexa como a Câmara.
+        """
+        endpoint = "/senador/lista/atual"
+        logging.info("[cliente_senadores.py] Fetching senadores atuais")
+
+        status, data = self.request(
+            http.HTTPMethod.GET, endpoint, headers=self.BASE_HEADER
+        )
+
+        if status == http.HTTPStatus.OK and isinstance(data, dict):
+            # Estrutura esperada: ListaParlamentarEmExercicio ->
+            # Parlamentares -> Parlamentar.
+            try:
+                lista_root = data.get("ListaParlamentarEmExercicio", {})
+                parlamentares = lista_root.get("Parlamentares", {}).get("Parlamentar", [])
+
+                if isinstance(parlamentares, dict):
+                    parlamentares = [parlamentares]
+
+                logging.info(
+                    "[cliente_senadores.py] Successfully fetched "
+                    f"{len(parlamentares)} senadores"
+                )
+                return parlamentares
+            except Exception as e:
+                logging.error(
+                    f"[cliente_senadores.py] Erro ao parsear JSON do Senado: {e}"
+                )
+                return []
+        else:
+            logging.warning(f"[cliente_senadores.py] Failed with status: {status}")
+            return []
