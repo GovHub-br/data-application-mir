@@ -252,3 +252,111 @@ models:
         nome_tabela: 'legislaturas.legislaturas'
         nome_coluna: 'dt_ingest'
         tipo_esperado: 'timestamp with time zone'
+
+
+  - name: deputados_historico
+    description: >
+      Tabela contendo todo o detalhamento evolutivo (histórico temporal) dos deputados federais através
+      da API da Câmara dos Deputados, incluindo trocas de mandatos, filiações, afastamentos e licenças,
+      bem como o começo e final calculado exato de cada período.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: id
+        description: Identificador do deputado na Câmara.
+      - name: nome
+        description: Nome oficial do deputado na API da Câmara.
+      - name: sigla_partido
+        description: Partido politico atrelado ao registro do histórico de filiação.
+      - name: id_legislatura
+        description: Código numérico referente a legislatura do evento histórico do deputado.
+      - name: situacao
+        description: Situação legal ou institucional durante aquele período (ex. Exercício, Afastado, Licença, etc).
+      - name: data_filiacao
+        description: A data em que o estado do período temporal foi iniciado. Baseado na data evento reportada da Câmara.
+      - name: data_desfiliacao
+        description: >
+          A data fina de encerramento do vínculo/situação, derivado dinamicamente das
+          ocorrências subsequentes e do fim oficial da legislatura.
+      - name: dt_ingest
+        description: Data de ingestão do registro advinda do raw.
+
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'dados_abertos.deputados_historico'
+          nome_coluna: 'id'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'dados_abertos.deputados_historico'
+          nome_coluna: 'nome'
+          tipo_esperado: 'text'
+      - verificacao_tipagem:
+          nome_tabela: 'dados_abertos.deputados_historico'
+          nome_coluna: 'id_legislatura'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'dados_abertos.deputados_historico'
+          nome_coluna: 'situacao'
+          tipo_esperado: 'text'
+      - verificacao_tipagem:
+          nome_tabela: 'dados_abertos.deputados_historico'
+          nome_coluna: 'data_filiacao'
+          tipo_esperado: 'timestamp with time zone'
+      - verificacao_tipagem:
+          nome_tabela: 'dados_abertos.deputados_historico'
+          nome_coluna: 'data_desfiliacao'
+          tipo_esperado: 'timestamp with time zone'
+
+  - name: senadores_historico
+    description: >
+      Tabela que detalha a temporalidade histórica de todas as filiações e trânsitos institucionais
+      recorrentes dos senadores federais pela API do Senado Federal.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: parlamentar_id
+        description: Identificador base do senador.
+      - name: codigo_partido
+        description: Código associado com o registro partidário original do Senado.
+      - name: sigla_partido
+        description: Sigla partidária ao qual o legislador participava na época da filiação.
+      - name: nome_partido
+        description: Descritivo puro com o nome do partido atrelado a este registro historico.
+      - name: nome
+        description: Nome atrelado ao parlamentar nesta ocorrência temporal.
+      - name: data_filiacao
+        description: A data hora legal e literal em que a nova condição partidária foi assumida no senado.
+      - name: data_desfiliação
+        description: A data hora limítrofe oficial sinalizando que esse ciclo se acabou.
+      - name: ano_filiacao
+        description: Extração numérica do ano da vinculação que abriu o percurso.
+      - name: ano_desfiliação
+        description: Extração em inteiros do ano em que a ocorrência atingiu seu ponto derradeiro.
+      - name: fonte
+        description: Informação que aponta de qual engine o historico se baseia.
+      - name: dt_ingest
+        description: Timestamp padronizado indicando o horário de registro físico efetuado via job.
+
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'dados_abertos.senadores_historico'
+          nome_coluna: 'parlamentar_id'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'dados_abertos.senadores_historico'
+          nome_coluna: 'data_filiacao'
+          tipo_esperado: 'timestamp with time zone'
+      - verificacao_tipagem:
+          nome_tabela: 'dados_abertos.senadores_historico'
+          nome_coluna: 'data_desfiliação'
+          tipo_esperado: 'timestamp with time zone'
+      - verificacao_tipagem:
+          nome_tabela: 'dados_abertos.senadores_historico'
+          nome_coluna: 'ano_filiacao'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'dados_abertos.senadores_historico'
+          nome_coluna: 'ano_desfiliação'
+          tipo_esperado: 'integer'

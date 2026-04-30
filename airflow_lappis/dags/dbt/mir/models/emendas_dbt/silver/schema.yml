@@ -166,3 +166,150 @@ models:
           nome_tabela: 'emendas.planos_partidos'
           nome_coluna: 'dt_ingest'
           tipo_esperado: 'timestamp with time zone'
+
+  - name: emendas_partidos
+    description: >
+      Tabela silver que enriquece os dados de emendas parlamentares do SIAFI-Tesouro com informações
+      cadastrais completas e históricas dos respectivos parlamentares e seus logotipos de partido.
+      Para a integração, avalia o nome com fallback temporal em relação ao momento de apresentação da emenda,
+      garantindo precisão na identificação de partido e cenário institucional à época.
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: emissao_mes
+        description: Mês de emissão referencial da emenda orçamentária.
+      - name: emissao_dia
+        description: Data pontual exata de emissão referencial.
+      - name: codigo_programa
+        description: Código orçamentário numérico do programa de governo.
+      - name: programa
+        description: Descritivo do escopo do programa de governo que abrange o recurso.
+      - name: codigo_acao_ajustada
+        description: Código indexado da ação ajustada governamental.
+      - name: acao_ajustada
+        description: Descrição da ação de governo orçamentária que recebe o numerário.
+      - name: autor_emendas_orcamento_descricao
+        description: Informação bruta contendo a descrição completa do autor original contido no SIAFI.
+      - name: autor_emendas_orcamento_nome
+        description: Parte explícita do nome do autor destrinchado limpo no bronze, alvo primário de ligação.
+      - name: uf
+        description: Unidade federativa favorecida no destino dos recursos contidos na emenda.
+      - name: uf_descricao
+        description: Nome legível em extenso descritivo da UF.
+      - name: municipio
+        description: Localidade alvo municipal receptora contida.
+      - name: pais
+        description: Região país consolidada constante ('Brasil').
+      - name: ne_ccor
+        description: Identificador de emissão originária gerando a conta corrente da Nota de Empenho (NE CCOR).
+      - name: ne_num_processo
+        description: Protocolo SEI base ou número rigoroso do processo público gerador original atrelado.
+      - name: ne_info_complementar
+        description: Repasse de dados textuais avulsos e complementares no interior descritivo da emenda.
+      - name: ne_ccor_descricao
+        description: Descritivo literal da Conta Corrente.
+      - name: doc_observacao
+        description: Comentários e observações de cadastro adicionadas ao corpo do documento governamental transacionado.
+      - name: codigo_gnd
+        description: Numérico estrito do Grupo de Natureza de Despesa.
+      - name: gnd
+        description: Rotulação formal designando a subfamília do Grupo de Natureza de Despesa onde os gastos repousam.
+      - name: natureza_despesa
+        description: Numérico formal indicativo da sub-natureza atrelada à despesa gerada.
+      - name: natureza_despesa_descricao
+        description: Descritivo em linguagem verbal detalhando a natureza final onde foi fixada e chancelada o repasse monetário.
+      - name: codigo_modalidade
+        description: Subcódigo identificador numérico atrelado à categoria sistêmica Modalidade de Aplicação.
+      - name: modalidade
+        description: Texto explícito definindo o perfil estrutural da finalidade e modalidade estritamente avaliadas desta verba.
+      - name: ne_ccor_favorecido
+        description: CPF ou credencial CNPJ de cunho privado/institucional validada do ente favorecido terminal da execução.
+      - name: ne_ccor_favorecido_descricao
+        description: Razão social declarada da entidade que irá usufruir e receber do orçamento.
+      - name: ne_ccor_ano_emissao
+        description: Marcador de referência em representação anual do dia inicial do empenho do tesouro reportado.
+      - name: ptres
+        description: Programa de Trabalho Resumido - indicador consolidado contábil da União no sistema do SIAFI.
+      - name: item_informacao
+        description: Hash ou item identificatório especial acoplado das métricas adicionais requeridas pelo processo contábil.
+      - name: item_informacao_descricao
+        description: Especificidade textual legível para auditoria relacionada fundamentalmente ao "item informação" do registro.
+      - name: despesas_empenhadas
+        description: Limite de fundos transacionados com base monetária ou saldo reservado à entidade recebedora na etapa de empenho.
+      - name: despesas_liquidadas
+        description: Montante e liquidez monetária contendo aprovação de entrega ou contraprestação referencial.
+      - name: despesas_pagas
+        description: Transferência monetária e emulação do recurso que se concretizou no processo de desembolso bancário explícito ao fornecedor.
+      - name: id_autor
+        description: Chave estrangeira extraída derivando-se da base histórica associatória dos parlamentares unificados.
+      - name: cargo_autor
+        description: Papel representacional (Senador, Deputado) assumido no ato em que emendou a peça pelo resgate de proximidade cronológica.
+      - name: autor
+        description: Nome purificado e resoluto encontrado na rede e camada silver para aquele político atuante.
+      - name: partido
+        description: Filiação ideológico-partidária oficial extraída da avaliação condicional temporal apurada ao tempo em que o documento subiu.
+      - name: uf_autor
+        description: Limite espacial contínuo estadual ou UF representativa que elegeu o ator governamental.
+      - name: url_foto_autor
+        description: Conexão estática direcionada vinculando o perfil institucional pictográfico extraído formalmente da web.
+      - name: email_autor
+        description: Espelho de conexão funcional do servidor federal que gerencia as ordens por mensagens do parlamento alvo.
+      - name: url_foto_partido
+        description: Logotipo e identidade diagramada iconográfica associada à sua chapa ou estandarte governamental daquele tempo exato.
+      - name: dt_ingest
+        description: Tracking text ou espelho de captura temporal da engrenagem do job (Airflow ETL) no formato padrão de UTC-3 timestamp timezone.
+
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'emissao_mes'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'emissao_dia'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'codigo_programa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'codigo_gnd'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'codigo_modalidade'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'ne_ccor_ano_emissao'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'ptres'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'despesas_empenhadas'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'despesas_liquidadas'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'despesas_pagas'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'id_autor'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'autor'
+          tipo_esperado: 'text'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'pais'
+          tipo_esperado: 'text'
