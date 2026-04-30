@@ -34,76 +34,84 @@ Para dúvidas, sugestões ou para contribuir com o projeto, entre em contato con
 
 # Data Pipeline Project
 
-This project implements a modern data stack using Airflow, dbt, Jupyter, and Superset for data orchestration, transformation, analysis, and visualization.
+O Data Pipeline Project é uma solução moderna que utiliza ferramentas como Airflow, DBT, Jupyter e Superset para orquestração, transformação, análise e visualização de dados. 
 
-## 🚀 Stack Components
+## 🚀 Stack do projeto
 
-- **Apache Airflow**: Workflow orchestration
-- **dbt**: Data transformation
-- **Jupyter**: Interactive data analysis
-- **Apache Superset**: Data visualization and exploration
-- **Docker**: Containerization and local development
-- **Make**: Build automation and setup
+- **Apache Airflow**: Orquestração de workflows
+- **dbt**: Transformação de dados
+- **Jupyter**: Análise de dados interativa
+- **Apache Superset**: Visualização e exploração de dados
+- **Docker**: Containerização e desenvolvimento local
+- **Make**: Automação de build e configuração
 
-## 📋 Prerequisites
+## 📋 Pré-requisitos
 
-- Docker and Docker Compose
+- Docker e Docker Compose
 - Make
-- Python 3.x
+- Python 3.11.x
 - Git
 
 ## 🔧 Setup
 
-1. Clone the repository:
+1. Clone o repositório:
 ```bash
-git clone git@gitlab.com:lappis-unb/gest-odadosipea/app-lappis-ipea.git
-cd app-lappis-ipea
+git clone git@github.com:GovHub-br/data-application-gov-hub.git
+cd data-application-gov-hub
 ```
 
-2. Run the setup using Make:
+2. Execute a configuração usando Make:
 ```bash
 make setup
 ```
 
-This will:
-- Create necessary virtual environments
-- Install dependencies
-- Set up pre-commit hooks
-- Configure development environment
+- Isso irá:
+    - Criar os ambientes virtuais necessários
+    - Instalar as dependências
+    - Configurar os hooks de pre-commit
+    - Preparar o ambiente de desenvolvimento
 
-## 🏃‍♂️ Running Locally
 
-Start all services using Docker Compose:
+3. Configuração de ambiente
+
+Este projeto depende de variáveis de ambiente para o desenvolvimento local.
+
+Você pode configurá-las seguindo **[este guia](https://gov-hub.io/govhub/documentacao/instalacao/)**.
+
+
+## 🏃‍♂️ Executando localmente
+
+Inicie todos os serviços usando Docker Compose:
 
 ```bash
 docker-compose up -d
 ```
 
-Access the different components:
+Acesse os diferentes componentes:
 - Airflow: http://localhost:8080
 - Jupyter: http://localhost:8888
 - Superset: http://localhost:8088
 
-## 💻 Development
+## 💻 Desenvolvimento
 
-### Code Quality
+### Qualidade de Código
 
-This project uses several tools to maintain code quality:
-- Pre-commit hooks
-- Linting configurations
-- Automated testing
+Este projeto utiliza diversas ferramentas para manter a qualidade do código:
+- Hooks de pre-commit
+- Configurações de lint
+- Testes automatizados
 
-Run linting checks:
+Execute a verificação de lint:
 ```bash
 make lint
 ```
 
-Run tests:
+Execute os testes:
 ```bash
 make test
 ```
 
-### Project Structure
+### Estrutura do projeto
 
 ```
 .
@@ -121,39 +129,40 @@ make test
 └── README.md
 ```
 
-### Makefile Commands
+### Comandos do Makefile
 
-- `make setup`: Initial project setup
-- `make lint`: Run linting checks
-- `make tests`: Run test suite
-- `make clean`: Clean up generated files
-- `make build`: Build Docker images
+- `make setup`: Configuração inicial do projeto
+- `make lint`: Executa verificações de lint
+- `make tests`: Executa a suíte de testes
+- `make clean`: Remove arquivos gerados
+- `make build`: Constrói as imagens Docker
 
-## 🔐 Git Workflow
+## 🔐 Fluxo de Trabalho com Git
 
-This project requires signed commits. To set up GPG signing:
+Este projeto exige commits assinados. Para configurar a assinatura com GPG:
 
-1. Generate a GPG key:
+1. Gere uma chave GPG:
 ```bash
 gpg --full-generate-key
 ```
 
-2. Configure Git to use GPG signing:
+2. Configure o Git para usar assinatura GPG:
 ```bash
-git config --global user.signingkey YOUR_KEY_ID
+git config --global user.signingkey SUA_KEY_ID
 git config --global commit.gpgsign true
 ```
 
-3. Add your GPG key to your GitLab account
+3. Adicione sua chave GPG à sua conta do GitLab
 
-## 📚 Documentation
+## 📚 Documentação
 
-- [Airflow Documentation](https://airflow.apache.org/docs/)
-- [dbt Documentation](https://docs.getdbt.com/)
-- [Superset Documentation](https://superset.apache.org/docs/intro)
+- [Documentação do Airflow](https://airflow.apache.org/docs/)
+- [Documentação do dbt](https://docs.getdbt.com/)
+- [Documentação do Superset](https://superset.apache.org/docs/intro)
+- [Documentação do GovHub](https://gov-hub.io/govhub/documentacao/instalacao/)
 
-## 🤝 Contributing
+## 🤝 Contribuição
 
-1. Create a new branch for your feature
-2. Make changes and ensure all tests pass
-3. Submit a merge request
+1. Crie uma nova branch para sua feature
+2. Faça as alterações e garanta que todos os testes passam
+3. Envie um merge request
