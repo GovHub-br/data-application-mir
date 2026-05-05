@@ -1,0 +1,169 @@
+version: 2
+
+models:
+  - name: numero_transferencia
+    description: >
+      Tabela da camada silver que extrai e padroniza o número de transferência
+      das emendas parlamentares. A extração é feita sequencialmente a partir de
+      múltiplas colunas usando as seguintes regras:
+      1. Se `ne_info_complementar` contém apenas dígitos, usa diretamente.
+      2. Se `ne_ccor_descricao` contém CONVENIO, FOMENTO ou FOMENO, extrai 6 dígitos via regex.
+      3. Se `ne_ccor_descricao` contém TED seguido de 6 dígitos, extrai via regex.
+      4. Se `doc_observacao` contém CONVENIO, FOMENTO ou FOMENO, extrai 6 dígitos via regex.
+      5. Se `doc_observacao` contém TED seguido de 6 dígitos, extrai via regex.
+      Caso nenhuma regra se aplique, `numero_transferencia` fica como NULL.
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: emissao_mes
+        description: "Mês de emissão da nota de empenho."
+      - name: emissao_dia
+        description: "Data de emissão da nota de empenho."
+      - name: codigo_programa
+        description: "Código do programa de governo."
+      - name: programa
+        description: "Descrição do programa de governo."
+      - name: codigo_acao_ajustada
+        description: "Código da ação orçamentária ajustada."
+      - name: acao_ajustada
+        description: "Descrição da ação orçamentária ajustada."
+      - name: autor_emendas_orcamento_descricao
+        description: "Descrição do autor da emenda orçamentária."
+      - name: autor_emendas_orcamento_nome
+        description: "Nome do autor da emenda orçamentária."
+      - name: uf
+        description: "Sigla da UF do autor."
+      - name: uf_descricao
+        description: "Nome da UF do autor."
+      - name: municipio
+        description: "Município associado à emenda."
+      - name: pais
+        description: "País associado à emenda."
+      - name: ne_ccor
+        description: "Número completo da nota de empenho."
+      - name: ne_num_processo
+        description: "Número do processo administrativo."
+      - name: ne_info_complementar
+        description: "Informações complementares da nota de empenho."
+      - name: ne_ccor_descricao
+        description: "Descrição da nota de empenho."
+      - name: doc_observacao
+        description: "Observações do documento."
+      - name: codigo_gnd
+        description: "Código do grupo de natureza de despesa."
+      - name: gnd
+        description: "Descrição do grupo de natureza de despesa."
+      - name: natureza_despesa
+        description: "Código da natureza de despesa."
+      - name: natureza_despesa_descricao
+        description: "Descrição da natureza de despesa."
+      - name: codigo_modalidade
+        description: "Código da modalidade de aplicação."
+      - name: modalidade
+        description: "Descrição da modalidade de aplicação."
+      - name: ne_ccor_favorecido
+        description: "CNPJ ou CPF do favorecido."
+      - name: ne_ccor_favorecido_descricao
+        description: "Nome do favorecido."
+      - name: ne_ccor_ano_emissao
+        description: "Ano de emissão da nota de empenho."
+      - name: ptres
+        description: "Programa de Trabalho Resumido."
+      - name: item_informacao
+        description: "Código do item de informação."
+      - name: item_informacao_descricao
+        description: "Descrição do item de informação."
+      - name: despesas_empenhadas
+        description: "Valor total das despesas empenhadas."
+      - name: despesas_liquidadas
+        description: "Valor das despesas liquidadas."
+      - name: despesas_pagas
+        description: "Valor das despesas pagas."
+      - name: id_autor
+        description: "Identificador do autor da emenda."
+      - name: cargo_autor
+        description: "Cargo do autor da emenda."
+      - name: autor
+        description: "Nome do autor da emenda."
+      - name: partido
+        description: "Partido do autor da emenda."
+      - name: uf_autor
+        description: "UF do autor da emenda."
+      - name: url_foto_autor
+        description: "URL da foto do autor."
+      - name: email_autor
+        description: "Email do autor."
+      - name: url_foto_partido
+        description: "URL da foto do partido."
+      - name: numero_transferencia
+        description: >
+          Número de transferência extraído das colunas ne_info_complementar,
+          ne_ccor_descricao e doc_observacao via regex. Pode ser número de
+          convênio ou TED. NULL quando não foi possível extrair.
+      - name: dt_ingest
+        description: "Timestamp de ingestão dos dados."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siconv_dbt.numero_transferencia'
+          nome_coluna: 'numero_transferencia'
+          tipo_esperado: 'integer'
+
+  - name: emendas_convenio
+    description: >
+      Tabela da camada silver que cruza emendas parlamentares com convênios do SICONV
+      e planos de ação do TransfereGov. Utiliza o `numero_transferencia` extraído
+      na tabela `numero_transferencia` para realizar o join com a tabela de convênios
+      pelo `nr_convenio`, e com `planos_acao` pelo `sq_instrumento` para os casos
+      de TEDs que não possuem convênio associado.
+      Do total de 191 registros, 174 (91%) têm convênio vinculado. Os 17 restantes
+      são TEDs, contratos ou instrumentos sem correspondência no SICONV.
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: numero_transferencia
+        description: "Número de transferência extraído das emendas — convênio ou TED."
+      - name: nr_convenio
+        description: "Número do convênio do SICONV. NULL para TEDs e contratos."
+      - name: sit_convenio
+        description: "Situação atual do convênio."
+      - name: dia_assin_conv
+        description: "Data de assinatura do convênio."
+      - name: dia_inic_vigenc_conv
+        description: "Data de início da vigência do convênio."
+      - name: dia_fim_vigenc_conv
+        description: "Data de fim da vigência do convênio."
+      - name: vl_global_conv
+        description: "Valor global do convênio."
+      - name: vl_repasse_conv
+        description: "Valor de repasse do convênio."
+      - name: vl_contrapartida_conv
+        description: "Valor de contrapartida do convênio."
+      - name: vl_empenhado_conv
+        description: "Valor empenhado do convênio."
+      - name: vl_desembolsado_conv
+        description: "Valor desembolsado do convênio."
+      - name: sq_instrumento
+        description: "Número do instrumento no TransfereGov. Preenchido para TEDs."
+      - name: id_plano_acao
+        description: "Identificador do plano de ação no TransfereGov."
+      - name: vl_total_plano_acao
+        description: "Valor total do plano de ação."
+      - name: tx_situacao_plano_acao
+        description: "Situação do plano de ação."
+      - name: dt_ingest
+        description: "Timestamp de ingestão dos dados."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siconv_dbt.emendas_convenio'
+          nome_coluna: 'nr_convenio'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siconv_dbt.emendas_convenio'
+          nome_coluna: 'numero_transferencia'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siconv_dbt.emendas_convenio'
+          nome_coluna: 'vl_global_conv'
+          tipo_esperado: 'numeric'
