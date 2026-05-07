@@ -125,3 +125,34 @@ sources:
     schema: sgac
     tables:
       - name: projetos_sgac
+      
+  - name: censo_demografico
+    schema: censo_demografico
+    tables:
+    - name: mulheres_tabela_1_tabela_base_do_sidra_10056
+    - name: mulheres_tabela_2_tabela_base_do_sidra_10061_parte_1
+    - name: mulheres_tabela_2_tabela_base_do_sidra_10061_parte_2
+    - name: mulheres_tabela_3_tabela_base_do_sidra_10063_parte_1
+    - name: mulheres_tabela_3_tabela_base_do_sidra_10063_parte_2
+    - name: mulheres_tabela_3_tabela_base_do_sidra_10063_parte_3
+    - name: mulheres_tabela_4_tabela_base_do_sidra_10141_parte_1
+    - name: mulheres_tabela_4_tabela_base_do_sidra_10141_parte_2
+    - name: mulheres_tabela_5_tabela_base_do_sidra_10253_parte_1
+    - name: mulheres_tabela_5_tabela_base_do_sidra_10253_parte_2
+    - name: mulheres_tabela_6_tabela_base_do_sidra_10283_parte_1
+    - name: mulheres_tabela_6_tabela_base_do_sidra_10283_parte_2
+    - name: mulheres_tabela_7_tabela_base_do_sidra_10282_parte_1
+    - name: mulheres_tabela_7_tabela_base_do_sidra_10282_parte_2
+    - name: mulheres_tabela_8_tabela_base_do_sidra_10329_parte_1
+    - name: mulheres_tabela_8_tabela_base_do_sidra_10329_parte_2
+    - name: mulheres_tabela_9_tabela_base_do_sidra_10331_parte_1
+    - name: mulheres_tabela_9_tabela_base_do_sidra_10331_parte_2
+    - name: mulheres_tabela_10_tabela_sidra_10077_e_10078
+    - name: mulheres_tabela_11_tabela_base_do_sidra_9882_parte_1
+    - name: mulheres_tabela_11_tabela_base_do_sidra_9882_parte_2
+    - name: mulheres_tabela_12_br_gr_uf_mu
+    - name: mulheres_tabela_13_br_gr_uf_mu
+    - name: mulheres_tabela_14_br_gr_uf_mu
+    - name: mulheres_tabela_15_br_gr_uf_mu
+    - name: mulheres_tabela_16_br_gr_uf_mu
+    - name: mulheres_tabela_17_br_gr_uf_mu
