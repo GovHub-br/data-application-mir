@@ -1,0 +1,116 @@
+version: 2
+
+models:
+
+  - name: ted_resumo_orcamentario
+    description: >
+      Tabela gold de consolidação orçamentária e financeira por Plano de Ação TED do MIR.
+      Agrega em uma única linha por (plano_acao, num_transf) os valores provenientes de
+      quatro fontes distintas: o valor total pactuado no plano (TransfereGov), os créditos
+      orçamentários descentralizados via Notas de Crédito (SIAFI), os empenhos registrados
+      nas Notas de Empenho (SIAFI) e os recursos financeiros liberados via Programações
+      Financeiras (SIAFI + TransfereGov). As quatro dimensões são combinadas via FULL JOIN
+      para garantir que nenhum registro seja perdido mesmo que exista em apenas uma fonte.
+    meta:
+      tags:
+        - gold
+    columns:
+      - name: plano_acao
+        description: >
+          Identificador único do Plano de Ação no TransfereGov. Chave primária junto com num_transf.
+      - name: num_transf
+        description: >
+          Número da transferência TED — o elo entre os sistemas SIAFI e TransfereGov.
+          É o campo que conecta NCs, NEs e PFs do SIAFI ao Plano de Ação correspondente.
+      - name: sigla_unidade_descentralizada
+        description: >
+          Sigla da unidade receptora dos recursos, conforme cadastrado no Plano de Ação do TransfereGov.
+      - name: valor_firmado
+        description: >
+          Valor total pactuado no Plano de Ação (vl_total_plano_acao), conforme o registro
+          mais recente no TransfereGov. Representa o compromisso financeiro acordado.
+      - name: orcamento_recebido
+        description: >
+          Soma dos valores de Notas de Crédito recebidas (eventos que não são 300301/300307),
+          representando o crédito orçamentário efetivamente descentralizado para o MIR.
+      - name: orcamento_devolvido
+        description: >
+          Soma dos valores de Notas de Crédito de eventos 300301 e 300307,
+          representando crédito orçamentário devolvido ao órgão concedente.
+      - name: empenhado
+        description: >
+          Soma dos valores positivos de despesas_empenhadas — empenhos formalizados,
+          excluindo anulações.
+      - name: empenho_anulado
+        description: >
+          Soma dos valores absolutos das despesas_empenhadas negativas — empenhos
+          cancelados ou revertidos após a emissão.
+      - name: despesas_pagas_exercicio
+        description: >
+          Total de despesas pagas no exercício corrente, proveniente do campo
+          despesas_pagas das Notas de Empenho.
+      - name: despesas_pagas_rap
+        description: >
+          Total de despesas pagas via Restos a Pagar (exercícios anteriores),
+          proveniente de restos_a_pagar_pagos das Notas de Empenho.
+      - name: restos_a_pagar
+        description: >
+          Valor total inscrito como Restos a Pagar — despesas empenhadas e não
+          pagas até o encerramento do exercício fiscal.
+      - name: despesas_liquidada
+        description: >
+          Soma das despesas liquidadas — despesas com bens ou serviços
+          efetivamente entregues e atestados.
+      - name: financeiro_recebido
+        description: >
+          Soma dos valores de Programações Financeiras com ação 'TRANSFERENCIA',
+          representando os recursos financeiros efetivamente recebidos pelo MIR.
+      - name: financeiro_devolvido
+        description: >
+          Soma dos valores de Programações Financeiras com ação 'DEVOLUCAO',
+          representando recursos financeiros devolvidos ao concedente.
+      - name: financeiro_cancelado
+        description: >
+          Soma dos valores de Programações Financeiras com ação 'CANCELAMENTO',
+          representando programações canceladas antes de seu processamento.
+      - name: dt_ingest
+        description: >
+          Timestamp mais recente de ingestão entre todas as fontes que compõem o registro
+          (planos_acao_ted, nc_plano_acao, empenhos_por_plano_acao, pf_unificado).
+          Indica quando os dados foram atualizados pela última vez (UTC-3).
+      - name: sigla_unidade_responsavel_acompanhamento
+        description: >
+          Sigla da unidade responsável pelo acompanhamento do programa, proveniente
+          de programas_ted (TransfereGov).
+      - name: tx_nome_institucional_programa
+        description: >
+          Nome institucional do programa ao qual o Plano de Ação está vinculado,
+          proveniente de programas_ted (TransfereGov).
+      - name: tx_objetivo_programa
+        description: >
+          Descrição do objetivo do programa, proveniente de programas_ted (TransfereGov).
+      - name: programa_governo
+        description: >
+          Código do programa de governo conforme classificação orçamentária SIAFI,
+          proveniente de nc_plano_acao.
+      - name: programa_governo_descricao
+        description: >
+          Descrição do programa de governo conforme classificação orçamentária SIAFI,
+          proveniente de nc_plano_acao.
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+          nome_coluna: 'plano_acao'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+          nome_coluna: 'valor_firmado'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+          nome_coluna: 'empenhado'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'

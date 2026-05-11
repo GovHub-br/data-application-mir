@@ -29,8 +29,38 @@ with
                 order by case when plano_acao is not null then 1 else 2 end
             ) as rn
         from joined
+    ),
+
+    via_nc as (
+        select num_transf, plano_acao
+        from ranked
+        where rn = 1
+    ),
+
+    via_sq_instrumento as (
+        select
+            sq_instrumento as num_transf,
+            id_plano_acao::text as plano_acao
+        from {{ ref("planos_acao_ted") }}
+        where sq_instrumento is not null
+    ),
+
+    unificado as (
+        select * from via_nc
+        union
+        select * from via_sq_instrumento
+    ),
+
+    final as (
+        select
+            *,
+            row_number() over (
+                partition by num_transf
+                order by case when plano_acao is not null then 1 else 2 end
+            ) as rn
+        from unificado
     )
 
 select num_transf, plano_acao
-from ranked
+from final
 where rn = 1
