@@ -11,6 +11,7 @@ from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
 import pandas as pd
 import io
+import os
 
 # Configurações básicas da DAG
 default_args = {
@@ -112,7 +113,7 @@ with DAG(
     dag_id="email_projetos_sgac_ingest",
     default_args=default_args,
     description="Processa anexos do email de dados do SGAC e insere no db",
-    schedule_interval=get_dynamic_schedule("email_projetos_sgac_ingest"),
+    schedule_interval=get_dynamic_schedule("email_projetos_sgac_ingest", default="15 12 * * *"),
     start_date=datetime(2023, 12, 1),
     catchup=False,
     tags=["email", "projetos", "sgac"],
@@ -145,7 +146,12 @@ with DAG(
             logging.info(
                 "CSV processado com sucesso. Dados encontrados: %s", total_linhas
             )
-            return csv_data
+            
+            file_path = f"/tmp/sgac_email_data_{context['run_id']}.csv"
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(csv_data)
+                
+            return file_path
         except Exception as e:
             logging.error("Erro no processamento dos emails: %s", str(e))
             raise
@@ -154,15 +160,16 @@ with DAG(
         """Insere no Postgres os dados retornados pela task de processamento do e-mail."""
         try:
             task_instance: Any = context["ti"]
-            csv_data: Any = task_instance.xcom_pull(task_ids="process_emails")
+            file_path: Any = task_instance.xcom_pull(task_ids="process_emails")
 
-            if not csv_data:
+            if not file_path or not os.path.exists(file_path):
                 logging.warning("Nenhum dado para inserir no banco.")
                 return
 
-            df = pd.read_csv(io.StringIO(csv_data))
+            df = pd.read_csv(file_path)
             if df.empty:
                 logging.warning("CSV recebido sem registros para insercao.")
+                os.remove(file_path)
                 return
 
             data = df.to_dict(orient="records")
@@ -183,6 +190,7 @@ with DAG(
                 schema="sgac",
             )
             logging.info("Dados inseridos com sucesso no banco de dados.")
+            os.remove(file_path)
         except Exception as e:
             logging.error("Erro ao inserir dados no banco: %s", str(e))
             raise
