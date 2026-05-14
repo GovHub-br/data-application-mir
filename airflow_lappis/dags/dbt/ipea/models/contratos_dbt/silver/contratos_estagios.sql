@@ -98,19 +98,29 @@ with
         union
         select *
         from joined_table_3
+    ),
+
+    contratos as (
+        select id, numero, fornecedor_cnpj_cpf_idgener, fornecedor_tipo, fornecedor_nome, dt_ingest as dt_ingest_contratos
+        from {{ ref("contratos") }}
     )
 
 --
 select
-    contrato_id,
-    mes_lancamento,
-    sum(valor_empenhado) as valor_empenhado,
-    sum(valor_liquidado) as valor_liquidado,
-    sum(valor_pago) as valor_pago,
-    sum(restos_a_pagar) as restos_a_pagar,
-    sum(restos_a_pagar_pago) as restos_a_pagar_pago,
-    max(dt_ingest) as dt_ingest
-from result_table
-where contrato_id is not null
-group by 1, 2
-order by contrato_id, mes_lancamento
+    r.contrato_id,
+    c.numero,
+    c.fornecedor_cnpj_cpf_idgener,
+    c.fornecedor_tipo,
+    c.fornecedor_nome,
+    r.mes_lancamento,
+    sum(r.valor_empenhado) as valor_empenhado,
+    sum(r.valor_liquidado) as valor_liquidado,
+    sum(r.valor_pago) as valor_pago,
+    sum(r.restos_a_pagar) as restos_a_pagar,
+    sum(r.restos_a_pagar_pago) as restos_a_pagar_pago,
+    greatest(max(r.dt_ingest), max(c.dt_ingest_contratos)) as dt_ingest
+from result_table r
+left join contratos c on r.contrato_id = c.id
+where r.contrato_id is not null
+group by 1, 2, 3, 4, 5, 6
+order by r.contrato_id, r.mes_lancamento

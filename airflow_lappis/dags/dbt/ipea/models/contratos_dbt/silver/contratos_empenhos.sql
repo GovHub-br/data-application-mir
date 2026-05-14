@@ -209,7 +209,10 @@ with
     contratos as (
         select
             id,
+            fornecedor_tipo,
             fornecedor_nome,
+            fornecedor_cnpj_cpf_idgener,
+            numero,
             unidades_requisitantes,
             objeto,
             vigencia_inicio,
@@ -234,7 +237,10 @@ select
     ce.despesas_empenhadas,
     ce.despesas_liquidadas,
     ce.despesas_pagas,
+    cc.fornecedor_tipo,
     cc.fornecedor_nome,
+    cc.fornecedor_cnpj_cpf_idgener,
+    cc.numero,
     cc.unidades_requisitantes,
     cc.objeto,
     cc.vigencia_inicio,

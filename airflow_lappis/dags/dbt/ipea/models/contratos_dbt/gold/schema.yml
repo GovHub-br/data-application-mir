@@ -88,6 +88,15 @@ models:
       - name: numero
         description: >
           Número do contrato no sistema ComprasGov.
+      - name: fornecedor_cnpj_cpf_idgener
+        description: >
+          CNPJ, CPF ou identificador genérico do fornecedor do contrato.
+      - name: fornecedor_tipo
+        description: >
+          Tipo do fornecedor do contrato.
+      - name: fornecedor_nome
+        description: >
+          Nome ou razão social do fornecedor associado ao contrato.
       - name: mes_ref
         description: >
           Mês de referência da informação financeira, preenchido para todos os meses entre o início e fim do contrato.
@@ -125,6 +134,18 @@ models:
       - name: contrato_id
         description: >
           Identificador único do contrato.
+      - name: numero
+        description: >
+          Número do contrato no sistema ComprasGov.
+      - name: fornecedor_cnpj_cpf_idgener
+        description: >
+          CNPJ, CPF ou identificador genérico do fornecedor do contrato.
+      - name: fornecedor_tipo
+        description: >
+          Tipo do fornecedor do contrato.
+      - name: fornecedor_nome
+        description: >
+          Nome ou razão social do fornecedor associado ao contrato.
       - name: total_cronograma
         description: >
           Soma de todos os valores programados no cronograma do contrato.

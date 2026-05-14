@@ -29,7 +29,7 @@ with
     preenchimento as (select contrato_id, mes_ref from {{ ref("preenchimento_meses") }}),
 
     contratos as (
-        select id, numero, dt_ingest as dt_ingest_contratos
+        select id, numero, fornecedor_cnpj_cpf_idgener, fornecedor_tipo, fornecedor_nome, dt_ingest as dt_ingest_contratos
         from {{ ref("contratos") }}
     ),
 
@@ -63,6 +63,9 @@ select
     ccm.siafi_restos_a_pagar,
     ccm.siafi_restos_a_pagar_pago,
     c.numero,
+    c.fornecedor_cnpj_cpf_idgener,
+    c.fornecedor_tipo,
+    c.fornecedor_nome,
     greatest(ccm.dt_ingest::timestamptz, c.dt_ingest_contratos::timestamptz) as dt_ingest
 from comparativo_mensal as ccm
 left join contratos as c on ccm.contrato_id = c.id

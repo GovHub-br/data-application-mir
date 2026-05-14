@@ -74,7 +74,24 @@ with
             greatest(dt_ingest_pago, dt_ingest_pendente) AS dt_ingest
         from joined_table
         order by contrato_id, mes_ref
+    ),
+
+    contratos as (
+        select id::text as contrato_id, numero, fornecedor_cnpj_cpf_idgener, fornecedor_tipo, fornecedor_nome, dt_ingest
+        from {{ ref("contratos") }}
     )
 
-select *
-from joined_ajustado
+select 
+    ja.contrato_id,
+    ja.mes_ref,
+    ja.valor_cronograma,
+    ja.valor_faturas_pagas,
+    ja.valor_faturas_pendentes,
+    ja.saldo_contratual_disponivel,
+    c.numero,
+    c.fornecedor_cnpj_cpf_idgener,
+    c.fornecedor_tipo,
+    c.fornecedor_nome,
+    greatest(ja.dt_ingest::timestamp with time zone, c.dt_ingest::timestamp with time zone) as dt_ingest
+from joined_ajustado ja
+left join contratos c using (contrato_id)

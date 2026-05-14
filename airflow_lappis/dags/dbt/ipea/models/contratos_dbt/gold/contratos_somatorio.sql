@@ -1,5 +1,9 @@
 select
     contrato_id,
+    numero,
+    fornecedor_cnpj_cpf_idgener,
+    fornecedor_tipo,
+    fornecedor_nome,
     sum(comprasgov_valor_cronograma) as total_cronograma,
     sum(comprasgov_valor_faturas) as total_faturas,
     sum(comprasgov_saldo_contratual_disponivel) as total_saldo_disponivel,
@@ -15,4 +19,4 @@ select
     max(dt_ingest) as dt_ingest
 
 from {{ ref("contratos_comparativo_mensal") }}
-group by contrato_id
+group by contrato_id, numero, fornecedor_cnpj_cpf_idgener, fornecedor_tipo, fornecedor_nome

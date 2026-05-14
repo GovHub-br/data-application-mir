@@ -5,6 +5,8 @@ with
         select
             id::int as contrato_id,
             fornecedor_cnpj_cpf_idgener,
+            fornecedor_tipo,
+            fornecedor_nome,
             processo as processo_contrato,
             numero as numero_contrato,
             objeto as objeto_contrato,
@@ -21,6 +23,8 @@ select
     c.numero_contrato,
     c.processo_contrato as contrato_processo,
     c.fornecedor_cnpj_cpf_idgener,
+    c.fornecedor_tipo,
+    c.fornecedor_nome,
     c.objeto_contrato,
     c.unidades_requisitantes,
     f.tipolistafatura_id,

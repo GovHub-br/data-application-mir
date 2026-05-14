@@ -58,6 +58,12 @@ models:
       - name: fornecedor_nome
         description: >
           Nome do fornecedor associado ao contrato.
+      - name: fornecedor_cnpj_cpf_idgener
+        description: >
+          CNPJ, CPF ou identificador genérico do fornecedor do contrato.
+      - name: numero
+        description: >
+          Número do contrato no sistema ComprasGov.
       - name: unidades_requisitantes
         description: >
           Unidades requisitantes associadas ao contrato.
@@ -87,6 +93,18 @@ models:
       - name: contrato_id
         description: >
           Identificador único do contrato relacionado aos estágios.
+      - name: numero
+        description: >
+          Número do contrato no sistema ComprasGov.
+      - name: fornecedor_cnpj_cpf_idgener
+        description: >
+          CNPJ, CPF ou identificador genérico do fornecedor do contrato.
+      - name: fornecedor_tipo
+        description: >
+          Tipo do fornecedor do contrato.
+      - name: fornecedor_nome
+        description: >
+          Nome ou razão social do fornecedor associado ao contrato.
       - name: mes_lancamento
         description: >
           Mês em que o estágio da despesa foi registrado no SIAFI.
@@ -164,6 +182,12 @@ models:
       - name: fornecedor_cnpj_cpf_idgener
         description: >
           CNPJ, CPF ou identificador genérico do fornecedor do contrato.
+      - name: fornecedor_tipo
+        description: >
+          Tipo do fornecedor do contrato.
+      - name: fornecedor_nome
+        description: >
+          Nome ou razão social do fornecedor associado ao contrato.
       - name: objeto_contrato
         description: >
           Descrição do objeto contratado.
@@ -270,6 +294,18 @@ models:
       - name: contrato_id
         description: >
           Identificador único do contrato.
+      - name: numero
+        description: >
+          Número do contrato no sistema ComprasGov.
+      - name: fornecedor_cnpj_cpf_idgener
+        description: >
+          CNPJ, CPF ou identificador genérico do fornecedor do contrato.
+      - name: fornecedor_tipo
+        description: >
+          Tipo do fornecedor do contrato.
+      - name: fornecedor_nome
+        description: >
+          Nome ou razão social do fornecedor associado ao contrato.
       - name: mes_ref
         description: >
           Mês de referência dos valores programados e faturados.
