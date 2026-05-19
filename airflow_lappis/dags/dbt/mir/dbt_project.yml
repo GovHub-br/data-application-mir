@@ -31,6 +31,10 @@ models:
     empenhos_ted_dbt:
      +materialized: table
      +schema: siafi_dbt
+    siconv_dbt:
+      +materialized: table
+      +schema: siconv_dbt
+
 
 
 on-run-start:
