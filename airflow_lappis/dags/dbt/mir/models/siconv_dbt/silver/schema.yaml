@@ -152,6 +152,12 @@ models:
         description: "Valor total do plano de ação."
       - name: tx_situacao_plano_acao
         description: "Situação do plano de ação."
+      - name: localizador_gasto
+        description: "Código do localizador de gasto associado à programação orçamentária."
+      - name: localizador_gasto_descricao
+        description: "Descrição do localizador de gasto."
+      - name: regiao_pt
+        description: "Região associada ao programa de trabalho (PT) da emenda."
       - name: dt_ingest
         description: "Timestamp de ingestão dos dados."
     tests:

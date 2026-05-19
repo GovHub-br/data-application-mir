@@ -231,6 +231,12 @@ models:
         description: Marcador de referência em representação anual do dia inicial do empenho do tesouro reportado.
       - name: ptres
         description: Programa de Trabalho Resumido - indicador consolidado contábil da União no sistema do SIAFI.
+      - name: localizador_gasto
+        description: Código do localizador de gasto associado à programação orçamentária.
+      - name: localizador_gasto_descricao
+        description: Descrição do localizador de gasto.
+      - name: regiao_pt
+        description: Região associada ao programa de trabalho (PT) da emenda.
       - name: item_informacao
         description: Hash ou item identificatório especial acoplado das métricas adicionais requeridas pelo processo contábil.
       - name: item_informacao_descricao

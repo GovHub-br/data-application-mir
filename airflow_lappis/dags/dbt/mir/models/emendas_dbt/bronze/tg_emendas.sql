@@ -21,6 +21,9 @@ with
 					)
 				)
 			) as autor_emendas_orcamento_nome,
+			localizador_gasto::text as localizador_gasto,
+			localizador_gasto_descricao::text as localizador_gasto_descricao,
+			regiao_pt::text as regiao_pt,
 			uf_pt::text as uf_pt,
 			uf_pt_descricao::text as uf_pt_descricao,
 			municipio_pt::text as municipio_pt,
