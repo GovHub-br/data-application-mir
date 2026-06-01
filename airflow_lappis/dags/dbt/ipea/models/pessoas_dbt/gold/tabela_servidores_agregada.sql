@@ -13,7 +13,7 @@ with
             greatest(df.dt_ingest, dp.dt_ingest, du.dt_ingest) as dt_ingest
         from {{ ref("dados_funcionais") }} df
         inner join {{ ref("dados_pessoais") }} dp on df.cpf = dp.cpf
-        inner join {{ ref("dados_uorg") }} du on df.sigla_uorg_exercicio = du.sigla_uorg
+        inner join {{ ref("dados_uorg") }} du on df.cpf = du.cpf
         where
             df.nome_cargo is not null
             and dp.nome_sexo is not null

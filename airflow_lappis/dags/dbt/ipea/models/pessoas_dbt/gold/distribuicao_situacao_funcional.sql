@@ -22,7 +22,7 @@ with
             du.nome_municipio_uorg,
             greatest(df.dt_ingest, du.dt_ingest) as dt_ingest_max
         from {{ ref("dados_funcionais") }} df
-        inner join {{ ref("dados_uorg") }} du on df.sigla_uorg_exercicio = du.sigla_uorg
+        inner join {{ ref("dados_uorg") }} du on df.cpf = du.cpf
     )
 
 select

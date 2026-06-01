@@ -86,4 +86,6 @@ select distinct
     du.nome_municipio_uorg,
     greatest(df.dt_ingest, du.dt_ingest) as dt_ingest
 from {{ ref("dados_funcionais") }} as df
-inner join {{ ref("dados_uorg") }} as du on df.sigla_uorg_exercicio = du.sigla_uorg
+-- INNER JOIN: exclui servidores sem uorg ativa (ex: aposentados, cedidos a outros órgãos).
+-- Esses servidores existem em dados_funcionais mas não possuem entrada em dados_uorg.
+inner join {{ ref("dados_uorg") }} as du on df.cpf = du.cpf

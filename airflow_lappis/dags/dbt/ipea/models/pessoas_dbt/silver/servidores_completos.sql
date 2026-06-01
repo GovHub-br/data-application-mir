@@ -57,7 +57,7 @@ with
     servidores_enriquecidos as (
         select distinct ph.*, du.nome_municipio_uorg, du.dt_ingest as dt_ingest_du
         from hierarquia_enriquecida ph
-        inner join {{ ref("dados_uorg") }} du on ph.siglaunidade = du.sigla_uorg
+        inner join {{ ref("dados_uorg") }} du on ph.cpf = du.cpf
         order by caminho_unidade, hierarquia_cargo
     )
 
