@@ -197,9 +197,8 @@ A estratégia adotada para domínios de dados é **GitHub Actions + labels `team
 - A workflow `Request team review` aplica labels de domínio quando identifica caminhos conhecidos.
 - A mesma workflow solicita revisão dos times correspondentes.
 - Labels `team:*` adicionadas manualmente ao PR também solicitam revisão do time associado.
-- O `CODEOWNERS` fica restrito a arquivos de governança do repositório, como protocolo, template de PR e a própria workflow.
 
-Essa escolha evita manter uma lista extensa de caminhos no `CODEOWNERS`, reduz erros de owner desconhecido e permite tratar casos em que o domínio é definido por label, não apenas pelo caminho do arquivo.
+Essa escolha centraliza o roteamento em um único lugar, evita manter listas paralelas de caminhos, reduz erros de configuração e permite tratar casos em que o domínio é definido por label, não apenas pelo caminho do arquivo.
 
 Mapa atual dos principais caminhos de DAGs e modelos:
 
@@ -226,7 +225,7 @@ Mapa atual dos principais caminhos de DAGs e modelos:
 | `airflow_lappis/dags/data_ingest/tesouro_gerencial/mcid/` | MCid |
 | `airflow_lappis/dags/data_ingest/ibge/` | GCES / OSS |
 
-Quando um PR alterar arquivos de um domínio mapeado, a workflow deve aplicar a label `team:*` correspondente e solicitar review do time associado. A ruleset da branch `main` deve exigir pelo menos uma aprovação antes do merge. A opção **Require review from Code Owners** pode continuar habilitada para arquivos de governança cobertos pelo `CODEOWNERS`, mas não é necessária para o roteamento das DAGs e modelos por domínio.
+Quando um PR alterar arquivos de um domínio mapeado, a workflow deve aplicar a label `team:*` correspondente e solicitar review do time associado. A ruleset da branch `main` deve exigir pelo menos uma aprovação antes do merge.
 
 ### Labels de Apoio
 
@@ -260,7 +259,7 @@ Para adicionar um novo projeto, ministério ou disciplina ao fluxo de revisão:
 
 ### Configuração Recomendada no GitHub
 
-Para aplicar essas regras automaticamente, o repositório usa a workflow `Request team review` para domínios de dados e mantém [`CODEOWNERS`](CODEOWNERS) apenas para arquivos de governança do processo.
+Para aplicar essas regras automaticamente, o repositório usa a workflow `Request team review`.
 
 Além da workflow, a branch `main` deve manter as seguintes proteções habilitadas:
 
