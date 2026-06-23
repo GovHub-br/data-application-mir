@@ -188,24 +188,45 @@ O repositório usa times do GitHub para direcionar revisões por domínio de atu
 | `@GovHub-br/minc` | Pipelines, modelos dbt e integrações vinculadas ao MinC, quando houver paths correspondentes neste repositório |
 | `@GovHub-br/oss` | Contribuições externas, documentação pública, governança de colaboração open source e PRs originados na disciplina GCES |
 
-Os nomes acima usam os slugs dos times no GitHub. O time pode aparecer visualmente como `MCid`, `MinC` ou `OSS`, mas o `CODEOWNERS` deve usar o slug configurado na organização. Não há um time separado para GCES; a label `team:gces` existe para triagem e também solicita revisão do time `@GovHub-br/oss`.
+Os nomes acima usam os slugs dos times no GitHub. O time pode aparecer visualmente como `MCid`, `MinC` ou `OSS`, mas automações e revisões devem usar o slug configurado na organização. Não há um time separado para GCES; a label `team:gces` existe para triagem e também solicita revisão do time `@GovHub-br/oss`.
 
 ### Estratégia de Revisão Automática
 
-A estratégia adotada é híbrida:
+A estratégia adotada para domínios de dados é **GitHub Actions + labels `team:*`**:
 
-- **CODEOWNERS por caminho de arquivo:** regra nativa do GitHub usada para solicitar e exigir revisão do domínio correto quando a ruleset da `main` habilita **Require review from Code Owners**.
-- **GitHub Actions + labels `team:*`:** automação complementar para aplicar labels de domínio e solicitar revisão dos times correspondentes quando o domínio for inferido por caminho ou indicado manualmente por label.
+- A workflow `Request team review` aplica labels de domínio quando identifica caminhos conhecidos.
+- A mesma workflow solicita revisão dos times correspondentes.
+- Labels `team:*` adicionadas manualmente ao PR também solicitam revisão do time associado.
+- O `CODEOWNERS` fica restrito a arquivos de governança do repositório, como protocolo, template de PR e a própria workflow.
 
-O arquivo [`CODEOWNERS`](CODEOWNERS) define os revisores automáticos para:
+Essa escolha evita manter uma lista extensa de caminhos no `CODEOWNERS`, reduz erros de owner desconhecido e permite tratar casos em que o domínio é definido por label, não apenas pelo caminho do arquivo.
 
-- domínios institucionais já presentes no repositório, como IPEA, MIR e MCid;
-- componentes compartilhados, como `plugins`, `helpers`, testes, CI/CD e configuração local;
-- documentação e arquivos de governança do repositório.
+Mapa atual dos principais caminhos de DAGs e modelos:
 
-Quando um PR alterar arquivos cobertos pelo `CODEOWNERS`, o GitHub deve solicitar revisão automaticamente ao time responsável. Para que isso bloqueie merge sem aprovação correta, a branch `main` deve manter a opção **Require review from Code Owners** habilitada.
+| Caminho | Domínio |
+| --- | --- |
+| `airflow_lappis/dags/dashboards/` | IPEA |
+| `airflow_lappis/dags/dbt/ipea/` | IPEA |
+| `airflow_lappis/dags/data_ingest/compras_gov/` | IPEA |
+| `airflow_lappis/dags/data_ingest/ipea_pro/` | IPEA |
+| `airflow_lappis/dags/data_ingest/pncp/` | IPEA |
+| `airflow_lappis/dags/data_ingest/sgac/` | IPEA |
+| `airflow_lappis/dags/data_ingest/siafi/` | IPEA |
+| `airflow_lappis/dags/data_ingest/siape/` | IPEA |
+| `airflow_lappis/dags/data_ingest/siorg/` | IPEA |
+| `airflow_lappis/dags/data_ingest/sisbolsas/` | IPEA |
+| `airflow_lappis/dags/data_ingest/tesouro_gerencial/` | IPEA, exceto subpastas `mir/` e `mcid/` |
+| `airflow_lappis/dags/data_ingest/transfere_gov/` | IPEA, exceto subpasta `mir/` |
+| `airflow_lappis/dags/dbt/mir/` | MIR |
+| `airflow_lappis/dags/data_ingest/dados_abertos/` | MIR |
+| `airflow_lappis/dags/data_ingest/siconv/` | MIR |
+| `airflow_lappis/dags/data_ingest/tesouro_gerencial/mir/` | MIR |
+| `airflow_lappis/dags/data_ingest/transfere_gov/mir/` | MIR |
+| `airflow_lappis/dags/data_ingest/transferegov_emendas/` | MIR |
+| `airflow_lappis/dags/data_ingest/tesouro_gerencial/mcid/` | MCid |
+| `airflow_lappis/dags/data_ingest/ibge/` | GCES / OSS |
 
-A workflow `Request team review` observa eventos de PR, aplica labels `team:*` quando identifica caminhos conhecidos e solicita review do time associado. Ela não substitui a proteção da branch; ela melhora a triagem e cobre casos em que o domínio é indicado por label.
+Quando um PR alterar arquivos de um domínio mapeado, a workflow deve aplicar a label `team:*` correspondente e solicitar review do time associado. A ruleset da branch `main` deve exigir pelo menos uma aprovação antes do merge. A opção **Require review from Code Owners** pode continuar habilitada para arquivos de governança cobertos pelo `CODEOWNERS`, mas não é necessária para o roteamento das DAGs e modelos por domínio.
 
 ### Labels de Apoio
 
@@ -218,7 +239,7 @@ Labels podem ser usadas como sinalização complementar quando o domínio do PR 
 - `team:gces`
 - `team:oss`
 
-As labels não substituem o `CODEOWNERS`. Se uma label indicar um domínio diferente dos arquivos alterados, o autor deve solicitar manualmente revisão do time indicado ou ajustar o `CODEOWNERS` se o novo padrão de caminhos for permanente.
+As labels são a referência principal para o roteamento automático. Se uma label indicar um domínio diferente dos arquivos alterados, o autor deve justificar no PR ou ajustar a regra da workflow se o novo padrão de caminhos for permanente.
 
 ### Como Incluir Novos Projetos ou Times
 
@@ -228,8 +249,8 @@ Para adicionar um novo projeto, ministério ou disciplina ao fluxo de revisão:
 2. Adicionar os membros responsáveis ao time.
 3. Definir o slug oficial do time, por exemplo `@GovHub-br/minc`.
 4. Criar ou identificar os diretórios do domínio no repositório.
-5. Adicionar os caminhos no [`CODEOWNERS`](CODEOWNERS).
-6. Abrir um PR de teste alterando um arquivo do domínio e confirmar que o GitHub solicita revisão do time correto.
+5. Adicionar os caminhos na workflow `Request team review`, ou documentar a label manual quando o domínio não puder ser inferido por caminho.
+6. Abrir um PR de teste alterando um arquivo do domínio ou aplicando a label correspondente e confirmar que o GitHub solicita revisão do time correto.
 
 ### Número Mínimo de Aprovações
 
@@ -239,12 +260,11 @@ Para adicionar um novo projeto, ministério ou disciplina ao fluxo de revisão:
 
 ### Configuração Recomendada no GitHub
 
-Para aplicar essas regras automaticamente, o repositório usa um arquivo [`CODEOWNERS`](CODEOWNERS) com os times responsáveis por cada domínio técnico.
+Para aplicar essas regras automaticamente, o repositório usa a workflow `Request team review` para domínios de dados e mantém [`CODEOWNERS`](CODEOWNERS) apenas para arquivos de governança do processo.
 
-Além do `CODEOWNERS`, a branch `main` deve manter as seguintes proteções habilitadas:
+Além da workflow, a branch `main` deve manter as seguintes proteções habilitadas:
 
 - Proteção da branch `main`, exigindo revisão antes do merge
-- Opção **Require review from Code Owners** habilitada
 - Mínimo de **1 aprovação** antes do merge
 - Bloqueio de force push na branch protegida
 

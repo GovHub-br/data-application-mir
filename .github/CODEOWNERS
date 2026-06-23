@@ -1,46 +1,11 @@
-# Revisores por dominio do repositorio
+# Donos de arquivos de governanca do repositorio
 #
-# Para que estas regras bloqueiem merge sem aprovacao do dominio correto,
-# a branch main deve exigir "Require review from Code Owners".
-#
-# Observacao: os nomes abaixo usam os slugs dos times no GitHub.
-# Exemplo: o time exibido como "MCid" deve existir como @GovHub-br/mcid.
-# O dominio GCES e tratado pelo time OSS.
+# O roteamento por dominio de dados e feito pela workflow
+# ".github/workflows/request-team-review.yaml", usando labels team:*.
+# Este arquivo fica restrito a arquivos que definem o proprio processo.
 
-# Fallback tecnico para areas compartilhadas de dados
-/airflow_lappis/dags/ @GovHub-br/oss
-/airflow_lappis/templates/ @GovHub-br/oss
-/airflow_lappis/plugins/ @GovHub-br/oss
-/airflow_lappis/helpers/ @GovHub-br/oss
-
-# Dominios institucionais ja materializados no repositorio
-/airflow_lappis/dags/dbt/ipea/ @GovHub-br/ipea
-/airflow_lappis/dags/data_ingest/ipea_pro/ @GovHub-br/ipea
-/airflow_lappis/dags/data_ingest/sgac/ @GovHub-br/ipea
-/airflow_lappis/dags/data_ingest/sisbolsas/ @GovHub-br/ipea
-
-/airflow_lappis/dags/dbt/mir/ @GovHub-br/mir
-/airflow_lappis/dags/data_ingest/tesouro_gerencial/mir/ @GovHub-br/mir
-/airflow_lappis/dags/data_ingest/transfere_gov/mir/ @GovHub-br/mir
-/airflow_lappis/dags/data_ingest/transferegov_emendas/ @GovHub-br/mir
-
-/airflow_lappis/dags/data_ingest/tesouro_gerencial/mcid/ @GovHub-br/mcid
-
-# Quando um dominio MinC for criado neste repositorio, adicionar aqui os paths
-# correspondentes e apontar para @GovHub-br/minc.
-
-# Contribuicoes externas e governanca de colaboracao
-/.github/ @GovHub-br/oss
-/README.md @GovHub-br/oss
-/LICENSE @GovHub-br/oss
-
-# Configuracoes de build, ambiente, CI/CD e execucao local
-/Dockerfile @GovHub-br/oss
-/Dockerfile.superset @GovHub-br/oss
-/docker-compose.yml @GovHub-br/oss
-/docker/ @GovHub-br/oss
-/Makefile @GovHub-br/oss
-/pyproject.toml @GovHub-br/oss
-/requirements.txt @GovHub-br/oss
-/setup-git-hooks.sh @GovHub-br/oss
-/tests/ @GovHub-br/oss
+/.github/CODEOWNERS @GovHub-br/oss
+/.github/CONTRIBUTING.md @GovHub-br/oss
+/.github/MERGE_REQUEST_PROTOCOL.md @GovHub-br/oss
+/.github/PULL_REQUEST_TEMPLATE.md @GovHub-br/oss
+/.github/workflows/request-team-review.yaml @GovHub-br/oss
