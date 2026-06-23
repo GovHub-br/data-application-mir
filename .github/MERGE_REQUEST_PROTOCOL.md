@@ -182,14 +182,14 @@ O repositório usa times do GitHub para direcionar revisões por domínio de atu
 
 | Time | Escopo principal |
 | --- | --- |
-| `team:gces` -> `@GovHub-br/oss` | Governança técnica do repositório, padrões compartilhados, CI/CD, testes, plugins, helpers e demandas da disciplina GCES |
+| `team:gces` -> `@GovHub-br/oss` | PRs originados na disciplina GCES, revisados pelo time OSS |
 | `@GovHub-br/ipea` | Pipelines, modelos dbt e integrações vinculadas ao IPEA |
 | `@GovHub-br/mir` | Pipelines, modelos dbt e integrações vinculadas ao MIR |
 | `@GovHub-br/mcid` | Pipelines e integrações vinculadas ao MCid |
 | `@GovHub-br/minc` | Pipelines, modelos dbt e integrações vinculadas ao MinC, quando houver paths correspondentes neste repositório |
-| `@GovHub-br/oss` | Contribuições externas, documentação pública, governança de colaboração open source e revisão do domínio GCES |
+| `@GovHub-br/oss` | Contribuições externas, documentação pública, governança de colaboração open source e PRs originados na disciplina GCES |
 
-Os nomes acima usam os slugs dos times no GitHub. O time pode aparecer visualmente como `MCid`, `MinC` ou `OSS`, mas o `CODEOWNERS` deve usar o slug configurado na organização. O domínio GCES é sinalizado pela label `team:gces`, mas a revisão é direcionada ao time `@GovHub-br/oss`.
+Os nomes acima usam os slugs dos times no GitHub. O time pode aparecer visualmente como `MCid`, `MinC` ou `OSS`, mas o `CODEOWNERS` deve usar o slug configurado na organização. Não há um time separado para GCES; a label `team:gces` existe para triagem, mas a revisão é solicitada ao time `@GovHub-br/oss`.
 
 ### Estratégia de Revisão Automática
 

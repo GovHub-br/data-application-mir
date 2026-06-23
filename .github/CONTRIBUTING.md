@@ -215,7 +215,7 @@ Toda solicitação de mudança ou sugestão deve ser registrada como issue.
 
 Consulte o [Protocolo de Aprovação de Pull Requests](MERGE_REQUEST_PROTOCOL.md) para os critérios obrigatórios de revisão, aprovação e merge.
 
-O repositório usa domínios de revisão (`GCES`, `IPEA`, `MIR`, `MCid`, `MinC` e `OSS`) e o arquivo [`CODEOWNERS`](CODEOWNERS) para solicitar revisões automaticamente conforme os caminhos alterados no PR. O domínio `GCES` é revisado pelo time `OSS`. Quando o domínio não estiver evidente apenas pelos arquivos modificados, use labels como `team:ipea`, `team:mir`, `team:mcid`, `team:minc`, `team:gces` ou `team:oss` para ajudar na triagem.
+O repositório usa domínios de revisão (`IPEA`, `MIR`, `MCid`, `MinC` e `OSS`) e o arquivo [`CODEOWNERS`](CODEOWNERS) para solicitar revisões automaticamente conforme os caminhos alterados no PR. PRs originados na disciplina GCES devem usar a label `team:gces`, que solicita revisão do time `OSS`. Quando o domínio não estiver evidente apenas pelos arquivos modificados, use labels como `team:ipea`, `team:mir`, `team:mcid`, `team:minc`, `team:gces` ou `team:oss` para ajudar na triagem.
 
 **Para quem submete o PR:** responda a todos os comentários de revisão, implemente as mudanças em novos commits e aguarde nova aprovação antes do merge.
 

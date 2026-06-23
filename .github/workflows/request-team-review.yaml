@@ -34,7 +34,7 @@ jobs:
             const labelConfig = {
               "team:gces": {
                 color: "5319e7",
-                description: "Revisao do dominio GCES, direcionada ao time OSS",
+                description: "Revisao de PRs da disciplina GCES pelo time OSS",
               },
               "team:ipea": {
                 color: "0e8a16",
@@ -54,7 +54,7 @@ jobs:
               },
               "team:oss": {
                 color: "5319e7",
-                description: "Revisao de contribuicoes OSS e governanca aberta",
+                description: "Revisao de contribuicoes OSS, GCES e governanca aberta",
               },
             };
 

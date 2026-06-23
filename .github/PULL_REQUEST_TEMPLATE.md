@@ -17,7 +17,7 @@ Closes #
 ## Domínio de revisão
 <!-- Marque o domínio/time principal impactado por este PR. Use labels team:* quando ajudar na triagem. -->
 
-- [ ] GCES
+- [ ] GCES / OSS
 - [ ] IPEA
 - [ ] MIR
 - [ ] MCid
