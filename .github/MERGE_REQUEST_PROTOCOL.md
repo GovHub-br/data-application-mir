@@ -174,19 +174,63 @@ Closes #42
 
 ---
 
-## 5. Revisores
+## 5. Revisores e Roteamento por Domínio
 
-### Quem Deve Revisar
+### Times de Revisão
 
-| Tipo de PR | Revisores |
+O repositório usa times do GitHub para direcionar revisões por domínio de atuação. Os times configurados na organização são:
+
+| Time | Escopo principal |
 | --- | --- |
-| DAGs de ingestão | `@GovHub-br/developers` |
-| Modelos dbt | `@GovHub-br/developers` |
-| Plugins e helpers | `@GovHub-br/developers` |
-| Documentação de configuração, infraestrutura ou deploy | `@GovHub-br/infra` |
-| Documentação de DAGs, modelos dbt ou fluxo de dados | `@GovHub-br/developers` |
+| `team:gces` -> `@GovHub-br/oss` | Governança técnica do repositório, padrões compartilhados, CI/CD, testes, plugins, helpers e demandas da disciplina GCES |
+| `@GovHub-br/ipea` | Pipelines, modelos dbt e integrações vinculadas ao IPEA |
+| `@GovHub-br/mir` | Pipelines, modelos dbt e integrações vinculadas ao MIR |
+| `@GovHub-br/mcid` | Pipelines e integrações vinculadas ao MCid |
+| `@GovHub-br/minc` | Pipelines, modelos dbt e integrações vinculadas ao MinC, quando houver paths correspondentes neste repositório |
+| `@GovHub-br/oss` | Contribuições externas, documentação pública, governança de colaboração open source e revisão do domínio GCES |
 
-Os times `@GovHub-br/developers` e `@GovHub-br/infra` são os responsáveis atuais pelos domínios técnicos do repositório. Caso um PR altere mais de um domínio, solicite revisão de todos os times responsáveis pelas áreas impactadas.
+Os nomes acima usam os slugs dos times no GitHub. O time pode aparecer visualmente como `MCid`, `MinC` ou `OSS`, mas o `CODEOWNERS` deve usar o slug configurado na organização. O domínio GCES é sinalizado pela label `team:gces`, mas a revisão é direcionada ao time `@GovHub-br/oss`.
+
+### Estratégia de Revisão Automática
+
+A estratégia adotada é híbrida:
+
+- **CODEOWNERS por caminho de arquivo:** regra nativa do GitHub usada para solicitar e exigir revisão do domínio correto quando a ruleset da `main` habilita **Require review from Code Owners**.
+- **GitHub Actions + labels `team:*`:** automação complementar para aplicar labels de domínio e solicitar revisão dos times correspondentes quando o domínio for inferido por caminho ou indicado manualmente por label.
+
+O arquivo [`CODEOWNERS`](CODEOWNERS) define os revisores automáticos para:
+
+- domínios institucionais já presentes no repositório, como IPEA, MIR e MCid;
+- componentes compartilhados, como `plugins`, `helpers`, testes, CI/CD e configuração local;
+- documentação e arquivos de governança do repositório.
+
+Quando um PR alterar arquivos cobertos pelo `CODEOWNERS`, o GitHub deve solicitar revisão automaticamente ao time responsável. Para que isso bloqueie merge sem aprovação correta, a branch `main` deve manter a opção **Require review from Code Owners** habilitada.
+
+A workflow `Request team review` observa eventos de PR, aplica labels `team:*` quando identifica caminhos conhecidos e solicita review do time associado. Ela não substitui a proteção da branch; ela melhora a triagem e cobre casos em que o domínio é indicado por label.
+
+### Labels de Apoio
+
+Labels podem ser usadas como sinalização complementar quando o domínio do PR não for evidente apenas pelos caminhos alterados:
+
+- `team:ipea`
+- `team:mir`
+- `team:mcid`
+- `team:minc`
+- `team:gces`
+- `team:oss`
+
+As labels não substituem o `CODEOWNERS`. Se uma label indicar um domínio diferente dos arquivos alterados, o autor deve solicitar manualmente revisão do time indicado ou ajustar o `CODEOWNERS` se o novo padrão de caminhos for permanente.
+
+### Como Incluir Novos Projetos ou Times
+
+Para adicionar um novo projeto, ministério ou disciplina ao fluxo de revisão:
+
+1. Criar o time correspondente na organização `GovHub-br`.
+2. Adicionar os membros responsáveis ao time.
+3. Definir o slug oficial do time, por exemplo `@GovHub-br/minc`.
+4. Criar ou identificar os diretórios do domínio no repositório.
+5. Adicionar os caminhos no [`CODEOWNERS`](CODEOWNERS).
+6. Abrir um PR de teste alterando um arquivo do domínio e confirmar que o GitHub solicita revisão do time correto.
 
 ### Número Mínimo de Aprovações
 
@@ -202,6 +246,8 @@ Além do `CODEOWNERS`, a branch `main` deve manter as seguintes proteções habi
 
 - Proteção da branch `main`, exigindo revisão antes do merge
 - Opção **Require review from Code Owners** habilitada
+- Mínimo de **1 aprovação** antes do merge
+- Bloqueio de force push na branch protegida
 
 Essas configurações de branch dependem da administração do repositório. Enquanto não estiverem ativas, as regras deste protocolo devem ser verificadas manualmente por autores, revisores e mantenedores.
 
