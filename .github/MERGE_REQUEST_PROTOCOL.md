@@ -206,7 +206,7 @@ Mapa atual dos principais caminhos de DAGs e modelos:
 | --- | --- |
 | `airflow_lappis/dags/dashboards/` | IPEA |
 | `airflow_lappis/dags/dbt/ipea/` | IPEA |
-| `airflow_lappis/dags/data_ingest/compras_gov/` | IPEA |
+| `airflow_lappis/dags/data_ingest/compras_gov/` | IPEA, exceto subpasta `mir/` |
 | `airflow_lappis/dags/data_ingest/ipea_pro/` | IPEA |
 | `airflow_lappis/dags/data_ingest/pncp/` | IPEA |
 | `airflow_lappis/dags/data_ingest/sgac/` | IPEA |
@@ -217,6 +217,7 @@ Mapa atual dos principais caminhos de DAGs e modelos:
 | `airflow_lappis/dags/data_ingest/tesouro_gerencial/` | IPEA, exceto subpastas `mir/` e `mcid/` |
 | `airflow_lappis/dags/data_ingest/transfere_gov/` | IPEA, exceto subpasta `mir/` |
 | `airflow_lappis/dags/dbt/mir/` | MIR |
+| `airflow_lappis/dags/data_ingest/compras_gov/mir/` | MIR |
 | `airflow_lappis/dags/data_ingest/dados_abertos/` | MIR |
 | `airflow_lappis/dags/data_ingest/siconv/` | MIR |
 | `airflow_lappis/dags/data_ingest/tesouro_gerencial/mir/` | MIR |

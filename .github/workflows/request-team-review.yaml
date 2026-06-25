@@ -76,6 +76,7 @@ jobs:
                   "airflow_lappis/dags/data_ingest/transfere_gov/",
                 ],
                 excludePaths: [
+                  "airflow_lappis/dags/data_ingest/compras_gov/mir/",
                   "airflow_lappis/dags/data_ingest/tesouro_gerencial/mcid/",
                   "airflow_lappis/dags/data_ingest/tesouro_gerencial/mir/",
                   "airflow_lappis/dags/data_ingest/transfere_gov/mir/",
@@ -85,6 +86,7 @@ jobs:
                 label: "team:mir",
                 paths: [
                   "airflow_lappis/dags/dbt/mir/",
+                  "airflow_lappis/dags/data_ingest/compras_gov/mir/",
                   "airflow_lappis/dags/data_ingest/dados_abertos/",
                   "airflow_lappis/dags/data_ingest/siconv/",
                   "airflow_lappis/dags/data_ingest/tesouro_gerencial/mir/",
