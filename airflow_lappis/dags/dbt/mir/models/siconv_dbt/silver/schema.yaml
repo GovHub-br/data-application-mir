@@ -454,3 +454,47 @@ models:
           nome_tabela: 'siconv_dbt.proposta_convenio'
           nome_coluna: 'vl_global_prop'
           tipo_esperado: 'numeric'
+
+  - name: convenio_proposta_pagamento
+    description: >
+      Tabela silver que cruza os 628 convênios do MIR com seus respectivos
+      pagamentos e dados da proposta de origem. Granularidade de 1 linha por
+      pagamento — convênios com múltiplos pagamentos aparecem múltiplas vezes.
+      Permite analisar para quais fornecedores foram os recursos, qual o objeto
+      do convênio associado e como os pagamentos se distribuem por território.
+    columns:
+      - name: nr_convenio
+        description: "Número único do convênio — chave de ligação entre as tabelas."
+      - name: objeto_proposta
+        description: "Descrição do objeto do convênio — o que foi prometido executar."
+      - name: uf_proponente
+        description: "UF onde o projeto será executado."
+      - name: munic_proponente
+        description: "Município onde o projeto será executado."
+      - name: nm_proponente
+        description: "Nome do convenente — município, estado ou organização executora."
+      - name: natureza_juridica
+        description: "Categoria do convenente: Administração Pública Municipal, OSC etc."
+      - name: modalidade
+        description: "Modalidade do instrumento: Convênio ou Termo de Fomento."
+      - name: nr_mov_fin
+        description: "Número do movimento financeiro do pagamento."
+      - name: identif_fornecedor
+        description: "CNPJ ou CPF (mascarado) do fornecedor que recebeu o pagamento."
+      - name: nome_fornecedor
+        description: "Nome ou razão social do fornecedor que recebeu o pagamento."
+      - name: tp_mov_financeira
+        description: "Tipo do movimento financeiro: Pagamento a Favorecido, Pagamento com OBTV etc."
+      - name: data_pag
+        description: "Data em que o pagamento foi realizado."
+      - name: nr_dl
+        description: "Número do documento de liquidação."
+      - name: desc_dl
+        description: "Descrição do documento de liquidação — indica o tipo: Nota Fiscal, Recibo, Diárias, Bolsa etc."
+      - name: vl_pago
+        description: "Valor efetivamente pago ao fornecedor."
+      - name: id_dl
+        description: "Identificador único do documento de liquidação."
+      - name: data_emissao_dl
+        description: "Data de emissão do documento de liquidação."
+ 
