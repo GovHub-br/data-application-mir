@@ -105,9 +105,10 @@ models:
         description: "Timestamp de ingestão dos dados."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.numero_transferencia'
-          nome_coluna: 'numero_transferencia'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siconv_dbt.numero_transferencia'
+            nome_coluna: 'numero_transferencia'
+            tipo_esperado: 'integer'
 
   - name: emendas_convenio
     description: >
@@ -162,17 +163,20 @@ models:
         description: "Timestamp de ingestão dos dados."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.emendas_convenio'
-          nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siconv_dbt.emendas_convenio'
+            nome_coluna: 'nr_convenio'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.emendas_convenio'
-          nome_coluna: 'numero_transferencia'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siconv_dbt.emendas_convenio'
+            nome_coluna: 'numero_transferencia'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.emendas_convenio'
-          nome_coluna: 'vl_global_conv'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siconv_dbt.emendas_convenio'
+            nome_coluna: 'vl_global_conv'
+            tipo_esperado: 'numeric'
 
   - name: convenios_consolidados
     description: >
@@ -274,17 +278,20 @@ models:
         description: "Valor global original do convênio."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.convenios_consolidados'
-          nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siconv_dbt.convenios_consolidados'
+            nome_coluna: 'nr_convenio'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.convenios_consolidados'
-          nome_coluna: 'ug_emitente'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siconv_dbt.convenios_consolidados'
+            nome_coluna: 'ug_emitente'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.convenios_consolidados'
-          nome_coluna: 'vl_global_conv'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siconv_dbt.convenios_consolidados'
+            nome_coluna: 'vl_global_conv'
+            tipo_esperado: 'numeric'
 
   - name: proposta_convenio
     description: >
@@ -439,23 +446,27 @@ models:
         description: "Valor de contrapartida da proposta."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.proposta_convenio'
-          nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siconv_dbt.proposta_convenio'
+            nome_coluna: 'nr_convenio'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.proposta_convenio'
-          nome_coluna: 'id_proposta'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siconv_dbt.proposta_convenio'
+            nome_coluna: 'id_proposta'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.proposta_convenio'
-          nome_coluna: 'vl_global_conv'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siconv_dbt.proposta_convenio'
+            nome_coluna: 'vl_global_conv'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.proposta_convenio'
-          nome_coluna: 'vl_global_prop'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siconv_dbt.proposta_convenio'
+            nome_coluna: 'vl_global_prop'
+            tipo_esperado: 'numeric'
 
-- name: convenio_proposta_pagamento
+  - name: convenio_proposta_pagamento
     description: >
       Tabela silver que cruza os 628 convênios do MIR com seus respectivos
       pagamentos e dados da proposta de origem. Granularidade de 1 linha por
@@ -630,17 +641,20 @@ models:
         description: "Data de emissão do documento de liquidação."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.convenio_proposta_pagamento'
-          nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siconv_dbt.convenio_proposta_pagamento'
+            nome_coluna: 'nr_convenio'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.convenio_proposta_pagamento'
-          nome_coluna: 'vl_pago'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siconv_dbt.convenio_proposta_pagamento'
+            nome_coluna: 'vl_pago'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'siconv_dbt.convenio_proposta_pagamento'
-          nome_coluna: 'data_pag'
-          tipo_esperado: 'date'
+          arguments:
+            nome_tabela: 'siconv_dbt.convenio_proposta_pagamento'
+            nome_coluna: 'data_pag'
+            tipo_esperado: 'date'
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.convenio_proposta_pagamento'
           nome_coluna: 'vl_global_conv'
