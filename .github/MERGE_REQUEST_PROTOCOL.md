@@ -263,6 +263,8 @@ Para adicionar um novo projeto, ministério ou disciplina ao fluxo de revisão:
 
 Para aplicar essas regras automaticamente, o repositório usa a workflow `Request team review`.
 
+Caso o GitHub recuse a solicitação automática de review de um time, a workflow deve registrar um aviso sem bloquear o PR. Se a solicitação de reviewers por time continuar falhando, configure o secret `TEAM_REVIEW_TOKEN` com um token autorizado a solicitar reviewers no repositório e ler times da organização.
+
 Além da workflow, a branch `main` deve manter as seguintes proteções habilitadas:
 
 - Proteção da branch `main`, exigindo revisão antes do merge
