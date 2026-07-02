@@ -19,7 +19,7 @@
     
     Uso no dbt_project.yml:
     models:
-      ipea:
+      mir:
         +post-hook:
           - "{{ register_model_metadata() }}"
 #}

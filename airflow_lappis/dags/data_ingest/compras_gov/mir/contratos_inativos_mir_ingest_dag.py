@@ -28,10 +28,10 @@ def api_contratos_inativos_dag() -> None:
     def fetch_and_store_contratos_inativos() -> None:
         logging.info("Iniciando fetch_and_store_contratos_mir_inativos")
 
-        orgao_alvo = Variable.get("airflow_orgao_1", default_var=None)
+        orgao_alvo = Variable.get("airflow_orgao", default_var=None)
         if not orgao_alvo:
-            logging.error("Variável airflow_orgao_1 não definida!")
-            raise ValueError("airflow_orgao_1 não definida")
+            logging.error("Variável airflow_orgao não definida!")
+            raise ValueError("airflow_orgao não definida")
 
         orgaos_config_str = Variable.get("airflow_variables", default_var="{}")
         orgaos_config = yaml.safe_load(orgaos_config_str)

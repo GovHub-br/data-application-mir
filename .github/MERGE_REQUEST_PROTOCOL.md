@@ -204,18 +204,6 @@ Mapa atual dos principais caminhos de DAGs e modelos:
 
 | Caminho | Domínio |
 | --- | --- |
-| `airflow_lappis/dags/dashboards/` | IPEA |
-| `airflow_lappis/dags/dbt/ipea/` | IPEA |
-| `airflow_lappis/dags/data_ingest/compras_gov/` | IPEA, exceto subpasta `mir/` |
-| `airflow_lappis/dags/data_ingest/ipea_pro/` | IPEA |
-| `airflow_lappis/dags/data_ingest/pncp/` | IPEA |
-| `airflow_lappis/dags/data_ingest/sgac/` | IPEA |
-| `airflow_lappis/dags/data_ingest/siafi/` | IPEA |
-| `airflow_lappis/dags/data_ingest/siape/` | IPEA |
-| `airflow_lappis/dags/data_ingest/siorg/` | IPEA |
-| `airflow_lappis/dags/data_ingest/sisbolsas/` | IPEA |
-| `airflow_lappis/dags/data_ingest/tesouro_gerencial/` | IPEA, exceto subpastas `mir/` e `mcid/` |
-| `airflow_lappis/dags/data_ingest/transfere_gov/` | IPEA, exceto subpasta `mir/` |
 | `airflow_lappis/dags/dbt/mir/` | MIR |
 | `airflow_lappis/dags/data_ingest/compras_gov/mir/` | MIR |
 | `airflow_lappis/dags/data_ingest/dados_abertos/` | MIR |
@@ -223,8 +211,6 @@ Mapa atual dos principais caminhos de DAGs e modelos:
 | `airflow_lappis/dags/data_ingest/tesouro_gerencial/mir/` | MIR |
 | `airflow_lappis/dags/data_ingest/transfere_gov/mir/` | MIR |
 | `airflow_lappis/dags/data_ingest/transferegov_emendas/` | MIR |
-| `airflow_lappis/dags/data_ingest/tesouro_gerencial/mcid/` | MCid |
-| `airflow_lappis/dags/data_ingest/ibge/` | GCES / OSS |
 
 Quando um PR alterar arquivos de um domínio, o autor ou mantenedor deve aplicar a label `team:*` correspondente. A workflow solicita review do time associado a essa label. A ruleset da branch `main` deve exigir pelo menos uma aprovação antes do merge.
 

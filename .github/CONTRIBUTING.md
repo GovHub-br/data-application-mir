@@ -40,7 +40,6 @@ Esperamos que todas as pessoas contribuam com respeito, colaboração e responsa
 │   └── CONTRIBUTING.md        # Este arquivo
 ├── airflow_lappis/
 │   ├── dags/
-│   │   ├── dashboards/
 │   │   ├── data_ingest/
 │   │   └── dbt/
 │   ├── helpers/
