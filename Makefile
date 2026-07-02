@@ -61,7 +61,7 @@ dev:
 	@docker compose exec -T $(AIRFLOW_SERVICE) airflow variables set airflow_orgao '$(AIRFLOW_LOCAL_ORGAO)'
 	@docker compose exec -T $(AIRFLOW_SERVICE) airflow variables set airflow_variables '{"ipea":{"codigos_ug":[113601,113602]},"unb":{"codigos_ug":[154040]},"ibama":{"codigos_ug":[440001,440048,440050]},"mgi":{"codigos_ug":[201082]}}'
 	@docker compose exec -T $(AIRFLOW_SERVICE) airflow variables set dynamic_schedules '{"empenhos_tesouro_ingest_dag":{"type":"cron","value":"0 13 * * 1-6"},"nc_tesouro_ingest_dag":{"type":"cron","value":"0 13 * * 1-6"},"pf_tesouro_ingest_dag":{"type":"cron","value":"0 13 * * 1-6"},"visao_orcamentaria_ingest":{"type":"cron","value":"0 13 * * 1-6"}}'
-	@docker compose exec -T $(AIRFLOW_SERVICE) sh -c "printf '%s\n' '{\"postgres_default\":{\"conn_type\":\"postgres\",\"host\":\"$(AIRFLOW_LOCAL_DB_HOST)\",\"schema\":\"$(AIRFLOW_LOCAL_DB_NAME)\",\"login\":\"$(AIRFLOW_LOCAL_DB_USER)\",\"password\":\"$(AIRFLOW_LOCAL_DB_PASSWORD)\",\"port\":$(AIRFLOW_LOCAL_DB_PORT)}}' > /tmp/airflow-connections.json && airflow connections import --overwrite /tmp/airflow-connections.json && rm -f /tmp/airflow-connections.json"
+	@docker compose exec -T $(AIRFLOW_SERVICE) sh -c "printf '%s\n' '{\"postgres_default\":{\"conn_type\":\"postgres\",\"host\":\"$(AIRFLOW_LOCAL_DB_HOST)\",\"schema\":\"$(AIRFLOW_LOCAL_DB_NAME)\",\"login\":\"$(AIRFLOW_LOCAL_DB_USER)\",\"password\":\"$(AIRFLOW_LOCAL_DB_PASSWORD)\",\"port\":$(AIRFLOW_LOCAL_DB_PORT)},\"postgres_mir\":{\"conn_type\":\"postgres\",\"host\":\"$(AIRFLOW_LOCAL_DB_HOST)\",\"schema\":\"$(AIRFLOW_LOCAL_DB_NAME)\",\"login\":\"$(AIRFLOW_LOCAL_DB_USER)\",\"password\":\"$(AIRFLOW_LOCAL_DB_PASSWORD)\",\"port\":$(AIRFLOW_LOCAL_DB_PORT)}}' > /tmp/airflow-connections.json && airflow connections import --overwrite /tmp/airflow-connections.json && rm -f /tmp/airflow-connections.json"
 	@echo "Ambiente local do Airflow configurado com sucesso."
 
 dev-check:
@@ -70,4 +70,5 @@ dev-check:
 	@docker compose exec -T $(AIRFLOW_SERVICE) airflow variables get airflow_variables >/dev/null
 	@docker compose exec -T $(AIRFLOW_SERVICE) airflow variables get dynamic_schedules >/dev/null
 	@docker compose exec -T $(AIRFLOW_SERVICE) airflow connections get postgres_default >/dev/null
+	@docker compose exec -T $(AIRFLOW_SERVICE) airflow connections get postgres_mir >/dev/null
 	@echo "Validação concluída: variables e connection do Airflow estão configuradas."
