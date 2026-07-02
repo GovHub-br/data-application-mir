@@ -11,9 +11,6 @@ models:
       nas Notas de Empenho (SIAFI) e os recursos financeiros liberados via Programações
       Financeiras (SIAFI + TransfereGov). As quatro dimensões são combinadas via FULL JOIN
       para garantir que nenhum registro seja perdido mesmo que exista em apenas uma fonte.
-    meta:
-      tags:
-        - gold
     columns:
       - name: plano_acao
         description: >
@@ -99,21 +96,25 @@ models:
           proveniente de nc_plano_acao.
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
-          nome_coluna: 'plano_acao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+            nome_coluna: 'plano_acao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
-          nome_coluna: 'valor_firmado'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+            nome_coluna: 'valor_firmado'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
-          nome_coluna: 'empenhado'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+            nome_coluna: 'empenhado'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
-          nome_coluna: 'dt_ingest'
-          tipo_esperado: 'timestamp with time zone'
+          arguments:
+            nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+            nome_coluna: 'dt_ingest'
+            tipo_esperado: 'timestamp with time zone'
 
   - name: ted_empenhos_plano_acao
     description: >
@@ -123,9 +124,6 @@ models:
       no TransfereGov. Remove as colunas operacionais do pipeline de extração (complemento_ted,
       num_ted, numero_base, ano_raw, ano_normalizado, ano_oficial, numero_ted_normalizado,
       num_transf_pa), expondo somente os campos de negócio.
-    meta:
-      tags:
-        - gold
     columns:
       - name: emissao_mes
         description: "Mês de emissão da NE no SIAFI."
@@ -184,22 +182,27 @@ models:
         description: "Timestamp de ingestão da NE no SIAFI (timestamptz, UTC-3)."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
-          nome_coluna: 'plano_acao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
+            nome_coluna: 'plano_acao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
-          nome_coluna: 'ne_ccor_ano_emissao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
+            nome_coluna: 'ne_ccor_ano_emissao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
-          nome_coluna: 'despesas_empenhadas'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
+            nome_coluna: 'despesas_empenhadas'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
-          nome_coluna: 'despesas_liquidadas'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
+            nome_coluna: 'despesas_liquidadas'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
-          nome_coluna: 'restos_a_pagar_inscritos'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
+            nome_coluna: 'restos_a_pagar_inscritos'
+            tipo_esperado: 'numeric'

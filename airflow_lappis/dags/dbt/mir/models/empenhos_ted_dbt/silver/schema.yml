@@ -7,9 +7,6 @@ models:
       (pf_tesouro) e do Transferegov (pf_transfere), realizando o cruzamento pela
       chave normalizada da PF. A chave e formada pelos ultimos 12 caracteres do campo
       pf no Tesouro e comparada com tx_numero_programacao no Transferegov.
-    meta:
-      tags:
-        - silver
     columns:
       - name: emissao_mes
         description: "Mes de emissao da programacao financeira no Tesouro."
@@ -69,21 +66,25 @@ models:
         description: "Maior timestamp de ingestao entre as fontes (UTC-3)."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.pf_unificado'
-          nome_coluna: 'emissao_dia'
-          tipo_esperado: 'date'
+          arguments:
+            nome_tabela: 'siafi_dbt.pf_unificado'
+            nome_coluna: 'emissao_dia'
+            tipo_esperado: 'date'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.pf_unificado'
-          nome_coluna: 'pf_valor_linha'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siafi_dbt.pf_unificado'
+            nome_coluna: 'pf_valor_linha'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.pf_unificado'
-          nome_coluna: 'id_programacao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siafi_dbt.pf_unificado'
+            nome_coluna: 'id_programacao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.pf_unificado'
-          nome_coluna: 'id_plano_acao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siafi_dbt.pf_unificado'
+            nome_coluna: 'id_plano_acao'
+            tipo_esperado: 'integer'
 
   - name: pf_unificado_planos_acao
     description: >
@@ -91,9 +92,6 @@ models:
       do Transferegov, por meio do id_plano_acao. O cruzamento preserva todas as
       linhas de PF e deduplica planos de acao por id_plano_acao, mantendo o registro
       mais recente por dt_ingest.
-    meta:
-      tags:
-        - silver
     columns:
       - name: id_programacao
         description: "Identificador da programacao financeira no Transferegov."
@@ -113,21 +111,25 @@ models:
         description: "Maior timestamp de ingestao entre pf_unificado e planos_acao_ted."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
-          nome_coluna: 'id_programacao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
+            nome_coluna: 'id_programacao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
-          nome_coluna: 'id_plano_acao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
+            nome_coluna: 'id_plano_acao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
-          nome_coluna: 'id_programa'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
+            nome_coluna: 'id_programa'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
-          nome_coluna: 'vl_total_plano_acao'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
+            nome_coluna: 'vl_total_plano_acao'
+            tipo_esperado: 'numeric'
           
   - name: nc_unificado
     description: >
@@ -136,9 +138,6 @@ models:
       O modelo mantém o layout principal de NC do SIAFI e aplica COALESCE para preencher
       programa_governo, programa_governo_descricao, acao_governo e acao_governo_descricao
       quando estiverem ausentes na base original.
-    meta:
-      tags:
-        - silver
     columns:
       - name: programa_governo
         description: "Código do programa de governo (SIAFI com fallback do mapeamento por PTRES)."
@@ -212,17 +211,20 @@ models:
         description: "Timestamp de ingestão do SIAFI (UTC-3)."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.nc_unificado'
-          nome_coluna: 'valor_celula'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siafi_dbt.nc_unificado'
+            nome_coluna: 'valor_celula'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.nc_unificado'
-          nome_coluna: 'emissao_dia'
-          tipo_esperado: 'date'
+          arguments:
+            nome_tabela: 'siafi_dbt.nc_unificado'
+            nome_coluna: 'emissao_dia'
+            tipo_esperado: 'date'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.nc_unificado'
-          nome_coluna: 'dt_ingest'
-          tipo_esperado: 'timestamp with time zone'
+          arguments:
+            nome_tabela: 'siafi_dbt.nc_unificado'
+            nome_coluna: 'dt_ingest'
+            tipo_esperado: 'timestamp with time zone'
 
   - name: nc_plano_acao
     description: >
@@ -231,9 +233,6 @@ models:
       Filtra registros com nc_transferencia = '-8' (NCs sem vínculo de transferência válido).
       Retorna todas as colunas de nc_unificado acrescidas de id_plano_acao, que pode ser nulo
       quando a NC do SIAFI não possui correspondência no TransfereGov.
-    meta:
-      tags:
-        - silver
     columns:
       - name: id_plano_acao
         description: >
@@ -312,21 +311,25 @@ models:
         description: "Timestamp de ingestão do SIAFI (timestamptz, UTC-3)."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.nc_plano_acao'
-          nome_coluna: 'id_plano_acao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siafi_dbt.nc_plano_acao'
+            nome_coluna: 'id_plano_acao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.nc_plano_acao'
-          nome_coluna: 'valor_celula'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siafi_dbt.nc_plano_acao'
+            nome_coluna: 'valor_celula'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.nc_plano_acao'
-          nome_coluna: 'emissao_dia'
-          tipo_esperado: 'date'
+          arguments:
+            nome_tabela: 'siafi_dbt.nc_plano_acao'
+            nome_coluna: 'emissao_dia'
+            tipo_esperado: 'date'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.nc_plano_acao'
-          nome_coluna: 'dt_ingest'
-          tipo_esperado: 'timestamp with time zone'
+          arguments:
+            nome_tabela: 'siafi_dbt.nc_plano_acao'
+            nome_coluna: 'dt_ingest'
+            tipo_esperado: 'timestamp with time zone'
 
   - name: empenhos_por_plano_acao
     description: >
@@ -336,9 +339,6 @@ models:
       O modelo aplica 9 métodos sequenciais de extração via regex, processando cada NE apenas
       uma vez pelo primeiro método que obtiver resultado. Ao final, cruza o num_transf encontrado
       com a view num_transf_n_plano_acao para obter o plano_acao correspondente.
-    meta:
-      tags:
-        - silver
     columns:
       - name: emissao_mes
         description: "Mês de emissão da NE no SIAFI"
@@ -417,26 +417,32 @@ models:
         description: "num_transf conforme registrado na ponte num_transf_n_plano_acao — usado para conferência cruzada com o num_transf extraído da NE."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
-          nome_coluna: 'despesas_empenhadas'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
+            nome_coluna: 'despesas_empenhadas'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
-          nome_coluna: 'despesas_liquidadas'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
+            nome_coluna: 'despesas_liquidadas'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
-          nome_coluna: 'restos_a_pagar_inscritos'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
+            nome_coluna: 'restos_a_pagar_inscritos'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
-          nome_coluna: 'ne_ccor_ano_emissao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
+            nome_coluna: 'ne_ccor_ano_emissao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
-          nome_coluna: 'plano_acao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
+            nome_coluna: 'plano_acao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
-          nome_coluna: 'dt_ingest'
-          tipo_esperado: 'timestamp with time zone'
+          arguments:
+            nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
+            nome_coluna: 'dt_ingest'
+            tipo_esperado: 'timestamp with time zone'

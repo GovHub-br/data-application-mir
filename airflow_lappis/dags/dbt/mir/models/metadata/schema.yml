@@ -8,9 +8,6 @@ models:
       Tabela central de metadados que armazena informações sobre todos os modelos dbt executados.
       Cada linha representa um modelo único, identificado pela combinação de schema e table_name.
       A tabela é atualizada de forma incremental, mantendo histórico das execuções.
-    meta:
-      tags:
-        - metadata
         - governance
     columns:
       - name: schema_name

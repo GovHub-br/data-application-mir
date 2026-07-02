@@ -13,9 +13,6 @@ models:
       pequenas transformações e ajuste de fuso horário na data de ingestão.
       Os dados são provenientes da fonte dados_abertos.deputados (camada raw) e
       passam por conversão explícita de tipos para garantir consistência e rastreabilidade.
-    meta:
-      tags:
-        - bronze
     columns:
       - name: id
         description: >
@@ -49,46 +46,54 @@ models:
       - name: dt_ingest
         description: >
           Data e hora (UTC-3 Brasília) em que os dados foram ingeridos da fonte original para a camada raw.
-    tests: 
-    - verificacao_tipagem:
-        nome_tabela: 'deputados.deputados'
-        nome_coluna: 'id'
-        tipo_esperado: 'integer'
+    tests:
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'deputados.deputados'
+            nome_coluna: 'id'
+            tipo_esperado: 'integer'
 
-    - verificacao_tipagem:
-        nome_tabela: 'deputados.deputados'
-        nome_coluna: 'nome'
-        tipo_esperado: 'text'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'deputados.deputados'
+            nome_coluna: 'nome'
+            tipo_esperado: 'text'
 
-    - verificacao_tipagem:
-        nome_tabela: 'deputados.deputados'
-        nome_coluna: 'siglapartido'
-        tipo_esperado: 'text'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'deputados.deputados'
+            nome_coluna: 'siglapartido'
+            tipo_esperado: 'text'
 
-    - verificacao_tipagem:
-        nome_tabela: 'deputados.deputados'
-        nome_coluna: 'siglauf'
-        tipo_esperado: 'text'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'deputados.deputados'
+            nome_coluna: 'siglauf'
+            tipo_esperado: 'text'
 
-    - verificacao_tipagem:
-        nome_tabela: 'deputados.deputados'
-        nome_coluna: 'idlegislatura'
-        tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'deputados.deputados'
+            nome_coluna: 'idlegislatura'
+            tipo_esperado: 'integer'
 
-    - verificacao_tipagem:
-        nome_tabela: 'deputados'
-        nome_coluna: 'urlfoto'
-        tipo_esperado: 'text'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'deputados'
+            nome_coluna: 'urlfoto'
+            tipo_esperado: 'text'
         
-    - verificacao_tipagem:
-        nome_tabela: 'deputados.deputados'
-        nome_coluna: 'email'
-        tipo_esperado: 'text'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'deputados.deputados'
+            nome_coluna: 'email'
+            tipo_esperado: 'text'
 
-    - verificacao_tipagem:
-        nome_tabela: 'deputados.deputados'
-        nome_coluna: 'dt_ingest'
-        tipo_esperado: 'timestamp with time zone'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'deputados.deputados'
+            nome_coluna: 'dt_ingest'
+            tipo_esperado: 'timestamp with time zone'
 
   - name: senadores
     description: >
@@ -99,9 +104,6 @@ models:
       pequenas transformações e ajuste de fuso horário na data de ingestão.
       Os dados são provenientes da fonte senado_federal.senadores (camada raw) e
       passam por conversão explícita de tipos para garantir consistência e rastreabilidade.
-    meta:
-      tags:
-        - bronze
     columns:
       - name: id
         description: >
@@ -144,56 +146,66 @@ models:
         description: >
           Data e hora (UTC-3 Brasília) em que os dados foram ingeridos da fonte original para a camada raw.
 
-    tests: 
-    - verificacao_tipagem:
-        nome_tabela: 'senadores.senadores'
-        nome_coluna: 'id'
-        tipo_esperado: 'integer'
+    tests:
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'senadores.senadores'
+            nome_coluna: 'id'
+            tipo_esperado: 'integer'
 
-    - verificacao_tipagem:
-        nome_tabela: 'senadores.senadores'
-        nome_coluna: 'nome_parlamentar'
-        tipo_esperado: 'text'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'senadores.senadores'
+            nome_coluna: 'nome_parlamentar'
+            tipo_esperado: 'text'
 
-    - verificacao_tipagem:
-        nome_tabela: 'senadores.senadores'
-        nome_coluna: 'sexo'
-        tipo_esperado: 'text'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'senadores.senadores'
+            nome_coluna: 'sexo'
+            tipo_esperado: 'text'
 
-    - verificacao_tipagem:
-        nome_tabela: 'senadores.senadores'
-        nome_coluna: 'forma_tratamento'
-        tipo_esperado: 'text'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'senadores.senadores'
+            nome_coluna: 'forma_tratamento'
+            tipo_esperado: 'text'
 
-    - verificacao_tipagem:
-        nome_tabela: 'senadores.senadores'
-        nome_coluna: 'url_foto'
-        tipo_esperado: 'text'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'senadores.senadores'
+            nome_coluna: 'url_foto'
+            tipo_esperado: 'text'
 
-    - verificacao_tipagem:
-        nome_tabela: 'senadores.senadores'
-        nome_coluna: 'url_pagina'
-        tipo_esperado: 'text'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'senadores.senadores'
+            nome_coluna: 'url_pagina'
+            tipo_esperado: 'text'
 
-    - verificacao_tipagem:
-        nome_tabela: 'senadores.senadores'
-        nome_coluna: 'email'
-        tipo_esperado: 'text'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'senadores.senadores'
+            nome_coluna: 'email'
+            tipo_esperado: 'text'
 
-    - verificacao_tipagem:
-        nome_tabela: 'senadores.senadores'
-        nome_coluna: 'sigla_partido'
-        tipo_esperado: 'text'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'senadores.senadores'
+            nome_coluna: 'sigla_partido'
+            tipo_esperado: 'text'
 
-    - verificacao_tipagem:
-        nome_tabela: 'senadores.senadores'
-        nome_coluna: 'uf'
-        tipo_esperado: 'text'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'senadores.senadores'
+            nome_coluna: 'uf'
+            tipo_esperado: 'text'
 
-    - verificacao_tipagem:
-        nome_tabela: 'senadores.senadores'
-        nome_coluna: 'dt_ingest'
-        tipo_esperado: 'timestamp with time zone'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'senadores.senadores'
+            nome_coluna: 'dt_ingest'
+            tipo_esperado: 'timestamp with time zone'
 
   - name: legislaturas
     description: >
@@ -203,9 +215,6 @@ models:
       e ajuste de fuso horário na data de ingestão.
       Os dados são provenientes da fonte camara_deputados.legislaturas (camada raw) e
       passam por conversão explícita de tipos para garantir consistência e rastreabilidade.
-    meta:
-      tags:
-        - bronze
     columns:
       - name: id
         description: >
@@ -228,30 +237,35 @@ models:
           Data e hora (UTC-3 Brasília) em que os dados foram ingeridos da fonte original para a camada raw.
 
     tests:
-    - verificacao_tipagem:
-        nome_tabela: 'legislaturas.legislaturas'
-        nome_coluna: 'id'
-        tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'legislaturas.legislaturas'
+            nome_coluna: 'id'
+            tipo_esperado: 'integer'
 
-    - verificacao_tipagem:
-        nome_tabela: 'legislaturas.legislaturas'
-        nome_coluna: 'data_inicio'
-        tipo_esperado: 'date'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'legislaturas.legislaturas'
+            nome_coluna: 'data_inicio'
+            tipo_esperado: 'date'
 
-    - verificacao_tipagem:
-        nome_tabela: 'legislaturas.legislaturas'
-        nome_coluna: 'data_fim'
-        tipo_esperado: 'date'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'legislaturas.legislaturas'
+            nome_coluna: 'data_fim'
+            tipo_esperado: 'date'
 
-    - verificacao_tipagem:
-        nome_tabela: 'legislaturas.legislaturas'
-        nome_coluna: 'data_eleicao'
-        tipo_esperado: 'date'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'legislaturas.legislaturas'
+            nome_coluna: 'data_eleicao'
+            tipo_esperado: 'date'
 
-    - verificacao_tipagem:
-        nome_tabela: 'legislaturas.legislaturas'
-        nome_coluna: 'dt_ingest'
-        tipo_esperado: 'timestamp with time zone'
+      - verificacao_tipagem:
+          arguments:
+            nome_tabela: 'legislaturas.legislaturas'
+            nome_coluna: 'dt_ingest'
+            tipo_esperado: 'timestamp with time zone'
 
 
   - name: deputados_historico
@@ -259,9 +273,6 @@ models:
       Tabela contendo todo o detalhamento evolutivo (histórico temporal) dos deputados federais através
       da API da Câmara dos Deputados, incluindo trocas de mandatos, filiações, afastamentos e licenças,
       bem como o começo e final calculado exato de cada período.
-    meta:
-      tags:
-        - bronze
     columns:
       - name: id
         description: Identificador do deputado na Câmara.
@@ -284,37 +295,40 @@ models:
 
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.deputados_historico'
-          nome_coluna: 'id'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'dados_abertos.deputados_historico'
+            nome_coluna: 'id'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.deputados_historico'
-          nome_coluna: 'nome'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'dados_abertos.deputados_historico'
+            nome_coluna: 'nome'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.deputados_historico'
-          nome_coluna: 'id_legislatura'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'dados_abertos.deputados_historico'
+            nome_coluna: 'id_legislatura'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.deputados_historico'
-          nome_coluna: 'situacao'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'dados_abertos.deputados_historico'
+            nome_coluna: 'situacao'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.deputados_historico'
-          nome_coluna: 'data_filiacao'
-          tipo_esperado: 'timestamp with time zone'
+          arguments:
+            nome_tabela: 'dados_abertos.deputados_historico'
+            nome_coluna: 'data_filiacao'
+            tipo_esperado: 'timestamp with time zone'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.deputados_historico'
-          nome_coluna: 'data_desfiliacao'
-          tipo_esperado: 'timestamp with time zone'
+          arguments:
+            nome_tabela: 'dados_abertos.deputados_historico'
+            nome_coluna: 'data_desfiliacao'
+            tipo_esperado: 'timestamp with time zone'
 
   - name: senadores_historico
     description: >
       Tabela que detalha a temporalidade histórica de todas as filiações e trânsitos institucionais
       recorrentes dos senadores federais pela API do Senado Federal.
-    meta:
-      tags:
-        - bronze
     columns:
       - name: parlamentar_id
         description: Identificador base do senador.
@@ -341,22 +355,27 @@ models:
 
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.senadores_historico'
-          nome_coluna: 'parlamentar_id'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'dados_abertos.senadores_historico'
+            nome_coluna: 'parlamentar_id'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.senadores_historico'
-          nome_coluna: 'data_filiacao'
-          tipo_esperado: 'timestamp with time zone'
+          arguments:
+            nome_tabela: 'dados_abertos.senadores_historico'
+            nome_coluna: 'data_filiacao'
+            tipo_esperado: 'timestamp with time zone'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.senadores_historico'
-          nome_coluna: 'data_desfiliação'
-          tipo_esperado: 'timestamp with time zone'
+          arguments:
+            nome_tabela: 'dados_abertos.senadores_historico'
+            nome_coluna: 'data_desfiliação'
+            tipo_esperado: 'timestamp with time zone'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.senadores_historico'
-          nome_coluna: 'ano_filiacao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'dados_abertos.senadores_historico'
+            nome_coluna: 'ano_filiacao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.senadores_historico'
-          nome_coluna: 'ano_desfiliação'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'dados_abertos.senadores_historico'
+            nome_coluna: 'ano_desfiliação'
+            tipo_esperado: 'integer'
