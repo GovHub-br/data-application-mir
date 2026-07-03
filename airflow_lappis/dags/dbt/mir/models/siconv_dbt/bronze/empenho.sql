@@ -4,7 +4,7 @@ with
     empenho_raw as (
         select
             nullif(id_empenho, '')::integer as id_empenho,
-            nullif(nr_convenio, '')::integer as nr_convenio,
+            nullif(nr_convenio, '')::text as nr_convenio,
             nr_empenho::text as nr_empenho,
             tipo_nota::text as tipo_nota,
             desc_tipo_nota::text as desc_tipo_nota,

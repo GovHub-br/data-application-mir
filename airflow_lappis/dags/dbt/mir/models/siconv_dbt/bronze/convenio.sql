@@ -3,7 +3,7 @@
 with
     convenio_raw as (
         select
-            nullif(nr_convenio, '')::integer as nr_convenio,
+            nullif(nr_convenio, '')::text as nr_convenio,
             nullif(id_proposta, '')::integer as id_proposta,
             nullif(dia, '')::integer as dia,
             nullif(mes, '')::integer as mes,

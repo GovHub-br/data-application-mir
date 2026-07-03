@@ -3,7 +3,7 @@
 with
     prorroga_oficio_raw as (
         select
-            nullif(nr_convenio, '')::integer as nr_convenio,
+            nullif(nr_convenio, '')::text as nr_convenio,
             nr_prorroga::text as nr_prorroga,
             to_date(nullif(dt_inicio_prorroga, ''), 'DD/MM/YYYY') as dt_inicio_prorroga,
             to_date(nullif(dt_fim_prorroga, ''), 'DD/MM/YYYY') as dt_fim_prorroga,

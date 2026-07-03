@@ -3,7 +3,7 @@
 with
     termo_aditivo_raw as (
         select
-            nullif(nr_convenio, '')::integer as nr_convenio,
+            nullif(nr_convenio, '')::text as nr_convenio,
             nullif(id_solicitacao, '')::integer as id_solicitacao,
             numero_ta::text as numero_ta,
             tipo_ta::text as tipo_ta,

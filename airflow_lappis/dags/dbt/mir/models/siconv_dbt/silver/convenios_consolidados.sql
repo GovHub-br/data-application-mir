@@ -18,7 +18,7 @@ with
             et.acao_governo_descricao
         from convenio cc
         right join empenhos_tesouro_ted et
-            on cast(cc.nr_convenio as text) = et.ne_info_complementar
+            on cc.nr_convenio = et.ne_info_complementar
         where cc.nr_convenio is not null
             and left(et.ne_ccor, 6) = '810008'
     ),

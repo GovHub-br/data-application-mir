@@ -4,7 +4,7 @@ with
     licitacao_raw as (
         select
             nullif(id_licitacao, '')::integer as id_licitacao,
-            nullif(nr_convenio, '')::integer as nr_convenio,
+            nullif(nr_convenio, '')::text as nr_convenio,
             nr_licitacao::text as nr_licitacao,
             modalidade_licitacao::text as modalidade_licitacao,
             tp_processo_compra::text as tp_processo_compra,
