@@ -168,7 +168,7 @@ models:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.emendas_convenio'
           nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.emendas_convenio'
           nome_coluna: 'numero_transferencia'
@@ -280,7 +280,7 @@ models:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.convenios_consolidados'
           nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.convenios_consolidados'
           nome_coluna: 'ug_emitente'
@@ -445,7 +445,7 @@ models:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.proposta_convenio'
           nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.proposta_convenio'
           nome_coluna: 'id_proposta'
@@ -636,7 +636,7 @@ models:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.convenio_proposta_pagamento'
           nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.convenio_proposta_pagamento'
           nome_coluna: 'vl_pago'

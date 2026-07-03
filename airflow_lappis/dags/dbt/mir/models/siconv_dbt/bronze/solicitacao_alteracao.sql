@@ -4,7 +4,7 @@ with
     solicitacao_alteracao_raw as (
         select
             nullif(id_solicitacao, '')::integer as id_solicitacao,
-            nullif(nr_convenio, '')::integer as nr_convenio,
+            nullif(nr_convenio, '')::text as nr_convenio,
             nr_solicitacao::text as nr_solicitacao,
             situacao_solicitacao::text as situacao_solicitacao,
             objeto_solicitacao::text as objeto_solicitacao,

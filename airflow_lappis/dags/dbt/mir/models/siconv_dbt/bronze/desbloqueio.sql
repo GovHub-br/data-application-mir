@@ -3,7 +3,7 @@
 with
     desbloqueio_raw as (
         select
-            nr_convenio::integer as nr_convenio,
+            nr_convenio::text as nr_convenio,
             nr_ob::text as nr_ob,
             to_date(nullif(data_cadastro, ''), 'DD/MM/YYYY') as data_cadastro,
             to_date(nullif(data_envio, ''), 'DD/MM/YYYY') as data_envio,

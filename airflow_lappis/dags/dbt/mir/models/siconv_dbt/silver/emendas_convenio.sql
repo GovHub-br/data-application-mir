@@ -123,5 +123,5 @@ select
     pa.sq_instrumento,
     pa.aa_instrumento
 from emendas e
-left join convenio c on e.numero_transferencia = c.nr_convenio
+left join convenio c on e.numero_transferencia::text = c.nr_convenio
 left join planos_acao pa on e.numero_transferencia::text = pa.sq_instrumento

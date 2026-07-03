@@ -4,7 +4,7 @@ with
     solicitacao_rendimento_aplicacao_raw as (
         select
             nullif(id_solicitacao_rend_aplicacao, '')::integer as id_solicitacao_rend_aplicacao,
-            nullif(nr_convenio, '')::integer as nr_convenio,
+            nullif(nr_convenio, '')::text as nr_convenio,
             nr_solicitacao_rend_aplicacao::text as nr_solicitacao_rend_aplicacao,
             status_solicitacao_rend_aplicacao::text as status_solicitacao_rend_aplicacao,
             case

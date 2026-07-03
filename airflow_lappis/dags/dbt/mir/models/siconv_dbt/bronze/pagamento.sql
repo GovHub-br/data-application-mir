@@ -4,7 +4,7 @@ with
     pagamento_raw as (
         select
             nullif(nr_mov_fin, '')::integer as nr_mov_fin,
-            nullif(nr_convenio, '')::integer as nr_convenio,
+            nullif(nr_convenio, '')::text as nr_convenio,
             identif_fornecedor::text as identif_fornecedor,
             nome_fornecedor::text as nome_fornecedor,
             tp_mov_financeira::text as tp_mov_financeira,

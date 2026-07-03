@@ -4,7 +4,7 @@ with
     desembolso_raw as (
         select
             nullif(id_desembolso, '')::integer as id_desembolso,
-            nullif(nr_convenio, '')::integer as nr_convenio,
+            nullif(nr_convenio, '')::text as nr_convenio,
             to_date(nullif(dt_ult_desembolso, ''), 'DD/MM/YYYY') as dt_ult_desembolso,
             nullif(qtd_dias_sem_desembolso, '')::integer as qtd_dias_sem_desembolso,
             to_date(nullif(data_desembolso, ''), 'DD/MM/YYYY') as data_desembolso,

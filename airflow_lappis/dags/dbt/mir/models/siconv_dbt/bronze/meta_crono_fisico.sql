@@ -5,7 +5,7 @@ with
         select
             nullif(id_meta, '')::integer as id_meta,
             nullif(id_proposta, '')::integer as id_proposta,
-            nullif(nr_convenio, '')::integer as nr_convenio,
+            nullif(nr_convenio, '')::text as nr_convenio,
             cod_programa::text as cod_programa,
             nome_programa::text as nome_programa,
             nullif(nr_meta, '')::integer as nr_meta,
