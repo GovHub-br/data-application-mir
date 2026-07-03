@@ -20,9 +20,6 @@ models:
 
       Quando o mesmo num_transf aparece nos dois caminhos com plano_acao distintos,
       um row_number prioriza o registro com plano_acao não-nulo.
-    meta:
-      tags:
-        - view
     columns:
       - name: num_transf
         description: >

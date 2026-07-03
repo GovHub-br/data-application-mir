@@ -19,7 +19,7 @@ env:
   POETRY_VERSION: "1.8.5"
   POETRY_VIRTUALENVS_IN_PROJECT: "true"
   POETRY_CACHE_DIR: "/home/runner/.cache/poetry"
-  DBT_PROJECT_DIR: "${{ github.workspace }}/airflow_lappis/dags/dbt/ipea"
+  DBT_PROJECT_DIR: "${{ github.workspace }}/airflow_lappis/dags/dbt/mir"
 
   IMAGE_REGISTRY_OWNER: govhub-br
   IMAGE_NAME: ghcr.io/govhub-br/airflow-ipea
@@ -180,10 +180,12 @@ jobs:
 
       - name: Gerar DBT docs
         env:
-          DB_DW_HOST: ${{ secrets.DB_DW_HOST }}
-          DB_DW_DBNAME: ${{ secrets.DB_DW_DBNAME }}
-          DB_DW_USER: ${{ secrets.DB_DW_USER }}
-          DB_DW_PASSWORD: ${{ secrets.DB_DW_PASSWORD }}
+          # O profile 'mir' lê variáveis com sufixo _MIR (ver dbt/mir/profiles.yml).
+          # Se o DW do MIR usar secrets próprios, troque por secrets.DB_DW_*_MIR.
+          DB_DW_HOST_MIR: ${{ secrets.DB_DW_HOST }}
+          DB_DW_DBNAME_MIR: ${{ secrets.DB_DW_DBNAME }}
+          DB_DW_USER_MIR: ${{ secrets.DB_DW_USER }}
+          DB_DW_PASSWORD_MIR: ${{ secrets.DB_DW_PASSWORD }}
         run: |
           cd "${{ env.DBT_PROJECT_DIR }}"
           dbt deps

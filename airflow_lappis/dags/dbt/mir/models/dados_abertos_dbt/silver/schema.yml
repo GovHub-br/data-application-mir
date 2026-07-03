@@ -6,9 +6,6 @@ models:
       Tabela silver que unifica informações de deputados e senadores
       em uma visão única de parlamentares, incluindo partido, UF,
       foto e logo do partido.
-    meta:
-      tags:
-        - silver
     columns:
       - name: id_parlamentar
         description: >
@@ -42,49 +39,55 @@ models:
           proveniente do seed partidos_logo.
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares'
-          nome_coluna: 'id_parlamentar'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares'
+            nome_coluna: 'id_parlamentar'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares'
-          nome_coluna: 'chave_join_nome'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares'
+            nome_coluna: 'chave_join_nome'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares'
-          nome_coluna: 'nome_parlamentar'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares'
+            nome_coluna: 'nome_parlamentar'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares'
-          nome_coluna: 'cargo_parlamentar'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares'
+            nome_coluna: 'cargo_parlamentar'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares'
-          nome_coluna: 'sigla_partido'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares'
+            nome_coluna: 'sigla_partido'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares'
-          nome_coluna: 'uf_parlamentar'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares'
+            nome_coluna: 'uf_parlamentar'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares'
-          nome_coluna: 'url_foto'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares'
+            nome_coluna: 'url_foto'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares'
-          nome_coluna: 'email'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares'
+            nome_coluna: 'email'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares'
-          nome_coluna: 'url_logo_partido'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares'
+            nome_coluna: 'url_logo_partido'
+            tipo_esperado: 'text'
 
   - name: parlamentares_historico
     description: >
       Tabela da camada silver que consolida e uniformiza o panorama evolutivo de deputados e senadores,
       fundindo as ocorrrências temporais (datas de filiação, desfiliação, cargo e status partidários).
-    meta:
-      tags:
-        - silver
     columns:
       - name: id_parlamentar
         description: Identificador base unificado que representa o político (proveniente da Câmara ou Senado).
@@ -119,26 +122,32 @@ models:
 
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares_historico'
-          nome_coluna: 'id_parlamentar'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares_historico'
+            nome_coluna: 'id_parlamentar'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares_historico'
-          nome_coluna: 'chave_join_nome'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares_historico'
+            nome_coluna: 'chave_join_nome'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares_historico'
-          nome_coluna: 'nome_parlamentar'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares_historico'
+            nome_coluna: 'nome_parlamentar'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares_historico'
-          nome_coluna: 'data_filiacao'
-          tipo_esperado: 'timestamp with time zone'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares_historico'
+            nome_coluna: 'data_filiacao'
+            tipo_esperado: 'timestamp with time zone'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares_historico'
-          nome_coluna: 'data_desfiliacao'
-          tipo_esperado: 'timestamp with time zone'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares_historico'
+            nome_coluna: 'data_desfiliacao'
+            tipo_esperado: 'timestamp with time zone'
       - verificacao_tipagem:
-          nome_tabela: 'dados_abertos.parlamentares_historico'
-          nome_coluna: 'id_legislatura'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'dados_abertos.parlamentares_historico'
+            nome_coluna: 'id_legislatura'
+            tipo_esperado: 'integer'

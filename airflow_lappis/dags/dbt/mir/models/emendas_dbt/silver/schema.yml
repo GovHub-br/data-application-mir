@@ -8,9 +8,6 @@ models:
       parlamentares do TransfereGov com metadados de parlamentares (deputados e senadores).
       A partir da tabela bronze planos_acoes e das bases de deputados e senadores, enriquece cada
       plano de ação com dados de identificação do parlamentar, partido, UF, foto e e-mail.
-    meta:
-      tags:
-        - silver
     columns:
       # Colunas de planos de ação (herdadas da camada bronze)
       - name: id_plano_acao
@@ -123,49 +120,60 @@ models:
           Data e hora (UTC-3 Brasília) mais recente de ingestão dos dados das tabelas fonte utilizadas neste modelo.
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'emendas.planos_partidos'
-          nome_coluna: 'id_plano_acao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.planos_partidos'
+            nome_coluna: 'id_plano_acao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.planos_partidos'
-          nome_coluna: 'ano_plano_acao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.planos_partidos'
+            nome_coluna: 'ano_plano_acao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.planos_partidos'
-          nome_coluna: 'codigo_situacao_dado_bancario_plano_acao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.planos_partidos'
+            nome_coluna: 'codigo_situacao_dado_bancario_plano_acao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.planos_partidos'
-          nome_coluna: 'numero_agencia_plano_acao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.planos_partidos'
+            nome_coluna: 'numero_agencia_plano_acao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.planos_partidos'
-          nome_coluna: 'numero_conta_plano_acao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.planos_partidos'
+            nome_coluna: 'numero_conta_plano_acao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.planos_partidos'
-          nome_coluna: 'sequencial_emenda_parlamentar_plano_acao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.planos_partidos'
+            nome_coluna: 'sequencial_emenda_parlamentar_plano_acao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.planos_partidos'
-          nome_coluna: 'valor_custeio_plano_acao'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'emendas.planos_partidos'
+            nome_coluna: 'valor_custeio_plano_acao'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.planos_partidos'
-          nome_coluna: 'valor_investimento_plano_acao'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'emendas.planos_partidos'
+            nome_coluna: 'valor_investimento_plano_acao'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.planos_partidos'
-          nome_coluna: 'id_programa'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.planos_partidos'
+            nome_coluna: 'id_programa'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.planos_partidos'
-          nome_coluna: 'id_parlamentar'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.planos_partidos'
+            nome_coluna: 'id_parlamentar'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.planos_partidos'
-          nome_coluna: 'dt_ingest'
-          tipo_esperado: 'timestamp with time zone'
+          arguments:
+            nome_tabela: 'emendas.planos_partidos'
+            nome_coluna: 'dt_ingest'
+            tipo_esperado: 'timestamp with time zone'
 
   - name: emendas_partidos
     description: >
@@ -173,9 +181,6 @@ models:
       cadastrais completas e históricas dos respectivos parlamentares e seus logotipos de partido.
       Para a integração, avalia o nome com fallback temporal em relação ao momento de apresentação da emenda,
       garantindo precisão na identificação de partido e cenário institucional à época.
-    meta:
-      tags:
-        - silver
     columns:
       - name: emissao_mes
         description: Mês de emissão referencial da emenda orçamentária.
@@ -272,57 +277,70 @@ models:
 
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'emendas.emendas_partidos'
-          nome_coluna: 'emissao_mes'
-          tipo_esperado: 'date'
+          arguments:
+            nome_tabela: 'emendas.emendas_partidos'
+            nome_coluna: 'emissao_mes'
+            tipo_esperado: 'date'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.emendas_partidos'
-          nome_coluna: 'emissao_dia'
-          tipo_esperado: 'date'
+          arguments:
+            nome_tabela: 'emendas.emendas_partidos'
+            nome_coluna: 'emissao_dia'
+            tipo_esperado: 'date'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.emendas_partidos'
-          nome_coluna: 'codigo_programa'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.emendas_partidos'
+            nome_coluna: 'codigo_programa'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.emendas_partidos'
-          nome_coluna: 'codigo_gnd'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.emendas_partidos'
+            nome_coluna: 'codigo_gnd'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.emendas_partidos'
-          nome_coluna: 'codigo_modalidade'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.emendas_partidos'
+            nome_coluna: 'codigo_modalidade'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.emendas_partidos'
-          nome_coluna: 'ne_ccor_ano_emissao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.emendas_partidos'
+            nome_coluna: 'ne_ccor_ano_emissao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.emendas_partidos'
-          nome_coluna: 'ptres'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.emendas_partidos'
+            nome_coluna: 'ptres'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.emendas_partidos'
-          nome_coluna: 'despesas_empenhadas'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'emendas.emendas_partidos'
+            nome_coluna: 'despesas_empenhadas'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.emendas_partidos'
-          nome_coluna: 'despesas_liquidadas'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'emendas.emendas_partidos'
+            nome_coluna: 'despesas_liquidadas'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.emendas_partidos'
-          nome_coluna: 'despesas_pagas'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'emendas.emendas_partidos'
+            nome_coluna: 'despesas_pagas'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.emendas_partidos'
-          nome_coluna: 'id_autor'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.emendas_partidos'
+            nome_coluna: 'id_autor'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.emendas_partidos'
-          nome_coluna: 'autor'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'emendas.emendas_partidos'
+            nome_coluna: 'autor'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.emendas_partidos'
-          nome_coluna: 'pais'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'emendas.emendas_partidos'
+            nome_coluna: 'pais'
+            tipo_esperado: 'text'
 
   - name: instrumentos_emendas
     description: >
@@ -332,9 +350,6 @@ models:
       termo de fomento (SICONV, via proposta_convenio) ou o Termo de Execução
       Descentralizada (TED, via ted_resumo_orcamentario), consolidando tipo, objeto,
       beneficiário, programa e valor firmado do instrumento em uma visão única.
-    meta:
-      tags:
-        - silver
     columns:
       # Colunas herdadas de numero_transferencia (emenda + autor)
       - name: emissao_mes
@@ -462,78 +477,97 @@ models:
           total do plano de ação do TED.
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'emissao_mes'
-          tipo_esperado: 'date'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'emissao_mes'
+            tipo_esperado: 'date'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'emissao_dia'
-          tipo_esperado: 'date'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'emissao_dia'
+            tipo_esperado: 'date'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'codigo_programa'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'codigo_programa'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'codigo_gnd'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'codigo_gnd'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'codigo_modalidade'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'codigo_modalidade'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'ne_ccor_ano_emissao'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'ne_ccor_ano_emissao'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'ptres'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'ptres'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'despesas_empenhadas'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'despesas_empenhadas'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'despesas_liquidadas'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'despesas_liquidadas'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'despesas_pagas'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'despesas_pagas'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'id_autor'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'id_autor'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'numero_transferencia'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'numero_transferencia'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'numero_instrumento'
-          tipo_esperado: 'integer'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'numero_instrumento'
+            tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'valor_firmado'
-          tipo_esperado: 'numeric'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'valor_firmado'
+            tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'tipo_instrumento'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'tipo_instrumento'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'objeto_instrumento'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'objeto_instrumento'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'beneficiario'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'beneficiario'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'autor'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'autor'
+            tipo_esperado: 'text'
       - verificacao_tipagem:
-          nome_tabela: 'emendas.instrumentos_emendas'
-          nome_coluna: 'pais'
-          tipo_esperado: 'text'
+          arguments:
+            nome_tabela: 'emendas.instrumentos_emendas'
+            nome_coluna: 'pais'
+            tipo_esperado: 'text'

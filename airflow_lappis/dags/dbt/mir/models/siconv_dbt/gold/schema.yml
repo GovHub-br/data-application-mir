@@ -5,9 +5,6 @@ models:
     todas as informações relevantes agregadas das tabelas do SICONV, incluindo
     execução financeira, metas físicas, licitações, pagamentos, aditivos e
     emendas parlamentares associadas.
-  meta:
-    tags:
-      - gold
   columns:
     - name: nr_convenio
       description: "Número único do convênio — chave principal."
