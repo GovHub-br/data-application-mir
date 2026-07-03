@@ -48,52 +48,44 @@ models:
           Data e hora (UTC-3 Brasília) em que os dados foram ingeridos da fonte original para a camada raw.
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'deputados.deputados'
-            nome_coluna: 'id'
-            tipo_esperado: 'integer'
+          nome_tabela: 'deputados.deputados'
+          nome_coluna: 'id'
+          tipo_esperado: 'integer'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'deputados.deputados'
-            nome_coluna: 'nome'
-            tipo_esperado: 'text'
+          nome_tabela: 'deputados.deputados'
+          nome_coluna: 'nome'
+          tipo_esperado: 'text'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'deputados.deputados'
-            nome_coluna: 'siglapartido'
-            tipo_esperado: 'text'
+          nome_tabela: 'deputados.deputados'
+          nome_coluna: 'siglapartido'
+          tipo_esperado: 'text'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'deputados.deputados'
-            nome_coluna: 'siglauf'
-            tipo_esperado: 'text'
+          nome_tabela: 'deputados.deputados'
+          nome_coluna: 'siglauf'
+          tipo_esperado: 'text'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'deputados.deputados'
-            nome_coluna: 'idlegislatura'
-            tipo_esperado: 'integer'
+          nome_tabela: 'deputados.deputados'
+          nome_coluna: 'idlegislatura'
+          tipo_esperado: 'integer'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'deputados'
-            nome_coluna: 'urlfoto'
-            tipo_esperado: 'text'
+          nome_tabela: 'deputados'
+          nome_coluna: 'urlfoto'
+          tipo_esperado: 'text'
         
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'deputados.deputados'
-            nome_coluna: 'email'
-            tipo_esperado: 'text'
+          nome_tabela: 'deputados.deputados'
+          nome_coluna: 'email'
+          tipo_esperado: 'text'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'deputados.deputados'
-            nome_coluna: 'dt_ingest'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'deputados.deputados'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
 
   - name: senadores
     description: >
@@ -148,64 +140,54 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'senadores.senadores'
-            nome_coluna: 'id'
-            tipo_esperado: 'integer'
+          nome_tabela: 'senadores.senadores'
+          nome_coluna: 'id'
+          tipo_esperado: 'integer'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'senadores.senadores'
-            nome_coluna: 'nome_parlamentar'
-            tipo_esperado: 'text'
+          nome_tabela: 'senadores.senadores'
+          nome_coluna: 'nome_parlamentar'
+          tipo_esperado: 'text'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'senadores.senadores'
-            nome_coluna: 'sexo'
-            tipo_esperado: 'text'
+          nome_tabela: 'senadores.senadores'
+          nome_coluna: 'sexo'
+          tipo_esperado: 'text'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'senadores.senadores'
-            nome_coluna: 'forma_tratamento'
-            tipo_esperado: 'text'
+          nome_tabela: 'senadores.senadores'
+          nome_coluna: 'forma_tratamento'
+          tipo_esperado: 'text'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'senadores.senadores'
-            nome_coluna: 'url_foto'
-            tipo_esperado: 'text'
+          nome_tabela: 'senadores.senadores'
+          nome_coluna: 'url_foto'
+          tipo_esperado: 'text'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'senadores.senadores'
-            nome_coluna: 'url_pagina'
-            tipo_esperado: 'text'
+          nome_tabela: 'senadores.senadores'
+          nome_coluna: 'url_pagina'
+          tipo_esperado: 'text'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'senadores.senadores'
-            nome_coluna: 'email'
-            tipo_esperado: 'text'
+          nome_tabela: 'senadores.senadores'
+          nome_coluna: 'email'
+          tipo_esperado: 'text'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'senadores.senadores'
-            nome_coluna: 'sigla_partido'
-            tipo_esperado: 'text'
+          nome_tabela: 'senadores.senadores'
+          nome_coluna: 'sigla_partido'
+          tipo_esperado: 'text'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'senadores.senadores'
-            nome_coluna: 'uf'
-            tipo_esperado: 'text'
+          nome_tabela: 'senadores.senadores'
+          nome_coluna: 'uf'
+          tipo_esperado: 'text'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'senadores.senadores'
-            nome_coluna: 'dt_ingest'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'senadores.senadores'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
 
   - name: legislaturas
     description: >
@@ -238,34 +220,29 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'legislaturas.legislaturas'
-            nome_coluna: 'id'
-            tipo_esperado: 'integer'
+          nome_tabela: 'legislaturas.legislaturas'
+          nome_coluna: 'id'
+          tipo_esperado: 'integer'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'legislaturas.legislaturas'
-            nome_coluna: 'data_inicio'
-            tipo_esperado: 'date'
+          nome_tabela: 'legislaturas.legislaturas'
+          nome_coluna: 'data_inicio'
+          tipo_esperado: 'date'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'legislaturas.legislaturas'
-            nome_coluna: 'data_fim'
-            tipo_esperado: 'date'
+          nome_tabela: 'legislaturas.legislaturas'
+          nome_coluna: 'data_fim'
+          tipo_esperado: 'date'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'legislaturas.legislaturas'
-            nome_coluna: 'data_eleicao'
-            tipo_esperado: 'date'
+          nome_tabela: 'legislaturas.legislaturas'
+          nome_coluna: 'data_eleicao'
+          tipo_esperado: 'date'
 
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'legislaturas.legislaturas'
-            nome_coluna: 'dt_ingest'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'legislaturas.legislaturas'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
 
 
   - name: deputados_historico
@@ -295,35 +272,29 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.deputados_historico'
-            nome_coluna: 'id'
-            tipo_esperado: 'integer'
+          nome_tabela: 'dados_abertos.deputados_historico'
+          nome_coluna: 'id'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.deputados_historico'
-            nome_coluna: 'nome'
-            tipo_esperado: 'text'
+          nome_tabela: 'dados_abertos.deputados_historico'
+          nome_coluna: 'nome'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.deputados_historico'
-            nome_coluna: 'id_legislatura'
-            tipo_esperado: 'integer'
+          nome_tabela: 'dados_abertos.deputados_historico'
+          nome_coluna: 'id_legislatura'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.deputados_historico'
-            nome_coluna: 'situacao'
-            tipo_esperado: 'text'
+          nome_tabela: 'dados_abertos.deputados_historico'
+          nome_coluna: 'situacao'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.deputados_historico'
-            nome_coluna: 'data_filiacao'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'dados_abertos.deputados_historico'
+          nome_coluna: 'data_filiacao'
+          tipo_esperado: 'timestamp with time zone'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.deputados_historico'
-            nome_coluna: 'data_desfiliacao'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'dados_abertos.deputados_historico'
+          nome_coluna: 'data_desfiliacao'
+          tipo_esperado: 'timestamp with time zone'
 
   - name: senadores_historico
     description: >
@@ -355,27 +326,22 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.senadores_historico'
-            nome_coluna: 'parlamentar_id'
-            tipo_esperado: 'integer'
+          nome_tabela: 'dados_abertos.senadores_historico'
+          nome_coluna: 'parlamentar_id'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.senadores_historico'
-            nome_coluna: 'data_filiacao'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'dados_abertos.senadores_historico'
+          nome_coluna: 'data_filiacao'
+          tipo_esperado: 'timestamp with time zone'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.senadores_historico'
-            nome_coluna: 'data_desfiliação'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'dados_abertos.senadores_historico'
+          nome_coluna: 'data_desfiliação'
+          tipo_esperado: 'timestamp with time zone'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.senadores_historico'
-            nome_coluna: 'ano_filiacao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'dados_abertos.senadores_historico'
+          nome_coluna: 'ano_filiacao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.senadores_historico'
-            nome_coluna: 'ano_desfiliação'
-            tipo_esperado: 'integer'
+          nome_tabela: 'dados_abertos.senadores_historico'
+          nome_coluna: 'ano_desfiliação'
+          tipo_esperado: 'integer'
