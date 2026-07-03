@@ -66,25 +66,21 @@ models:
         description: "Maior timestamp de ingestao entre as fontes (UTC-3)."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_unificado'
-            nome_coluna: 'emissao_dia'
-            tipo_esperado: 'date'
+          nome_tabela: 'siafi_dbt.pf_unificado'
+          nome_coluna: 'emissao_dia'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_unificado'
-            nome_coluna: 'pf_valor_linha'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.pf_unificado'
+          nome_coluna: 'pf_valor_linha'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_unificado'
-            nome_coluna: 'id_programacao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.pf_unificado'
+          nome_coluna: 'id_programacao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_unificado'
-            nome_coluna: 'id_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.pf_unificado'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
 
   - name: pf_unificado_planos_acao
     description: >
@@ -111,25 +107,21 @@ models:
         description: "Maior timestamp de ingestao entre pf_unificado e planos_acao_ted."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
-            nome_coluna: 'id_programacao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
+          nome_coluna: 'id_programacao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
-            nome_coluna: 'id_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
-            nome_coluna: 'id_programa'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
+          nome_coluna: 'id_programa'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
-            nome_coluna: 'vl_total_plano_acao'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
+          nome_coluna: 'vl_total_plano_acao'
+          tipo_esperado: 'numeric'
           
   - name: nc_unificado
     description: >
@@ -211,20 +203,17 @@ models:
         description: "Timestamp de ingestão do SIAFI (UTC-3)."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.nc_unificado'
-            nome_coluna: 'valor_celula'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.nc_unificado'
+          nome_coluna: 'valor_celula'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.nc_unificado'
-            nome_coluna: 'emissao_dia'
-            tipo_esperado: 'date'
+          nome_tabela: 'siafi_dbt.nc_unificado'
+          nome_coluna: 'emissao_dia'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.nc_unificado'
-            nome_coluna: 'dt_ingest'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'siafi_dbt.nc_unificado'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
 
   - name: nc_plano_acao
     description: >
@@ -311,25 +300,21 @@ models:
         description: "Timestamp de ingestão do SIAFI (timestamptz, UTC-3)."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.nc_plano_acao'
-            nome_coluna: 'id_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.nc_plano_acao'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.nc_plano_acao'
-            nome_coluna: 'valor_celula'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.nc_plano_acao'
+          nome_coluna: 'valor_celula'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.nc_plano_acao'
-            nome_coluna: 'emissao_dia'
-            tipo_esperado: 'date'
+          nome_tabela: 'siafi_dbt.nc_plano_acao'
+          nome_coluna: 'emissao_dia'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.nc_plano_acao'
-            nome_coluna: 'dt_ingest'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'siafi_dbt.nc_plano_acao'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
 
   - name: empenhos_por_plano_acao
     description: >
@@ -417,32 +402,26 @@ models:
         description: "num_transf conforme registrado na ponte num_transf_n_plano_acao — usado para conferência cruzada com o num_transf extraído da NE."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
-            nome_coluna: 'despesas_empenhadas'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
+          nome_coluna: 'despesas_empenhadas'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
-            nome_coluna: 'despesas_liquidadas'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
+          nome_coluna: 'despesas_liquidadas'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
-            nome_coluna: 'restos_a_pagar_inscritos'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
+          nome_coluna: 'restos_a_pagar_inscritos'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
-            nome_coluna: 'ne_ccor_ano_emissao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
+          nome_coluna: 'ne_ccor_ano_emissao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
-            nome_coluna: 'plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
+          nome_coluna: 'plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
-            nome_coluna: 'dt_ingest'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
