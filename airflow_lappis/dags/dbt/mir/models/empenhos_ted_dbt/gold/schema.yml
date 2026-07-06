@@ -96,25 +96,21 @@ models:
           proveniente de nc_plano_acao.
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
-            nome_coluna: 'plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+          nome_coluna: 'plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
-            nome_coluna: 'valor_firmado'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+          nome_coluna: 'valor_firmado'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
-            nome_coluna: 'empenhado'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+          nome_coluna: 'empenhado'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
-            nome_coluna: 'dt_ingest'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
 
   - name: ted_empenhos_plano_acao
     description: >
@@ -182,27 +178,22 @@ models:
         description: "Timestamp de ingestão da NE no SIAFI (timestamptz, UTC-3)."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
-            nome_coluna: 'plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
+          nome_coluna: 'plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
-            nome_coluna: 'ne_ccor_ano_emissao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
+          nome_coluna: 'ne_ccor_ano_emissao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
-            nome_coluna: 'despesas_empenhadas'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
+          nome_coluna: 'despesas_empenhadas'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
-            nome_coluna: 'despesas_liquidadas'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
+          nome_coluna: 'despesas_liquidadas'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
-            nome_coluna: 'restos_a_pagar_inscritos'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
+          nome_coluna: 'restos_a_pagar_inscritos'
+          tipo_esperado: 'numeric'

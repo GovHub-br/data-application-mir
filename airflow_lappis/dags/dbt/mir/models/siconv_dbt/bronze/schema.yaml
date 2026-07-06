@@ -80,20 +80,17 @@ models:
         description: "Código da conta bancária."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.proposta'
-            nome_coluna: 'id_proposta'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.proposta'
+          nome_coluna: 'id_proposta'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.proposta'
-            nome_coluna: 'vl_global_prop'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siconv_dbt.proposta'
+          nome_coluna: 'vl_global_prop'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.proposta'
-            nome_coluna: 'dia_proposta'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.proposta'
+          nome_coluna: 'dia_proposta'
+          tipo_esperado: 'date'
 
   - name: convenio
     description: >
@@ -182,20 +179,17 @@ models:
         description: "Valor global original do convênio."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.convenio'
-            nome_coluna: 'nr_convenio'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.convenio'
+          nome_coluna: 'nr_convenio'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.convenio'
-            nome_coluna: 'vl_global_conv'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siconv_dbt.convenio'
+          nome_coluna: 'vl_global_conv'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.convenio'
-            nome_coluna: 'dia_assin_conv'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.convenio'
+          nome_coluna: 'dia_assin_conv'
+          tipo_esperado: 'date'
 
   - name: desembolso
     description: >
@@ -225,20 +219,17 @@ models:
         description: "Valor desembolsado."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.desembolso'
-            nome_coluna: 'id_desembolso'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.desembolso'
+          nome_coluna: 'id_desembolso'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.desembolso'
-            nome_coluna: 'vl_desembolsado'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siconv_dbt.desembolso'
+          nome_coluna: 'vl_desembolsado'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.desembolso'
-            nome_coluna: 'data_desembolso'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.desembolso'
+          nome_coluna: 'data_desembolso'
+          tipo_esperado: 'date'
 
   - name: desbloqueio
     description: >
@@ -262,20 +253,17 @@ models:
         description: "Valor bloqueado."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.desbloqueio'
-            nome_coluna: 'nr_convenio'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.desbloqueio'
+          nome_coluna: 'nr_convenio'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.desbloqueio'
-            nome_coluna: 'vl_total_desbloqueio'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siconv_dbt.desbloqueio'
+          nome_coluna: 'vl_total_desbloqueio'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.desbloqueio'
-            nome_coluna: 'data_cadastro'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.desbloqueio'
+          nome_coluna: 'data_cadastro'
+          tipo_esperado: 'date'
 
   - name: solicitacao_alteracao
     description: >
@@ -295,15 +283,13 @@ models:
         description: "Data da solicitação."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.solicitacao_alteracao'
-            nome_coluna: 'id_solicitacao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.solicitacao_alteracao'
+          nome_coluna: 'id_solicitacao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.solicitacao_alteracao'
-            nome_coluna: 'data_solicitacao'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.solicitacao_alteracao'
+          nome_coluna: 'data_solicitacao'
+          tipo_esperado: 'date'
 
   - name: termo_aditivo
     description: >
@@ -333,20 +319,17 @@ models:
         description: "Justificativa do termo aditivo."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.termo_aditivo'
-            nome_coluna: 'nr_convenio'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.termo_aditivo'
+          nome_coluna: 'nr_convenio'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.termo_aditivo'
-            nome_coluna: 'vl_global_ta'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siconv_dbt.termo_aditivo'
+          nome_coluna: 'vl_global_ta'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.termo_aditivo'
-            nome_coluna: 'dt_assinatura_ta'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.termo_aditivo'
+          nome_coluna: 'dt_assinatura_ta'
+          tipo_esperado: 'date'
 
   - name: solicitacao_rendimento_aplicacao
     description: >
@@ -368,20 +351,17 @@ models:
         description: "Valor aprovado de rendimento."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.solicitacao_rendimento_aplicacao'
-            nome_coluna: 'id_solicitacao_rend_aplicacao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.solicitacao_rendimento_aplicacao'
+          nome_coluna: 'id_solicitacao_rend_aplicacao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.solicitacao_rendimento_aplicacao'
-            nome_coluna: 'valor_solicitacao_rend_aplicacao'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siconv_dbt.solicitacao_rendimento_aplicacao'
+          nome_coluna: 'valor_solicitacao_rend_aplicacao'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.solicitacao_rendimento_aplicacao'
-            nome_coluna: 'data_solicitacao_rend_aplicacao'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.solicitacao_rendimento_aplicacao'
+          nome_coluna: 'data_solicitacao_rend_aplicacao'
+          tipo_esperado: 'date'
 
   - name: prorroga_oficio
     description: >
@@ -403,15 +383,13 @@ models:
         description: "Situação da prorrogação."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.prorroga_oficio'
-            nome_coluna: 'nr_convenio'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.prorroga_oficio'
+          nome_coluna: 'nr_convenio'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.prorroga_oficio'
-            nome_coluna: 'dt_inicio_prorroga'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.prorroga_oficio'
+          nome_coluna: 'dt_inicio_prorroga'
+          tipo_esperado: 'date'
 
   - name: pagamento_tributo
     description: >
@@ -425,20 +403,17 @@ models:
         description: "Valor pago de tributos."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.pagamento_tributo'
-            nome_coluna: 'nr_convenio'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.pagamento_tributo'
+          nome_coluna: 'nr_convenio'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.pagamento_tributo'
-            nome_coluna: 'vl_pag_tributos'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siconv_dbt.pagamento_tributo'
+          nome_coluna: 'vl_pag_tributos'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.pagamento_tributo'
-            nome_coluna: 'data_tributo'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.pagamento_tributo'
+          nome_coluna: 'data_tributo'
+          tipo_esperado: 'date'
 
   - name: pagamento
     description: >
@@ -468,20 +443,17 @@ models:
         description: "Data de emissão do documento de liquidação."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.pagamento'
-            nome_coluna: 'nr_mov_fin'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.pagamento'
+          nome_coluna: 'nr_mov_fin'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.pagamento'
-            nome_coluna: 'vl_pago'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siconv_dbt.pagamento'
+          nome_coluna: 'vl_pago'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.pagamento'
-            nome_coluna: 'data_pag'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.pagamento'
+          nome_coluna: 'data_pag'
+          tipo_esperado: 'date'
 
   - name: licitacao
     description: >
@@ -525,20 +497,17 @@ models:
         description: "Data de envio para análise."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.licitacao'
-            nome_coluna: 'id_licitacao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.licitacao'
+          nome_coluna: 'id_licitacao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.licitacao'
-            nome_coluna: 'valor_licitacao'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siconv_dbt.licitacao'
+          nome_coluna: 'valor_licitacao'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.licitacao'
-            nome_coluna: 'data_publicacao_licitacao'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.licitacao'
+          nome_coluna: 'data_publicacao_licitacao'
+          tipo_esperado: 'date'
 
   - name: ingresso_contrapartida
     description: >
@@ -552,20 +521,17 @@ models:
         description: "Valor de ingresso da contrapartida."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.ingresso_contrapartida'
-            nome_coluna: 'nr_convenio'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.ingresso_contrapartida'
+          nome_coluna: 'nr_convenio'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.ingresso_contrapartida'
-            nome_coluna: 'vl_ingresso_contrapartida'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siconv_dbt.ingresso_contrapartida'
+          nome_coluna: 'vl_ingresso_contrapartida'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.ingresso_contrapartida'
-            nome_coluna: 'dt_ingresso_contrapartida'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.ingresso_contrapartida'
+          nome_coluna: 'dt_ingresso_contrapartida'
+          tipo_esperado: 'date'
 
   - name: empenho
     description: >
@@ -609,20 +575,17 @@ models:
         description: "Descrição da emenda SIAFI."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.empenho'
-            nome_coluna: 'id_empenho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.empenho'
+          nome_coluna: 'id_empenho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.empenho'
-            nome_coluna: 'valor_empenho'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siconv_dbt.empenho'
+          nome_coluna: 'valor_empenho'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.empenho'
-            nome_coluna: 'data_emissao'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.empenho'
+          nome_coluna: 'data_emissao'
+          tipo_esperado: 'date'
 
   - name: historico_situacao
     description: >
@@ -642,15 +605,13 @@ models:
         description: "Código do histórico de situação."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.historico_situacao'
-            nome_coluna: 'nr_convenio'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.historico_situacao'
+          nome_coluna: 'nr_convenio'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.historico_situacao'
-            nome_coluna: 'dia_historico_sit'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.historico_situacao'
+          nome_coluna: 'dia_historico_sit'
+          tipo_esperado: 'date'
 
   - name: cronograma_desembolso
     description: >
@@ -672,15 +633,13 @@ models:
         description: "Valor da parcela do cronograma de desembolso."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.cronograma_desembolso'
-            nome_coluna: 'nr_convenio'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.cronograma_desembolso'
+          nome_coluna: 'nr_convenio'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.cronograma_desembolso'
-            nome_coluna: 'valor_parcela_crono_desembolso'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siconv_dbt.cronograma_desembolso'
+          nome_coluna: 'valor_parcela_crono_desembolso'
+          tipo_esperado: 'numeric'
 
   - name: meta_crono_fisico
     description: >
@@ -722,17 +681,14 @@ models:
         description: "Valor da meta."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.meta_crono_fisico'
-            nome_coluna: 'id_meta'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siconv_dbt.meta_crono_fisico'
+          nome_coluna: 'id_meta'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.meta_crono_fisico'
-            nome_coluna: 'vl_meta'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siconv_dbt.meta_crono_fisico'
+          nome_coluna: 'vl_meta'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siconv_dbt.meta_crono_fisico'
-            nome_coluna: 'data_inicio_meta'
-            tipo_esperado: 'date'
+          nome_tabela: 'siconv_dbt.meta_crono_fisico'
+          nome_coluna: 'data_inicio_meta'
+          tipo_esperado: 'date'
