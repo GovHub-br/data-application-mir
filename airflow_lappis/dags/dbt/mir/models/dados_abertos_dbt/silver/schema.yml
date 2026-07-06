@@ -39,50 +39,41 @@ models:
           proveniente do seed partidos_logo.
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares'
-            nome_coluna: 'id_parlamentar'
-            tipo_esperado: 'integer'
+          nome_tabela: 'dados_abertos.parlamentares'
+          nome_coluna: 'id_parlamentar'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares'
-            nome_coluna: 'chave_join_nome'
-            tipo_esperado: 'text'
+          nome_tabela: 'dados_abertos.parlamentares'
+          nome_coluna: 'chave_join_nome'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares'
-            nome_coluna: 'nome_parlamentar'
-            tipo_esperado: 'text'
+          nome_tabela: 'dados_abertos.parlamentares'
+          nome_coluna: 'nome_parlamentar'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares'
-            nome_coluna: 'cargo_parlamentar'
-            tipo_esperado: 'text'
+          nome_tabela: 'dados_abertos.parlamentares'
+          nome_coluna: 'cargo_parlamentar'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares'
-            nome_coluna: 'sigla_partido'
-            tipo_esperado: 'text'
+          nome_tabela: 'dados_abertos.parlamentares'
+          nome_coluna: 'sigla_partido'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares'
-            nome_coluna: 'uf_parlamentar'
-            tipo_esperado: 'text'
+          nome_tabela: 'dados_abertos.parlamentares'
+          nome_coluna: 'uf_parlamentar'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares'
-            nome_coluna: 'url_foto'
-            tipo_esperado: 'text'
+          nome_tabela: 'dados_abertos.parlamentares'
+          nome_coluna: 'url_foto'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares'
-            nome_coluna: 'email'
-            tipo_esperado: 'text'
+          nome_tabela: 'dados_abertos.parlamentares'
+          nome_coluna: 'email'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares'
-            nome_coluna: 'url_logo_partido'
-            tipo_esperado: 'text'
+          nome_tabela: 'dados_abertos.parlamentares'
+          nome_coluna: 'url_logo_partido'
+          tipo_esperado: 'text'
 
   - name: parlamentares_historico
     description: >
@@ -122,32 +113,26 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares_historico'
-            nome_coluna: 'id_parlamentar'
-            tipo_esperado: 'integer'
+          nome_tabela: 'dados_abertos.parlamentares_historico'
+          nome_coluna: 'id_parlamentar'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares_historico'
-            nome_coluna: 'chave_join_nome'
-            tipo_esperado: 'text'
+          nome_tabela: 'dados_abertos.parlamentares_historico'
+          nome_coluna: 'chave_join_nome'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares_historico'
-            nome_coluna: 'nome_parlamentar'
-            tipo_esperado: 'text'
+          nome_tabela: 'dados_abertos.parlamentares_historico'
+          nome_coluna: 'nome_parlamentar'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares_historico'
-            nome_coluna: 'data_filiacao'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'dados_abertos.parlamentares_historico'
+          nome_coluna: 'data_filiacao'
+          tipo_esperado: 'timestamp with time zone'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares_historico'
-            nome_coluna: 'data_desfiliacao'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'dados_abertos.parlamentares_historico'
+          nome_coluna: 'data_desfiliacao'
+          tipo_esperado: 'timestamp with time zone'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'dados_abertos.parlamentares_historico'
-            nome_coluna: 'id_legislatura'
-            tipo_esperado: 'integer'
+          nome_tabela: 'dados_abertos.parlamentares_historico'
+          nome_coluna: 'id_legislatura'
+          tipo_esperado: 'integer'

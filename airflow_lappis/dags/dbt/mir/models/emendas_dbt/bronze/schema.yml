@@ -75,75 +75,61 @@ models:
           Data e hora (UTC-3 Brasília) em que os dados foram ingeridos da fonte original para a camada raw.
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'id_programa'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'id_programa'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'ano_programa'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'ano_programa'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'id_orgao_superior_programa'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'id_orgao_superior_programa'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'id_unidade_gestora_programa'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'id_unidade_gestora_programa'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'id_unidade_orcamentaria_responsavel_programa'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'id_unidade_orcamentaria_responsavel_programa'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'data_inicio_ciencia_programa'
-            tipo_esperado: 'date'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'data_inicio_ciencia_programa'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'data_fim_ciencia_programa'
-            tipo_esperado: 'date'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'data_fim_ciencia_programa'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'valor_necessidade_financeira_programa'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_necessidade_financeira_programa'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'valor_total_disponibilizado_programa'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_total_disponibilizado_programa'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'valor_impedido_programa'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_impedido_programa'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'valor_a_disponibilizar_programa'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_a_disponibilizar_programa'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'valor_documentos_habeis_gerados_programa'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_documentos_habeis_gerados_programa'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'valor_obs_geradas_programa'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_obs_geradas_programa'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.programas'
-            nome_coluna: 'valor_disponibilidade_atual_programa'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.programas'
+          nome_coluna: 'valor_disponibilidade_atual_programa'
+          tipo_esperado: 'numeric'
 
   - name: planos_acoes
     description: >
@@ -241,50 +227,41 @@ models:
           Data e hora (UTC-3 Brasília) em que os dados foram ingeridos da fonte original para a camada raw.
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_acoes'
-            nome_coluna: 'id_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.planos_acoes'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_acoes'
-            nome_coluna: 'ano_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.planos_acoes'
+          nome_coluna: 'ano_plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_acoes'
-            nome_coluna: 'codigo_situacao_dado_bancario_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.planos_acoes'
+          nome_coluna: 'codigo_situacao_dado_bancario_plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_acoes'
-            nome_coluna: 'numero_agencia_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.planos_acoes'
+          nome_coluna: 'numero_agencia_plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_acoes'
-            nome_coluna: 'numero_conta_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.planos_acoes'
+          nome_coluna: 'numero_conta_plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_acoes'
-            nome_coluna: 'sequencial_emenda_parlamentar_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.planos_acoes'
+          nome_coluna: 'sequencial_emenda_parlamentar_plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_acoes'
-            nome_coluna: 'valor_custeio_plano_acao'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.planos_acoes'
+          nome_coluna: 'valor_custeio_plano_acao'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_acoes'
-            nome_coluna: 'valor_investimento_plano_acao'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.planos_acoes'
+          nome_coluna: 'valor_investimento_plano_acao'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_acoes'
-            nome_coluna: 'id_programa'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.planos_acoes'
+          nome_coluna: 'id_programa'
+          tipo_esperado: 'integer'
 
   - name: empenhos_especiais
     description: >
@@ -381,60 +358,49 @@ models:
           Data e hora (UTC-3 Brasília) em que os dados foram ingeridos da fonte original para a camada raw.
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.empenhos_emendas'
-            nome_coluna: 'id_empenho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.empenhos_emendas'
+          nome_coluna: 'id_empenho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.empenhos_emendas'
-            nome_coluna: 'situacao_empenho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.empenhos_emendas'
+          nome_coluna: 'situacao_empenho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.empenhos_emendas'
-            nome_coluna: 'tipo_documento_empenho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.empenhos_emendas'
+          nome_coluna: 'tipo_documento_empenho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.empenhos_emendas'
-            nome_coluna: 'ug_responsavel_empenho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.empenhos_emendas'
+          nome_coluna: 'ug_responsavel_empenho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.empenhos_emendas'
-            nome_coluna: 'ug_emitente_empenho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.empenhos_emendas'
+          nome_coluna: 'ug_emitente_empenho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.empenhos_emendas'
-            nome_coluna: 'ptres_empenho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.empenhos_emendas'
+          nome_coluna: 'ptres_empenho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.empenhos_emendas'
-            nome_coluna: 'modalidade_despesa_empenho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.empenhos_emendas'
+          nome_coluna: 'modalidade_despesa_empenho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.empenhos_emendas'
-            nome_coluna: 'data_emissao_empenho'
-            tipo_esperado: 'date'
+          nome_tabela: 'emendas.empenhos_emendas'
+          nome_coluna: 'data_emissao_empenho'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.empenhos_emendas'
-            nome_coluna: 'prioridade_desbloqueio_empenho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.empenhos_emendas'
+          nome_coluna: 'prioridade_desbloqueio_empenho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.empenhos_emendas'
-            nome_coluna: 'valor_empenho'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.empenhos_emendas'
+          nome_coluna: 'valor_empenho'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.empenhos_emendas'
-            nome_coluna: 'id_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.empenhos_emendas'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
 
   - name: ordens_bancarias
     description: >
@@ -488,50 +454,41 @@ models:
           Data e hora (UTC-3 Brasília) em que os dados foram ingeridos da fonte original para a camada raw.
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.ordens_bancarias'
-            nome_coluna: 'id_op_ob'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.ordens_bancarias'
+          nome_coluna: 'id_op_ob'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.ordens_bancarias'
-            nome_coluna: 'data_emissao_op'
-            tipo_esperado: 'date'
+          nome_tabela: 'emendas.ordens_bancarias'
+          nome_coluna: 'data_emissao_op'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.ordens_bancarias'
-            nome_coluna: 'vinculacao_op'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.ordens_bancarias'
+          nome_coluna: 'vinculacao_op'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.ordens_bancarias'
-            nome_coluna: 'situacao_op'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.ordens_bancarias'
+          nome_coluna: 'situacao_op'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.ordens_bancarias'
-            nome_coluna: 'data_situacao_op'
-            tipo_esperado: 'date'
+          nome_tabela: 'emendas.ordens_bancarias'
+          nome_coluna: 'data_situacao_op'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.ordens_bancarias'
-            nome_coluna: 'data_emissao_ob'
-            tipo_esperado: 'date'
+          nome_tabela: 'emendas.ordens_bancarias'
+          nome_coluna: 'data_emissao_ob'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.ordens_bancarias'
-            nome_coluna: 'data_assinatura_ordenador_despesa_ob'
-            tipo_esperado: 'date'
+          nome_tabela: 'emendas.ordens_bancarias'
+          nome_coluna: 'data_assinatura_ordenador_despesa_ob'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.ordens_bancarias'
-            nome_coluna: 'data_assinatura_gestor_financeiro_ob'
-            tipo_esperado: 'date'
+          nome_tabela: 'emendas.ordens_bancarias'
+          nome_coluna: 'data_assinatura_gestor_financeiro_ob'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.ordens_bancarias'
-            nome_coluna: 'id_dh'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.ordens_bancarias'
+          nome_coluna: 'id_dh'
+          tipo_esperado: 'integer'
 
   - name: historico_pagamentos
     description: >
@@ -560,25 +517,21 @@ models:
           Data e hora (UTC-3 Brasília) em que os dados foram ingeridos da fonte original para a camada raw.
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.historico_pagamentos'
-            nome_coluna: 'id_historico_op_ob'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.historico_pagamentos'
+          nome_coluna: 'id_historico_op_ob'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.historico_pagamentos'
-            nome_coluna: 'data_hora_historico_op'
-            tipo_esperado: 'timestamp without time zone'
+          nome_tabela: 'emendas.historico_pagamentos'
+          nome_coluna: 'data_hora_historico_op'
+          tipo_esperado: 'timestamp without time zone'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.historico_pagamentos'
-            nome_coluna: 'historico_situacao_op'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.historico_pagamentos'
+          nome_coluna: 'historico_situacao_op'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.historico_pagamentos'
-            nome_coluna: 'id_op_ob'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.historico_pagamentos'
+          nome_coluna: 'id_op_ob'
+          tipo_esperado: 'integer'
 
   - name: planos_trabalho_especial
     description: >
@@ -625,30 +578,25 @@ models:
           Data e hora (UTC-3 Brasília) em que os dados foram ingeridos da fonte original para a camada raw.
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_trabalho_especial'
-            nome_coluna: 'id_plano_trabalho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.planos_trabalho_especial'
+          nome_coluna: 'id_plano_trabalho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_trabalho_especial'
-            nome_coluna: 'data_inicio_execucao_plano_trabalho'
-            tipo_esperado: 'timestamp without time zone'
+          nome_tabela: 'emendas.planos_trabalho_especial'
+          nome_coluna: 'data_inicio_execucao_plano_trabalho'
+          tipo_esperado: 'timestamp without time zone'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_trabalho_especial'
-            nome_coluna: 'data_fim_execucao_plano_trabalho'
-            tipo_esperado: 'timestamp without time zone'
+          nome_tabela: 'emendas.planos_trabalho_especial'
+          nome_coluna: 'data_fim_execucao_plano_trabalho'
+          tipo_esperado: 'timestamp without time zone'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_trabalho_especial'
-            nome_coluna: 'prazo_execucao_meses_plano_trabalho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.planos_trabalho_especial'
+          nome_coluna: 'prazo_execucao_meses_plano_trabalho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.planos_trabalho_especial'
-            nome_coluna: 'id_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.planos_trabalho_especial'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
 
   - name: documentos_habeis
     description: >
@@ -730,65 +678,53 @@ models:
           Data e hora (UTC-3 Brasília) em que os dados foram ingeridos da fonte original para a camada raw.
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.documentos_habeis'
-            nome_coluna: 'id_dh'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.documentos_habeis'
+          nome_coluna: 'id_dh'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.documentos_habeis'
-            nome_coluna: 'id_empenho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.documentos_habeis'
+          nome_coluna: 'id_empenho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.documentos_habeis'
-            nome_coluna: 'situacao_dh'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.documentos_habeis'
+          nome_coluna: 'situacao_dh'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.documentos_habeis'
-            nome_coluna: 'ug_emitente_dh'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.documentos_habeis'
+          nome_coluna: 'ug_emitente_dh'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.documentos_habeis'
-            nome_coluna: 'data_vencimento_dh'
-            tipo_esperado: 'date'
+          nome_tabela: 'emendas.documentos_habeis'
+          nome_coluna: 'data_vencimento_dh'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.documentos_habeis'
-            nome_coluna: 'data_emissao_dh'
-            tipo_esperado: 'date'
+          nome_tabela: 'emendas.documentos_habeis'
+          nome_coluna: 'data_emissao_dh'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.documentos_habeis'
-            nome_coluna: 'ug_pagadora_dh'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.documentos_habeis'
+          nome_coluna: 'ug_pagadora_dh'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.documentos_habeis'
-            nome_coluna: 'codigo_siorg_empenho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.documentos_habeis'
+          nome_coluna: 'codigo_siorg_empenho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.documentos_habeis'
-            nome_coluna: 'ano_referencia_empenho'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.documentos_habeis'
+          nome_coluna: 'ano_referencia_empenho'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.documentos_habeis'
-            nome_coluna: 'ug_beneficiada_dh'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.documentos_habeis'
+          nome_coluna: 'ug_beneficiada_dh'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.documentos_habeis'
-            nome_coluna: 'valor_dh'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.documentos_habeis'
+          nome_coluna: 'valor_dh'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.documentos_habeis'
-            nome_coluna: 'valor_rateio_dh'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.documentos_habeis'
+          nome_coluna: 'valor_rateio_dh'
+          tipo_esperado: 'numeric'
 
   - name: relatorio_gestao
     description: >
@@ -805,15 +741,13 @@ models:
         description: "Identificador Único do Plano de Ação (PA)."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.relatorio_gestao'
-            nome_coluna: 'id_relatorio_gestao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.relatorio_gestao'
+          nome_coluna: 'id_relatorio_gestao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.relatorio_gestao'
-            nome_coluna: 'id_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.relatorio_gestao'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
 
   - name: relatorio_gestao_novo
     description: >
@@ -839,30 +773,25 @@ models:
         description: "Data e hora da ingestão dos dados na camada bronze (UTC-3)."
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.relatorio_gestao_novo'
-            nome_coluna: 'id_relatorio_gestao_novo'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.relatorio_gestao_novo'
+          nome_coluna: 'id_relatorio_gestao_novo'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.relatorio_gestao_novo'
-            nome_coluna: 'data_e_hora_relatorio_gestao_novo'
-            tipo_esperado: 'timestamp without time zone'
+          nome_tabela: 'emendas.relatorio_gestao_novo'
+          nome_coluna: 'data_e_hora_relatorio_gestao_novo'
+          tipo_esperado: 'timestamp without time zone'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.relatorio_gestao_novo'
-            nome_coluna: 'valor_executado_relatorio_gestao_novo'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.relatorio_gestao_novo'
+          nome_coluna: 'valor_executado_relatorio_gestao_novo'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.relatorio_gestao_novo'
-            nome_coluna: 'valor_pendente_relatorio_gestao_novo'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.relatorio_gestao_novo'
+          nome_coluna: 'valor_pendente_relatorio_gestao_novo'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.relatorio_gestao_novo'
-            nome_coluna: 'id_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.relatorio_gestao_novo'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
 
   - name: executor
     description: >
@@ -910,40 +839,33 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.executor_especial'
-            nome_coluna: 'id_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.executor_especial'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.executor_especial'
-            nome_coluna: 'id_executor'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.executor_especial'
+          nome_coluna: 'id_executor'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.executor_especial'
-            nome_coluna: 'valor_custeio_executor'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.executor_especial'
+          nome_coluna: 'valor_custeio_executor'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.executor_especial'
-            nome_coluna: 'valor_investimento_executor'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.executor_especial'
+          nome_coluna: 'valor_investimento_executor'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.executor_especial'
-            nome_coluna: 'numero_agencia_executor'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.executor_especial'
+          nome_coluna: 'numero_agencia_executor'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.executor_especial'
-            nome_coluna: 'numero_conta_executor'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.executor_especial'
+          nome_coluna: 'numero_conta_executor'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.executor_especial'
-            nome_coluna: 'codigo_situacao_dado_bancario_executor'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.executor_especial'
+          nome_coluna: 'codigo_situacao_dado_bancario_executor'
+          tipo_esperado: 'integer'
           
   - name: metas
     description: >
@@ -988,45 +910,37 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.meta_especial'
-            nome_coluna: 'id_executor'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.meta_especial'
+          nome_coluna: 'id_executor'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.meta_especial'
-            nome_coluna: 'id_meta'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.meta_especial'
+          nome_coluna: 'id_meta'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.meta_especial'
-            nome_coluna: 'qt_uniade_meta'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.meta_especial'
+          nome_coluna: 'qt_uniade_meta'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.meta_especial'
-            nome_coluna: 'valor_custeio_emenda_especial_meta'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.meta_especial'
+          nome_coluna: 'valor_custeio_emenda_especial_meta'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.meta_especial'
-            nome_coluna: 'valor_investimento_emenda_especial_meta'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.meta_especial'
+          nome_coluna: 'valor_investimento_emenda_especial_meta'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.meta_especial'
-            nome_coluna: 'valor_custeio_recursos_proprios_meta'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.meta_especial'
+          nome_coluna: 'valor_custeio_recursos_proprios_meta'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.meta_especial'
-            nome_coluna: 'valor_investimento_recursos_proprios_meta'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.meta_especial'
+          nome_coluna: 'valor_investimento_recursos_proprios_meta'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.meta_especial'
-            nome_coluna: 'qt_meses_meta'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.meta_especial'
+          nome_coluna: 'qt_meses_meta'
+          tipo_esperado: 'integer'
 
   - name: finalidades
     description: >
@@ -1049,20 +963,17 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.finalidade_especial'
-            nome_coluna: 'id_executor'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.finalidade_especial'
+          nome_coluna: 'id_executor'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.finalidade_especial'
-            nome_coluna: 'cd_area_politica_publica_tipo_pt'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.finalidade_especial'
+          nome_coluna: 'cd_area_politica_publica_tipo_pt'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.finalidade_especial'
-            nome_coluna: 'cd_area_politica_publica_pt'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.finalidade_especial'
+          nome_coluna: 'cd_area_politica_publica_pt'
+          tipo_esperado: 'integer'
 
   - name: tg_emendas
     description: >
@@ -1151,62 +1062,50 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.tg_emendas'
-            nome_coluna: 'emissao_mes'
-            tipo_esperado: 'date'
+          nome_tabela: 'emendas.tg_emendas'
+          nome_coluna: 'emissao_mes'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.tg_emendas'
-            nome_coluna: 'emissao_dia'
-            tipo_esperado: 'date'
+          nome_tabela: 'emendas.tg_emendas'
+          nome_coluna: 'emissao_dia'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.tg_emendas'
-            nome_coluna: 'programa_governo'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.tg_emendas'
+          nome_coluna: 'programa_governo'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.tg_emendas'
-            nome_coluna: 'grupo_despesa'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.tg_emendas'
+          nome_coluna: 'grupo_despesa'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.tg_emendas'
-            nome_coluna: 'modalidade_aplicacao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.tg_emendas'
+          nome_coluna: 'modalidade_aplicacao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.tg_emendas'
-            nome_coluna: 'ne_ccor_ano_emissao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.tg_emendas'
+          nome_coluna: 'ne_ccor_ano_emissao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.tg_emendas'
-            nome_coluna: 'ptres'
-            tipo_esperado: 'integer'
+          nome_tabela: 'emendas.tg_emendas'
+          nome_coluna: 'ptres'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.tg_emendas'
-            nome_coluna: 'despesas_empenhadas'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.tg_emendas'
+          nome_coluna: 'despesas_empenhadas'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.tg_emendas'
-            nome_coluna: 'despesas_liquidadas'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.tg_emendas'
+          nome_coluna: 'despesas_liquidadas'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.tg_emendas'
-            nome_coluna: 'despesas_pagas'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.tg_emendas'
+          nome_coluna: 'despesas_pagas'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.tg_emendas'
-            nome_coluna: 'restos_a_pagar_inscritos'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.tg_emendas'
+          nome_coluna: 'restos_a_pagar_inscritos'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'emendas.tg_emendas'
-            nome_coluna: 'restos_a_pagar_pagos'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'emendas.tg_emendas'
+          nome_coluna: 'restos_a_pagar_pagos'
+          tipo_esperado: 'numeric'

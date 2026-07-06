@@ -86,20 +86,17 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'mir.empenhos_tesouro_parlamentares'
-            nome_coluna: 'ne_ccor_ano_emissao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'mir.empenhos_tesouro_parlamentares'
+          nome_coluna: 'ne_ccor_ano_emissao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'mir.empenhos_tesouro_parlamentares'
-            nome_coluna: 'despesas_empenhadas'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'mir.empenhos_tesouro_parlamentares'
+          nome_coluna: 'despesas_empenhadas'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'mir.empenhos_tesouro_parlamentares'
-            nome_coluna: 'restos_a_pagar_inscritos'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'mir.empenhos_tesouro_parlamentares'
+          nome_coluna: 'restos_a_pagar_inscritos'
+          tipo_esperado: 'numeric'
 
   - name: nc_tesouro_mir
     description: >
@@ -184,25 +181,21 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.nc_tesouro_mir'
-            nome_coluna: 'ptres'
-            tipo_esperado: 'text'
+          nome_tabela: 'siafi_dbt.nc_tesouro_mir'
+          nome_coluna: 'ptres'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.nc_tesouro_mir'
-            nome_coluna: 'valor_celula'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.nc_tesouro_mir'
+          nome_coluna: 'valor_celula'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.nc_tesouro_mir'
-            nome_coluna: 'movimento_liquido_moeda_origem'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.nc_tesouro_mir'
+          nome_coluna: 'movimento_liquido_moeda_origem'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.nc_tesouro_mir'
-            nome_coluna: 'emissao_dia'
-            tipo_esperado: 'date'
+          nome_tabela: 'siafi_dbt.nc_tesouro_mir'
+          nome_coluna: 'emissao_dia'
+          tipo_esperado: 'date'
 
   - name: pf_tesouro
     description: >
@@ -247,15 +240,13 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_tesouro_mir'
-            nome_coluna: 'emissao_dia'
-            tipo_esperado: 'date'
+          nome_tabela: 'siafi_dbt.pf_tesouro_mir'
+          nome_coluna: 'emissao_dia'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_tesouro_mir'
-            nome_coluna: 'pf_valor_linha'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.pf_tesouro_mir'
+          nome_coluna: 'pf_valor_linha'
+          tipo_esperado: 'numeric'
 
   - name: pf_ptres
     description: >
@@ -302,15 +293,13 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_ptres_mir'
-            nome_coluna: 'dotacao_inicial'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.pf_ptres_mir'
+          nome_coluna: 'dotacao_inicial'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_ptres_mir'
-            nome_coluna: 'dotacao_atualizada'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.pf_ptres_mir'
+          nome_coluna: 'dotacao_atualizada'
+          tipo_esperado: 'numeric'
 
   - name: pf_transfere
     description: >
@@ -343,15 +332,13 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_transfere_mir'
-            nome_coluna: 'id_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.pf_transfere_mir'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.pf_transfere_mir'
-            nome_coluna: 'id_programacao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.pf_transfere_mir'
+          nome_coluna: 'id_programacao'
+          tipo_esperado: 'integer'
 
   - name: notas_de_credito
     description: >
@@ -385,25 +372,21 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.notas_de_credito_mir'
-            nome_coluna: 'id_nota'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.notas_de_credito_mir'
+          nome_coluna: 'id_nota'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.notas_de_credito_mir'
-            nome_coluna: 'id_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.notas_de_credito_mir'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.notas_de_credito_mir'
-            nome_coluna: 'dt_emissao_nota'
-            tipo_esperado: 'timestamp without time zone'
+          nome_tabela: 'siafi_dbt.notas_de_credito_mir'
+          nome_coluna: 'dt_emissao_nota'
+          tipo_esperado: 'timestamp without time zone'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.notas_de_credito_mir'
-            nome_coluna: 'dt_ingest'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'siafi_dbt.notas_de_credito_mir'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
 
   - name: programas_ted
     description: >
@@ -463,30 +446,25 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.programas_mir'
-            nome_coluna: 'id_programa'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.programas_mir'
+          nome_coluna: 'id_programa'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.programas_mir'
-            nome_coluna: 'aa_ano_programa'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.programas_mir'
+          nome_coluna: 'aa_ano_programa'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.programas_mir'
-            nome_coluna: 'in_beneficiario_especifico'
-            tipo_esperado: 'boolean'
+          nome_tabela: 'siafi_dbt.programas_mir'
+          nome_coluna: 'in_beneficiario_especifico'
+          tipo_esperado: 'boolean'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.programas_mir'
-            nome_coluna: 'dt_recebimento_plano_beneficiario_inicio'
-            tipo_esperado: 'date'
+          nome_tabela: 'siafi_dbt.programas_mir'
+          nome_coluna: 'dt_recebimento_plano_beneficiario_inicio'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.programas_mir'
-            nome_coluna: 'dt_ingest'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'siafi_dbt.programas_mir'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
 
   - name: planos_acao_ted
     description: >
@@ -538,27 +516,22 @@ models:
 
     tests:
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.planos_acao_mir'
-            nome_coluna: 'id_plano_acao'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.planos_acao_mir'
+          nome_coluna: 'id_plano_acao'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.planos_acao_mir'
-            nome_coluna: 'id_programa'
-            tipo_esperado: 'integer'
+          nome_tabela: 'siafi_dbt.planos_acao_mir'
+          nome_coluna: 'id_programa'
+          tipo_esperado: 'integer'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.planos_acao_mir'
-            nome_coluna: 'vl_total_plano_acao'
-            tipo_esperado: 'numeric'
+          nome_tabela: 'siafi_dbt.planos_acao_mir'
+          nome_coluna: 'vl_total_plano_acao'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.planos_acao_mir'
-            nome_coluna: 'dt_inicio_vigencia'
-            tipo_esperado: 'date'
+          nome_tabela: 'siafi_dbt.planos_acao_mir'
+          nome_coluna: 'dt_inicio_vigencia'
+          tipo_esperado: 'date'
       - verificacao_tipagem:
-          arguments:
-            nome_tabela: 'siafi_dbt.planos_acao_mir'
-            nome_coluna: 'dt_ingest'
-            tipo_esperado: 'timestamp with time zone'
+          nome_tabela: 'siafi_dbt.planos_acao_mir'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
