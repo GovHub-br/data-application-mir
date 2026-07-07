@@ -66,13 +66,7 @@ def api_contratos_dag() -> None:
             else:
                 logging.warning(f"Nenhum contrato encontrado para UG {ug_code}")
 
-    trigger_contratos_inativos = TriggerDagRunOperator(
-        task_id="trigger_contratos_inativos",
-        trigger_dag_id="api_contratos_inativos_dag",
-        wait_for_completion=False,
-    )
-
-    fetch_and_store_contratos() >> trigger_contratos_inativos
+    fetch_and_store_contratos()
 
 
 dag_instance = api_contratos_dag()
