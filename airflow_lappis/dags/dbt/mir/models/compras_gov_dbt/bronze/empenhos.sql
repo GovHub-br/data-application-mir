@@ -4,6 +4,7 @@ with
     empenhos as (
         select
             id::text as id,
+            contrato_id::text as contrato_id,
             unidade_gestora,
             gestao,
             numero as nota_empenho,
