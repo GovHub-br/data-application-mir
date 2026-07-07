@@ -26,7 +26,7 @@ def api_cronograma_mir_dag() -> None:
     def fetch_cronograma() -> None:
         logging.info("[contratos_cronograma_mir_ingest_dag.py] Starting fetch_cronograma task")
         api = ClienteContratos()
-        postgres_conn_str = get_postgres_conn("postgres_mir")  
+        postgres_conn_str = get_postgres_conn("postgres_mir")
         db = ClientPostgresDB(postgres_conn_str)
         contratos_ids = db.get_contratos_ids()
 
@@ -39,14 +39,15 @@ def api_cronograma_mir_dag() -> None:
                 cronograma = api.get_cronograma_by_contrato_id(str(contrato_id))
 
                 if cronograma:
-                    for fatura in cronograma:
-                        fatura["dt_ingest"] = datetime.now().isoformat()
+                    for item in cronograma:
+                        item["contrato_id"] = contrato_id
+                        item["dt_ingest"] = datetime.now().isoformat()
 
                 db.insert_data(
                     cronograma,
                     "cronograma",
-                    conflict_fields=["id"],
-                    primary_key=["id"],
+                    conflict_fields=["id", "contrato_id"],
+                    primary_key=["id", "contrato_id"],
                     schema="compras_gov",
                 )
             except Exception as e:
