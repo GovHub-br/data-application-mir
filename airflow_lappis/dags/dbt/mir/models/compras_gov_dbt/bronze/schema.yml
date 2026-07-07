@@ -1,0 +1,304 @@
+version: 2
+
+models:
+  # ----------------------------------------------------------------------------
+  # Contratos (ativos)
+  # ----------------------------------------------------------------------------
+  - name: contratos
+    description: >
+      Camada bronze dos contratos ativos do Compras GOV, ingeridos via API para o
+      schema compras_gov do postgres_mir. Contém contratos cuja situacao é distinta
+      de 'Inativo'. Realiza conversão de tipos, normalização de valores monetários
+      (formato brasileiro), validação de datas e limpeza de CPF/CNPJ e processo.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: id
+        description: "Identificador único do contrato."
+      - name: situacao
+        description: "Situação do contrato (para este modelo, distinta de 'Inativo')."
+      - name: fornecedor_cnpj_cpf_idgener
+        description: "CNPJ/CPF/identificador do fornecedor, sem caracteres especiais."
+      - name: num_parcelas
+        description: "Número de parcelas do contrato."
+      - name: valor_inicial
+        description: "Valor inicial do contrato."
+      - name: valor_global
+        description: "Valor global do contrato."
+      - name: valor_parcela
+        description: "Valor de cada parcela."
+      - name: valor_acumulado
+        description: "Valor acumulado realizado."
+      - name: data_assinatura
+        description: "Data de assinatura do contrato."
+      - name: vigencia_inicio
+        description: "Início da vigência."
+      - name: vigencia_fim
+        description: "Fim da vigência."
+      - name: dt_ingest
+        description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.contratos'
+          nome_coluna: 'num_parcelas'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.contratos'
+          nome_coluna: 'valor_inicial'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.contratos'
+          nome_coluna: 'valor_global'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.contratos'
+          nome_coluna: 'data_assinatura'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.contratos'
+          nome_coluna: 'vigencia_inicio'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.contratos'
+          nome_coluna: 'vigencia_fim'
+          tipo_esperado: 'date'
+
+  # ----------------------------------------------------------------------------
+  # Contratos inativos
+  # ----------------------------------------------------------------------------
+  - name: contratos_inativos
+    description: >
+      Camada bronze dos contratos inativos do Compras GOV. Mesma estrutura do modelo
+      de contratos, filtrando situacao igual a 'Inativo'. Ativos e inativos são
+      ingeridos na mesma tabela raw (compras_gov.contratos) e separados na bronze
+      pela coluna situacao.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: id
+        description: "Identificador único do contrato inativo."
+      - name: situacao
+        description: "Situação do contrato (igual a 'Inativo' neste modelo)."
+      - name: justificativa_inativo
+        description: "Justificativa da inativação do contrato."
+      - name: valor_global
+        description: "Valor global do contrato."
+      - name: data_assinatura
+        description: "Data de assinatura do contrato."
+      - name: vigencia_fim
+        description: "Fim da vigência."
+      - name: dt_ingest
+        description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.contratos_inativos'
+          nome_coluna: 'valor_global'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.contratos_inativos'
+          nome_coluna: 'data_assinatura'
+          tipo_esperado: 'date'
+
+  # ----------------------------------------------------------------------------
+  # Empenhos
+  # ----------------------------------------------------------------------------
+  - name: empenhos
+    description: >
+      Camada bronze dos empenhos de contratos do Compras GOV. Cada empenho é
+      vinculado ao contrato de origem via contrato_id (injetado na ingestão).
+      Valores monetários normalizados e data de emissão validada.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: id
+        description: "Identificador único do empenho."
+      - name: contrato_id
+        description: "Identificador do contrato ao qual o empenho pertence."
+      - name: nota_empenho
+        description: "Número da nota de empenho."
+      - name: empenhado
+        description: "Valor empenhado."
+      - name: liquidado
+        description: "Valor liquidado."
+      - name: pago
+        description: "Valor pago."
+      - name: data_emissao
+        description: "Data de emissão do empenho."
+      - name: dt_ingest
+        description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.empenhos'
+          nome_coluna: 'empenhado'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.empenhos'
+          nome_coluna: 'liquidado'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.empenhos'
+          nome_coluna: 'pago'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.empenhos'
+          nome_coluna: 'data_emissao'
+          tipo_esperado: 'date'
+
+  # ----------------------------------------------------------------------------
+  # Faturas
+  # ----------------------------------------------------------------------------
+  - name: faturas
+    description: >
+      Camada bronze das faturas de contratos do Compras GOV. Cada fatura é vinculada
+      ao contrato via contrato_id (injetado na ingestão). Valores monetários
+      normalizados e datas validadas. O campo dados_empenho é preservado como texto
+      (JSON bruto) para tratamento em camadas posteriores.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: id
+        description: "Identificador único da fatura."
+      - name: contrato_id
+        description: "Identificador do contrato ao qual a fatura pertence."
+      - name: numero
+        description: "Número da fatura."
+      - name: emissao
+        description: "Data de emissão da fatura."
+      - name: vencimento
+        description: "Data de vencimento da fatura."
+      - name: valor
+        description: "Valor bruto da fatura."
+      - name: valorliquido
+        description: "Valor líquido da fatura."
+      - name: data_liquidacao
+        description: "Data de liquidação da fatura."
+      - name: situacao
+        description: "Situação da fatura."
+      - name: dt_ingest
+        description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.faturas'
+          nome_coluna: 'id'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.faturas'
+          nome_coluna: 'valor'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.faturas'
+          nome_coluna: 'valorliquido'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.faturas'
+          nome_coluna: 'emissao'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.faturas'
+          nome_coluna: 'data_liquidacao'
+          tipo_esperado: 'date'
+
+  # ----------------------------------------------------------------------------
+  # Cronograma
+  # ----------------------------------------------------------------------------
+  - name: cronograma
+    description: >
+      Camada bronze do cronograma de contratos do Compras GOV. Representa as parcelas
+      mensais programadas de cada contrato, vinculadas via contrato_id (injetado na
+      ingestão). Valor normalizado e vencimento validado.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: id
+        description: "Identificador único do item de cronograma."
+      - name: contrato_id
+        description: "Identificador do contrato ao qual o item pertence."
+      - name: mesref
+        description: "Mês de referência."
+      - name: anoref
+        description: "Ano de referência."
+      - name: vencimento
+        description: "Data de vencimento da parcela."
+      - name: valor
+        description: "Valor programado para o mês/ano de referência."
+      - name: dt_ingest
+        description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.cronograma'
+          nome_coluna: 'id'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.cronograma'
+          nome_coluna: 'mesref'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.cronograma'
+          nome_coluna: 'anoref'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.cronograma'
+          nome_coluna: 'valor'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.cronograma'
+          nome_coluna: 'vencimento'
+          tipo_esperado: 'date'
+
+  # ----------------------------------------------------------------------------
+  # Terceirizados
+  # ----------------------------------------------------------------------------
+  - name: terceirizados
+    description: >
+      Camada bronze dos terceirizados de contratos do Compras GOV. Cada trabalhador é
+      vinculado ao contrato via contrato_id (injetado na ingestão). CPF e nome são
+      extraídos do campo usuario; valores de remuneração e benefícios normalizados;
+      datas de início e fim validadas.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: id
+        description: "Identificador único do registro de terceirizado."
+      - name: contrato_id
+        description: "Identificador do contrato ao qual o trabalhador está vinculado."
+      - name: cpf
+        description: "CPF do trabalhador (extraído do campo usuario)."
+      - name: nome
+        description: "Nome do trabalhador (extraído do campo usuario)."
+      - name: jornada
+        description: "Jornada semanal em horas."
+      - name: salario
+        description: "Salário mensal do trabalhador."
+      - name: custo
+        description: "Custo total do trabalhador para a instituição."
+      - name: data_inicio
+        description: "Data de início do vínculo."
+      - name: data_fim
+        description: "Data de fim do vínculo."
+      - name: situacao
+        description: "Situação do vínculo (ativo, encerrado)."
+      - name: dt_ingest
+        description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.terceirizados'
+          nome_coluna: 'id'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.terceirizados'
+          nome_coluna: 'salario'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.terceirizados'
+          nome_coluna: 'custo'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.terceirizados'
+          nome_coluna: 'data_inicio'
+          tipo_esperado: 'date'

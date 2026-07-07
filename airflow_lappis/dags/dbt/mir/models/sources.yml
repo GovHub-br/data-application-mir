@@ -72,3 +72,11 @@ sources:
       - name: historico_situacao
       - name: cronograma_desembolso
       - name: meta_crono_fisico
+  - name: compras_gov
+    schema: compras_gov
+    tables:
+      - name: contratos
+      - name: faturas
+      - name: empenhos
+      - name: cronograma
+      - name: terceirizados
