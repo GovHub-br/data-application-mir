@@ -26,7 +26,7 @@ def api_terceirizados_mir_dag() -> None:
     def fetch_terceirizados() -> None:
         logging.info("[contratos_terceirizados_mir_ingest_dag.py] Starting fetch_terceirizados task")
         api = ClienteContratos()
-        postgres_conn_str = get_postgres_conn("postgres_mir")  
+        postgres_conn_str = get_postgres_conn("postgres_mir")
         db = ClientPostgresDB(postgres_conn_str)
         contratos_ids = db.get_contratos_ids()
 
@@ -39,14 +39,15 @@ def api_terceirizados_mir_dag() -> None:
                 terceirizados = api.get_terceirizados_by_contrato_id(str(contrato_id))
 
                 if terceirizados:
-                    for fatura in terceirizados:
-                        fatura["dt_ingest"] = datetime.now().isoformat()
+                    for terceirizado in terceirizados:
+                        terceirizado["contrato_id"] = contrato_id
+                        terceirizado["dt_ingest"] = datetime.now().isoformat()
 
                 db.insert_data(
                     terceirizados,
                     "terceirizados",
-                    conflict_fields=["id"],
-                    primary_key=["id"],
+                    conflict_fields=["id", "contrato_id"],
+                    primary_key=["id", "contrato_id"],
                     schema="compras_gov",
                 )
             except Exception as e:
