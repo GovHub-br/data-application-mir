@@ -26,7 +26,7 @@ def api_empenhos_mir_dag() -> None:
     def fetch_empenhos() -> None:
         logging.info("[contratos_empenhos_mir_ingest_dag.py] Starting fetch_empenhos task")
         api = ClienteContratos()
-        postgres_conn_str = get_postgres_conn("postgres_mir")  
+        postgres_conn_str = get_postgres_conn("postgres_mir")
         db = ClientPostgresDB(postgres_conn_str)
         contratos_ids = db.get_contratos_ids()
 
@@ -39,14 +39,15 @@ def api_empenhos_mir_dag() -> None:
                 empenhos = api.get_empenhos_by_contrato_id(str(contrato_id))
 
                 if empenhos:
-                    for fatura in empenhos:
-                        fatura["dt_ingest"] = datetime.now().isoformat()
+                    for empenho in empenhos:
+                        empenho["contrato_id"] = contrato_id
+                        empenho["dt_ingest"] = datetime.now().isoformat()
 
                 db.insert_data(
                     empenhos,
                     "empenhos",
-                    conflict_fields=["id"],
-                    primary_key=["id"],
+                    conflict_fields=["id", "contrato_id"],
+                    primary_key=["id", "contrato_id"],
                     schema="compras_gov",
                 )
             except Exception as e:
