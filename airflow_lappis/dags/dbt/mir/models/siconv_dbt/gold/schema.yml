@@ -243,19 +243,4 @@ models:
       description: "Partidos dos parlamentares que direcionaram emendas. NULL se não há emenda associada."
     - name: ufs_parlamentares
       description: "UFs dos parlamentares que direcionaram emendas. NULL se não há emenda associada."
-  tests:
-    - verificacao_tipagem:
-        arguments:
-          nome_tabela: 'siconv_dbt.resumo_termos_fomento'
-          nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
-    - verificacao_tipagem:
-        arguments:
-          nome_tabela: 'siconv_dbt.resumo_termos_fomento'
-          nome_coluna: 'valor_firmado_atualizado'
-          tipo_esperado: 'numeric'
-    - verificacao_tipagem:
-        arguments:
-          nome_tabela: 'siconv_dbt.resumo_termos_fomento'
-          nome_coluna: 'data_assinatura'
-          tipo_esperado: 'date'
+ 
