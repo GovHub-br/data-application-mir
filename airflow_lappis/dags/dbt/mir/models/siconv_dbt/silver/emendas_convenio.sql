@@ -62,6 +62,7 @@ select
     e.url_foto_partido,
     e.numero_transferencia,
     e.dt_ingest,
+    e.autor_emendas_orcamento, 
     c.nr_convenio,
     c.id_proposta,
     c.dia,

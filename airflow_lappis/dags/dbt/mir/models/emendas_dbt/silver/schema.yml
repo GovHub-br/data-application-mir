@@ -183,6 +183,8 @@ models:
         description: Código indexado da ação ajustada governamental.
       - name: acao_ajustada
         description: Descrição da ação de governo orçamentária que recebe o numerário.
+      - name: autor_emendas_orcamento
+        description: Identificador do autor da emenda no orçamento, conforme SIAFI.  
       - name: autor_emendas_orcamento_descricao
         description: Informação bruta contendo a descrição completa do autor original contido no SIAFI.
       - name: autor_emendas_orcamento_nome

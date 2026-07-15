@@ -58,6 +58,8 @@ cruzamento_bruto AS (
 		e.restos_a_pagar_pagos,
         e.autor_emendas_orcamento_nome,
 
+		e.autor_emendas_orcamento,     
+
 		e.emenda_id,
 
 		p.id_parlamentar as id_autor,
@@ -147,6 +149,8 @@ SELECT
 	despesas_pagas,
 	restos_a_pagar_inscritos,
 	restos_a_pagar_pagos,
+
+	autor_emendas_orcamento,    
 
 	id_autor,
 	cargo_autor,
