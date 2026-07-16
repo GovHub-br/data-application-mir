@@ -28,6 +28,8 @@ models:
         description: "Código da ação orçamentária ajustada."
       - name: acao_ajustada
         description: "Descrição da ação orçamentária ajustada."
+      - name: autor_emendas_orcamento
+        description: Identificador do autor da emenda no orçamento, conforme SIAFI.
       - name: autor_emendas_orcamento_descricao
         description: "Descrição do autor da emenda orçamentária."
       - name: autor_emendas_orcamento_nome
