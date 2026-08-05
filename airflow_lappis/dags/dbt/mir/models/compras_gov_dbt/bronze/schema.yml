@@ -302,3 +302,93 @@ models:
           nome_tabela: 'compras_gov_dbt.terceirizados'
           nome_coluna: 'data_inicio'
           tipo_esperado: 'date'
+
+  # ----------------------------------------------------------------------------
+  # Empenhos do Tesouro (SIAFI) — filtrado para as UGs do MIR
+  # ----------------------------------------------------------------------------
+  - name: empenhos_tesouro
+    description: >
+      Camada bronze dos empenhos do Tesouro Gerencial (SIAFI), lidos de
+      source('siafi', 'ne_tesouro') e filtrados para as Unidades Gestoras do MIR
+      (230002 e 810008), identificadas pelos 6 primeiros dígitos de ne_ccor. Realiza
+      limpeza do número do processo, padronização do favorecido para caixa alta e
+      conversão dos valores financeiros (formato brasileiro) para numeric(15,2) via
+      macro parse_financial_value. Registros com ano de emissão inválido (não numérico
+      de 4 dígitos) são descartados para garantir o cast de ne_ccor_ano_emissao. É
+      pré-requisito dos cruzamentos contratos_empenhos e estagios_mensal do domínio de
+      Contratos.
+    meta:
+      tags:
+        - bronze
+    columns:
+      - name: programa_governo
+        description: "Código identificador do programa de governo associado ao empenho."
+      - name: programa_governo_descricao
+        description: "Descrição textual do programa de governo."
+      - name: acao_governo
+        description: "Código da ação orçamentária (Ação de Governo)."
+      - name: acao_governo_descricao
+        description: "Descrição da ação orçamentária."
+      - name: emissao_mes
+        description: "Mês de emissão da nota de empenho."
+      - name: emissao_dia
+        description: "Dia específico da emissão da nota de empenho."
+      - name: ne_ccor
+        description: >
+          Número completo da nota de empenho (chave natural). Os 6 primeiros dígitos
+          identificam a UG emitente, base do filtro das UGs do MIR.
+        tests:
+          - not_null
+      - name: ne_num_processo
+        description: "Número do processo administrativo, limpo de pontos, barras e hifens via regex."
+      - name: ne_info_complementar
+        description: "Informações adicionais registradas na nota de empenho."
+      - name: ne_ccor_descricao
+        description: "Descrição detalhada do item ou serviço empenhado."
+      - name: doc_observacao
+        description: "Observações registradas no documento fiscal ou contábil."
+      - name: natureza_despesa
+        description: "Código da natureza da despesa (ex: 339030)."
+      - name: natureza_despesa_descricao
+        description: "Descrição da categoria da natureza de despesa."
+      - name: ne_ccor_favorecido
+        description: "CNPJ ou CPF do favorecido do empenho, convertido para caixa alta."
+      - name: ne_ccor_favorecido_descricao
+        description: "Nome ou Razão Social do favorecido."
+      - name: ne_ccor_ano_emissao
+        description: "Ano de emissão do empenho (YYYY), validado via regex e convertido para integer."
+      - name: ptres
+        description: "Programa de Trabalho Resumido (PTRES)."
+      - name: fonte_recursos_detalhada
+        description: "Código detalhado da fonte de financiamento."
+      - name: fonte_recursos_detalhada_descricao
+        description: "Descrição da fonte de recursos."
+      - name: despesas_empenhadas
+        description: "Valor total das despesas empenhadas, convertido para numeric(15,2)."
+      - name: despesas_liquidadas
+        description: "Valor das despesas liquidadas, convertido para numeric(15,2)."
+      - name: despesas_pagas
+        description: "Valor efetivamente pago ao favorecido, convertido para numeric(15,2)."
+      - name: restos_a_pagar_inscritos
+        description: "Valor inscrito em Restos a Pagar (RP), convertido para numeric(15,2)."
+      - name: restos_a_pagar_pagos
+        description: "Valor de Restos a Pagar já quitados, convertido para numeric(15,2)."
+      - name: dt_ingest
+        description: "Timestamp da ingestão na camada raw, ajustado para UTC-3 (fuso de Brasília)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.empenhos_tesouro'
+          nome_coluna: 'ne_ccor_ano_emissao'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.empenhos_tesouro'
+          nome_coluna: 'despesas_empenhadas'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.empenhos_tesouro'
+          nome_coluna: 'restos_a_pagar_inscritos'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'compras_gov_dbt.empenhos_tesouro'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
