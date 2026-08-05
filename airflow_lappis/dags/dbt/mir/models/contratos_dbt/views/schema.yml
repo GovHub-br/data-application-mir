@@ -1,0 +1,48 @@
+version: 2
+
+models:
+
+  - name: identificadores
+    description: >
+      Consolida por contrato os identificadores usados nos cruzamentos com os
+      empenhos do Tesouro (SIAFI): nota de empenho (NE), processo, CNPJ/CPF do
+      fornecedor e informação complementar (UG + modalidade + número do
+      contrato/licitação). Base para os cruzamentos contratos_empenhos e
+      contratos_estagios.
+
+      O NE é consolidado a partir de duas fontes, unificadas via UNION:
+      empenhos (nota_empenho, Compras GOV) e faturas (numero_empenho, extraído
+      do JSON armazenado em dados_empenho). O resultado é então combinado com
+      contratos via FULL JOIN por contrato_id.
+
+      O NE final prioriza o valor vindo de empenhos/faturas sobre o número do
+      próprio contrato, e só é considerado válido quando, após normalização
+      (remoção de caracteres não alfanuméricos), possui exatamente 12
+      caracteres; caso contrário, é nulo.
+    columns:
+      - name: contrato_id
+        description: >
+          Identificador do contrato. Vem de contratos (c.id) ou, quando o
+          contrato não tem correspondência direta, do lado dos empenhos/faturas
+          unificados (nu.contrato_id).
+        tests:
+          - not_null
+      - name: categoria
+        description: "Categoria do contrato."
+      - name: processo
+        description: >
+          Número do processo do contrato, normalizado (somente dígitos,
+          sem pontuação).
+      - name: cnpj_cpf
+        description: >
+          CNPJ ou CPF do fornecedor, normalizado (somente dígitos,
+          sem pontuação).
+      - name: info_complementar
+        description: >
+          Concatenação da unidade gestora, modalidade e número do
+          contrato/licitação (licitacao_numero, com fallback para numero).
+      - name: ne
+        description: >
+          Nota de empenho (NE), priorizando a origem de empenhos/faturas sobre
+          o número do contrato. Normalizada (somente alfanuméricos, maiúscula).
+          Nula quando o valor normalizado não possui exatamente 12 caracteres.
