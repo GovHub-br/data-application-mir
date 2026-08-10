@@ -76,6 +76,10 @@ models:
         description: "Código da fonte de recursos detalhada que financia a despesa da emenda."
       - name: fonte_recursos_detalhada_descricao
         description: "Descrição da fonte de recursos detalhada (ex.: RECURSOS LIVRES DA UNIAO)."
+      - name: dotacao_inicial
+        description: "Dotação inicial (LOA) da classificação da emenda (referência, repetida por empenho — não somar)."
+      - name: dotacao_atualizada
+        description: "Dotação atualizada da classificação da emenda (referência, repetida por empenho — não somar)."
       - name: despesas_empenhadas
         description: "Valor total das despesas empenhadas."
       - name: despesas_liquidadas
