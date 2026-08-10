@@ -7,7 +7,6 @@ with
             partido__codigopartido::text as codigo_partido,
             partido__siglapartido::text as sigla_partido,
             partido__nomepartido::text as nome_partido,
-            parlamentar__nome:: text as nome,
             case
                 when lower(trim(datafiliacao::text)) in ('', 'nan', 'null') then null
                 else datafiliacao::timestamptz
@@ -16,14 +15,6 @@ with
                 when lower(trim(datadesfiliacao::text)) in ('', 'nan', 'null') then null
                 else datadesfiliacao::timestamptz
             end as data_desfiliação,
-            case
-                when trim(anofiliacao::text) ~ '^[0-9]{4}$' then anofiliacao::integer
-                else null
-            end as ano_filiacao,
-            case
-                when trim(anodesfiliacao::text) ~ '^[0-9]{4}$' then anodesfiliacao::integer
-                else null
-            end as ano_desfiliação,
             fonte:: text as fonte,
             (dt_ingest || '-03:00')::timestamptz as dt_ingest
         from {{ source("senado_federal", "senadores_historico") }}
