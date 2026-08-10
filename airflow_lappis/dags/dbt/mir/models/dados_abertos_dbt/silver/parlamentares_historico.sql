@@ -73,8 +73,8 @@ parlamentares_unificados AS (
 
     SELECT
         sh.parlamentar_id AS id_parlamentar,
-        {{ name_formater("COALESCE(NULLIF(sh.nome, ''), s.nome_parlamentar)") }} AS chave_join_nome,
-        COALESCE(NULLIF(sh.nome, ''), s.nome_parlamentar) AS nome_parlamentar,
+        {{ name_formater("s.nome_parlamentar") }} AS chave_join_nome,
+        s.nome_parlamentar AS nome_parlamentar,
         'Senador' AS cargo_parlamentar,
         sh.sigla_partido AS sigla_partido,
         s.uf AS uf_parlamentar,
