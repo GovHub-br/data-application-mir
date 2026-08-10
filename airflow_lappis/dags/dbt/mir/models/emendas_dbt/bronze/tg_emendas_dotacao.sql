@@ -1,10 +1,11 @@
 {{ config(materialized="table") }}
 
 with
-	tg_emendas_raw as (
+	tg_emendas_dotacao_raw as (
 		select
-			-- Linhas de Restos a Pagar vem sem data de emissao aplicavel
-			-- (emissao_mes/dia = '000/AAAA'); nesses casos a data fica nula.
+			-- Grao de dotacao orcamentaria: uma linha por classificacao
+			-- (programa/acao/localizador/natureza/modalidade/fonte/ptres),
+			-- sem empenho associado (ne_ccor = '-9' na tabela raw).
 			case
 				when emissao_mes ~ '^[A-Z]{3}/[0-9]{4}$'
 				then {{ target.schema }}.parse_date(emissao_mes)
@@ -41,10 +42,6 @@ with
     			else uf_pt_descricao
 			end::text as uf_pt_descricao,
 			municipio_pt::text as municipio_pt,
-			ne_ccor::text as ne_ccor,
-			ne_num_processo::text as ne_num_processo,
-			ne_info_complementar::text as ne_info_complementar,
-			ne_ccor_descricao::text as ne_ccor_descricao,
 			doc_observacao::text as doc_observacao,
 			grupo_despesa::integer as grupo_despesa,
 			grupo_despesa_descricao::text as grupo_despesa_descricao,
@@ -52,25 +49,17 @@ with
 			natureza_despesa_descricao::text as natureza_despesa_descricao,
 			modalidade_aplicacao::integer as modalidade_aplicacao,
 			modalidade_aplicacao_descricao::text as modalidade_aplicacao_descricao,
-			ne_ccor_favorecido::text as ne_ccor_favorecido,
-			ne_ccor_favorecido_descricao::text as ne_ccor_favorecido_descricao,
-			ne_ccor_ano_emissao::integer as ne_ccor_ano_emissao,
 			ptres::integer as ptres,
 			fonte_recursos_detalhada::text as fonte_recursos_detalhada,
 			fonte_recursos_detalhada_descricao::text as fonte_recursos_detalhada_descricao,
-			{{ parse_financial_value("despesas_empenhadas") }} as despesas_empenhadas,
-            {{ parse_financial_value("despesas_liquidadas") }} as despesas_liquidadas,
-            {{ parse_financial_value("despesas_pagas") }} as despesas_pagas,
-            {{ parse_financial_value("restos_a_pagar_inscritos") }} as restos_a_pagar_inscritos,
-            {{ parse_financial_value("restos_a_pagar_pagos") }} as restos_a_pagar_pagos,
+			{{ parse_financial_value("dotacao_inicial") }} as dotacao_inicial,
+			{{ parse_financial_value("dotacao_atualizada") }} as dotacao_atualizada,
 			(dt_ingest || '-03:00')::timestamptz as dt_ingest
 		from {{ source("siafi", "ne_tesouro_emendas") }}
-		-- A tabela raw agora traz dois graos. Este modelo e o grao de
-		-- empenho; as linhas de dotacao (ne_ccor = '-9', itens 9/13) sao
-		-- expostas separadamente em tg_emendas_dotacao.
-		where ne_ccor <> '-9'
+		-- Apenas as linhas de dotacao (itens 9/13). O grao de empenho
+		-- fica em tg_emendas.
+		where ne_ccor = '-9'
 	)
 
 select *
-from tg_emendas_raw
-
+from tg_emendas_dotacao_raw

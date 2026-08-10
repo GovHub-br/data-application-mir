@@ -58,6 +58,8 @@ TARGET_COLUMNS: List[str] = [
     "ptres",
     "fonte_recursos_detalhada",
     "fonte_recursos_detalhada_descricao",
+    "dotacao_inicial",
+    "dotacao_atualizada",
     "despesas_empenhadas",
     "despesas_liquidadas",
     "despesas_pagas",
@@ -105,6 +107,8 @@ HEADERS_WITH_DESCRICAO = {
 }
 
 ITEM_CODE_TO_CANONICAL = {
+    "9": "dotacao_inicial",
+    "13": "dotacao_atualizada",
     "29": "despesas_empenhadas",
     "31": "despesas_liquidadas",
     "34": "despesas_pagas",
@@ -119,10 +123,27 @@ SUB_HEADER_LINES = 2
 # tabelas que precisam ser recriadas. Ver reset_table_if_legacy_schema.
 LEGACY_SCHEMA_MARKER_COLUMN = "item_informacao"
 
-# Cada linha do relatorio e uma movimentacao contabil do empenho
-# (emissao, alteracao, anulacao, pagamento). doc_observacao distingue
-# as movimentacoes do mesmo empenho no mesmo dia.
-UNIQUE_KEY = ["ne_ccor", "emissao_mes", "emissao_dia", "doc_observacao"]
+# O relatorio agora traz DOIS graos na mesma tabela:
+#   - Empenho: cada linha e uma movimentacao contabil de uma NE
+#     (ne_ccor real, ne_ccor_ano_emissao com o ano).
+#   - Dotacao (itens 9/13): orcamento no grao da classificacao
+#     (programa/acao/localizador/natureza/modalidade/fonte/ptres),
+#     sem empenho — ne_ccor = '-9' em todas as linhas.
+# Como ne_ccor e constante ('-9') nas linhas de dotacao, a chave precisa
+# incluir a classificacao orcamentaria para identifica-las sem colisao;
+# para as linhas de empenho essas colunas sao funcao do proprio empenho,
+# entao nao alteram a deduplicacao.
+UNIQUE_KEY = [
+    "ne_ccor",
+    "emissao_mes",
+    "emissao_dia",
+    "doc_observacao",
+    "ptres",
+    "natureza_despesa",
+    "modalidade_aplicacao",
+    "localizador_gasto",
+    "fonte_recursos_detalhada",
+]
 
 
 def _build_column_map(header_row: List[str]) -> Dict[str, int]:
@@ -159,8 +180,7 @@ def parse_tesouro_emendas_csv(
 
     lines = csv_data.splitlines()
     header_indices = [
-        i for i, line in enumerate(lines)
-        if line.lstrip().startswith(HEADER_MARKER)
+        i for i, line in enumerate(lines) if line.lstrip().startswith(HEADER_MARKER)
     ]
     if not header_indices:
         raise ValueError(
@@ -247,9 +267,52 @@ def reset_table_if_legacy_schema(db: ClientPostgresDB) -> None:
         TABLE_SCHEMA,
         TABLE_NAME,
     )
-    db.execute_non_query(
-        f"DROP TABLE IF EXISTS {TABLE_SCHEMA}.{TABLE_NAME} CASCADE;"
+    db.execute_non_query(f"DROP TABLE IF EXISTS {TABLE_SCHEMA}.{TABLE_NAME} CASCADE;")
+
+
+def reset_table_if_pk_mismatch(db: ClientPostgresDB) -> None:
+    """Dropa a tabela se a PRIMARY KEY nao corresponder a UNIQUE_KEY atual.
+
+    A tabela antiga foi criada com PRIMARY KEY na chave de 4 colunas. A nova
+    chave (empenho + dotacao) tem 9 colunas, e nao ha migracao automatica:
+    - CREATE TABLE IF NOT EXISTS nao altera constraints de tabela existente;
+    - ensure_unique_constraint nao ajuda porque o nome do indice, truncado em
+      63 chars, colide com o da chave antiga (CREATE ... IF NOT EXISTS pula).
+    Por isso comparamos a PK atual com a UNIQUE_KEY e, se diferir, recriamos a
+    tabela — que passa a ter a PK composta correta. Seguro: cada e-mail traz o
+    relatorio completo (Ano Lancamento >= 2022), entao a proxima carga repopula
+    tudo. Idempotente: quando a PK ja bate, nao faz nada.
+    """
+    exists = db.execute_query(
+        f"SELECT 1 FROM information_schema.tables "
+        f"WHERE table_schema = '{TABLE_SCHEMA}' "
+        f"AND table_name = '{TABLE_NAME}' LIMIT 1;"
     )
+    if not exists:
+        return
+
+    pk_rows = db.execute_query(
+        f"SELECT kcu.column_name "
+        f"FROM information_schema.table_constraints tc "
+        f"JOIN information_schema.key_column_usage kcu "
+        f"  ON tc.constraint_name = kcu.constraint_name "
+        f"  AND tc.table_schema = kcu.table_schema "
+        f"WHERE tc.table_schema = '{TABLE_SCHEMA}' "
+        f"  AND tc.table_name = '{TABLE_NAME}' "
+        f"  AND tc.constraint_type = 'PRIMARY KEY';"
+    )
+    current_pk = {row[0] for row in pk_rows}
+    if current_pk == set(UNIQUE_KEY):
+        return
+
+    logging.warning(
+        "PK de %s.%s (%s) difere da UNIQUE_KEY (%s) — dropando para recriar.",
+        TABLE_SCHEMA,
+        TABLE_NAME,
+        sorted(current_pk) or "nenhuma",
+        sorted(UNIQUE_KEY),
+    )
+    db.execute_non_query(f"DROP TABLE IF EXISTS {TABLE_SCHEMA}.{TABLE_NAME} CASCADE;")
 
 
 with DAG(
@@ -329,7 +392,16 @@ with DAG(
 
             df = pd.read_csv(io.StringIO(csv_data), dtype=str, keep_default_na=False)
             df = df.replace({"": None})
-            df = df[df["ne_ccor_ano_emissao"].fillna("").str.startswith("20")]
+            # Mantem dois graos: empenhos (ne_ccor_ano_emissao com o ano) e
+            # linhas de dotacao (itens 9/13, sem empenho). O filtro antigo
+            # (so ano) descartava toda a dotacao.
+            is_empenho = df["ne_ccor_ano_emissao"].fillna("").str.startswith("20")
+            has_dotacao = df["dotacao_inicial"].notna() | df["dotacao_atualizada"].notna()
+            df = df[is_empenho | has_dotacao]
+
+            # Protege o ON CONFLICT (execute_values) contra chaves repetidas no
+            # mesmo lote, que fariam o INSERT inteiro falhar.
+            df = df.drop_duplicates(subset=UNIQUE_KEY, keep="last")
 
             data = df.where(pd.notnull(df), None).to_dict(orient="records")
             for record in data:
@@ -339,6 +411,7 @@ with DAG(
             db = ClientPostgresDB(postgres_conn_str)
 
             reset_table_if_legacy_schema(db)
+            reset_table_if_pk_mismatch(db)
 
             db.insert_data(
                 data,

@@ -237,6 +237,16 @@ models:
         description: Código da fonte de recursos detalhada que financia a despesa da emenda.
       - name: fonte_recursos_detalhada_descricao
         description: Descrição da fonte de recursos detalhada, por exemplo RECURSOS LIVRES DA UNIAO.
+      - name: dotacao_inicial
+        description: >
+          Dotação inicial (LOA) da classificação orçamentária da emenda, anexada
+          como referência da linha orçamentária. Repete-se entre empenhos da mesma
+          classificação — NÃO somar por empenho (para totais use emendas_orcamento_execucao).
+      - name: dotacao_atualizada
+        description: >
+          Dotação atualizada (após créditos) da classificação orçamentária da emenda,
+          anexada como referência. Repete-se entre empenhos da mesma classificação —
+          NÃO somar por empenho (para totais use emendas_orcamento_execucao).
       - name: despesas_empenhadas
         description: Limite de fundos transacionados com base monetária ou saldo reservado à entidade recebedora na etapa de empenho.
       - name: despesas_liquidadas
@@ -295,6 +305,14 @@ models:
           nome_tabela: 'emendas.emendas_partidos'
           nome_coluna: 'ptres'
           tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'dotacao_inicial'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_partidos'
+          nome_coluna: 'dotacao_atualizada'
+          tipo_esperado: 'numeric'
       - verificacao_tipagem:
           nome_tabela: 'emendas.emendas_partidos'
           nome_coluna: 'despesas_empenhadas'
@@ -394,6 +412,14 @@ models:
         description: Código da fonte de recursos detalhada que financia a despesa.
       - name: fonte_recursos_detalhada_descricao
         description: Descrição da fonte de recursos detalhada.
+      - name: dotacao_inicial
+        description: >
+          Dotação inicial (LOA) da classificação orçamentária da emenda (referência,
+          repetida entre empenhos da mesma classificação — não somar por empenho).
+      - name: dotacao_atualizada
+        description: >
+          Dotação atualizada da classificação orçamentária da emenda (referência,
+          repetida entre empenhos da mesma classificação — não somar por empenho).
       - name: despesas_empenhadas
         description: Valor empenhado da emenda.
       - name: despesas_liquidadas
@@ -484,6 +510,14 @@ models:
           tipo_esperado: 'integer'
       - verificacao_tipagem:
           nome_tabela: 'emendas.instrumentos_emendas'
+          nome_coluna: 'dotacao_inicial'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.instrumentos_emendas'
+          nome_coluna: 'dotacao_atualizada'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.instrumentos_emendas'
           nome_coluna: 'despesas_empenhadas'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
@@ -530,3 +564,122 @@ models:
           nome_tabela: 'emendas.instrumentos_emendas'
           nome_coluna: 'pais'
           tipo_esperado: 'text'
+
+  - name: emendas_orcamento_execucao
+    description: >
+      Orçamento (dotado) e execução (empenhado/liquidado/pago) das emendas
+      parlamentares juntos no mesmo grão: a classificação orçamentária
+      (programa/ação/localizador/natureza/modalidade/fonte/PTRES), que mapeia
+      para um único autor de emenda. A base é a dotação (tg_emendas_dotacao),
+      com a execução (tg_emendas) agregada por classificação e juntada via
+      LEFT JOIN — assim linhas dotadas mas ainda não empenhadas aparecem com
+      execução 0, e cada dotação é somada uma única vez (sem dupla contagem).
+      O parlamentar é atribuído pelo nome do autor (filiação mais recente).
+    columns:
+      - name: codigo_programa
+        description: "Código do programa de governo no orçamento."
+      - name: programa
+        description: "Descrição do programa de governo."
+      - name: codigo_acao
+        description: "Código da ação de governo associada à emenda."
+      - name: acao
+        description: "Descrição da ação de governo associada à emenda."
+      - name: localizador_gasto
+        description: "Código do localizador de gasto da programação orçamentária."
+      - name: localizador_gasto_descricao
+        description: "Descrição do localizador de gasto."
+      - name: regiao_pt
+        description: "Região associada ao programa de trabalho (PT) da emenda."
+      - name: uf
+        description: "UF de aplicação da programação orçamentária."
+      - name: uf_descricao
+        description: "Descrição da UF da programação orçamentária."
+      - name: municipio
+        description: "Município de aplicação da programação orçamentária."
+      - name: codigo_gnd
+        description: "Código do grupo de natureza de despesa."
+      - name: gnd
+        description: "Descrição do grupo de natureza de despesa."
+      - name: natureza_despesa
+        description: "Código da natureza de despesa."
+      - name: natureza_despesa_descricao
+        description: "Descrição da natureza de despesa."
+      - name: codigo_modalidade
+        description: "Código da modalidade de aplicação."
+      - name: modalidade
+        description: "Descrição da modalidade de aplicação."
+      - name: ptres
+        description: "PTRES associado à classificação orçamentária."
+      - name: fonte_recursos_detalhada
+        description: "Código da fonte de recursos detalhada que financia a despesa."
+      - name: fonte_recursos_detalhada_descricao
+        description: "Descrição da fonte de recursos detalhada."
+      - name: autor_emendas_orcamento
+        description: "Identificador do autor da emenda no orçamento."
+      - name: autor_emendas_orcamento_descricao
+        description: "Descrição completa do autor da emenda no orçamento."
+      - name: autor_emendas_orcamento_nome
+        description: "Nome do autor da emenda em Title Case, usado na atribuição do parlamentar."
+      - name: dotacao_inicial
+        description: "Dotação orçamentária inicial (LOA) da classificação, somada."
+      - name: dotacao_atualizada
+        description: "Dotação orçamentária atualizada (após créditos) da classificação, somada."
+      - name: despesas_empenhadas
+        description: "Total empenhado na classificação (0 quando dotado mas não empenhado)."
+      - name: despesas_liquidadas
+        description: "Total liquidado na classificação."
+      - name: despesas_pagas
+        description: "Total pago na classificação."
+      - name: restos_a_pagar_inscritos
+        description: "Total de restos a pagar inscritos na classificação."
+      - name: restos_a_pagar_pagos
+        description: "Total de restos a pagar pagos na classificação."
+      - name: saldo_a_empenhar
+        description: "Dotação atualizada menos o empenhado (quanto ainda pode ser empenhado)."
+      - name: percentual_empenhado
+        description: "Empenhado / dotação atualizada (fração entre 0 e 1)."
+      - name: percentual_pago
+        description: "Pago / dotação atualizada (fração entre 0 e 1)."
+      - name: id_autor
+        description: "Identificador do parlamentar autor na base unificada (nulo se sem match)."
+      - name: cargo_autor
+        description: "Cargo do parlamentar autor (Deputado ou Senador)."
+      - name: autor
+        description: "Nome do parlamentar autor na base de parlamentares."
+      - name: partido
+        description: "Sigla do partido do autor (filiação mais recente)."
+      - name: uf_autor
+        description: "UF representada pelo parlamentar autor."
+      - name: url_foto_autor
+        description: "URL da foto oficial do parlamentar autor."
+      - name: email_autor
+        description: "E-mail institucional do parlamentar autor."
+      - name: url_foto_partido
+        description: "URL do logotipo do partido do autor."
+      - name: dt_ingest
+        description: "Data e hora (UTC-3) mais recente de ingestão das fontes deste modelo."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_orcamento_execucao'
+          nome_coluna: 'codigo_programa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_orcamento_execucao'
+          nome_coluna: 'ptres'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_orcamento_execucao'
+          nome_coluna: 'dotacao_inicial'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_orcamento_execucao'
+          nome_coluna: 'dotacao_atualizada'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_orcamento_execucao'
+          nome_coluna: 'despesas_empenhadas'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_orcamento_execucao'
+          nome_coluna: 'saldo_a_empenhar'
+          tipo_esperado: 'numeric'

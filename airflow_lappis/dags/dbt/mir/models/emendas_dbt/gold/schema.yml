@@ -1,0 +1,66 @@
+version: 2
+
+models:
+  - name: resumo_emendas_orcamento_execucao
+    description: >
+      Resumo por parlamentar do orçamento (dotado) versus execução
+      (empenhado/liquidado/pago) das emendas parlamentares. Agrega a silver
+      emendas_orcamento_execucao por autor. Como dotação e execução já chegam
+      no mesmo grão (classificação orçamentária), as somas por parlamentar não
+      têm dupla contagem.
+    columns:
+      - name: autor_emendas_orcamento_nome
+        description: "Nome do autor da emenda (chave de agregação, sempre presente)."
+      - name: id_autor
+        description: "Identificador do parlamentar na base unificada (nulo se sem match)."
+      - name: autor
+        description: "Nome do parlamentar na base de parlamentares."
+      - name: cargo_autor
+        description: "Cargo do parlamentar (Deputado ou Senador)."
+      - name: partido
+        description: "Sigla do partido do parlamentar (filiação mais recente)."
+      - name: uf_autor
+        description: "UF representada pelo parlamentar."
+      - name: url_foto_autor
+        description: "URL da foto oficial do parlamentar."
+      - name: url_foto_partido
+        description: "URL do logotipo do partido."
+      - name: quantidade_linhas_orcamentarias
+        description: "Número de classificações orçamentárias (linhas de emenda) do autor."
+      - name: quantidade_localizadores
+        description: "Número de localizadores de gasto distintos do autor."
+      - name: dotacao_inicial
+        description: "Soma da dotação inicial (LOA) das emendas do autor."
+      - name: dotacao_atualizada
+        description: "Soma da dotação atualizada das emendas do autor."
+      - name: despesas_empenhadas
+        description: "Soma do empenhado das emendas do autor."
+      - name: despesas_liquidadas
+        description: "Soma do liquidado das emendas do autor."
+      - name: despesas_pagas
+        description: "Soma do pago das emendas do autor."
+      - name: restos_a_pagar_inscritos
+        description: "Soma dos restos a pagar inscritos das emendas do autor."
+      - name: restos_a_pagar_pagos
+        description: "Soma dos restos a pagar pagos das emendas do autor."
+      - name: saldo_a_empenhar
+        description: "Dotação atualizada total menos o empenhado total do autor."
+      - name: percentual_empenhado
+        description: "Empenhado total / dotação atualizada total (fração entre 0 e 1)."
+      - name: percentual_pago
+        description: "Pago total / dotação atualizada total (fração entre 0 e 1)."
+      - name: dt_ingest
+        description: "Data e hora (UTC-3) mais recente de ingestão das fontes."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.resumo_emendas_orcamento_execucao'
+          nome_coluna: 'dotacao_atualizada'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.resumo_emendas_orcamento_execucao'
+          nome_coluna: 'despesas_empenhadas'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.resumo_emendas_orcamento_execucao'
+          nome_coluna: 'saldo_a_empenhar'
+          tipo_esperado: 'numeric'
