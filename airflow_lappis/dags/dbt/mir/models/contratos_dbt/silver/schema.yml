@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  # ----------------------------------------------------------------------------
+  # Contratos x Faturas
+  # ----------------------------------------------------------------------------
+  - name: contratos_faturas
+    description: >
+      Camada silver do cruzamento entre faturas e contratos do Compras GOV.
+      Enriquece as faturas com dados cadastrais do contrato (fornecedor,
+      número, objeto, unidades requisitantes) via left join por contrato_id,
+      garantindo que todas as faturas sejam mantidas mesmo sem contrato
+      correspondente.
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: id
+        description: "Identificador único da fatura (herdado de faturas)."
+      - name: contrato_id
+        description: "Identificador do contrato ao qual a fatura pertence. Chave de junção com contratos.id."
+      - name: numero
+        description: "Número da fatura."
+      - name: emissao
+        description: "Data de emissão da fatura."
+      - name: vencimento
+        description: "Data de vencimento da fatura."
+      - name: valor
+        description: "Valor bruto da fatura."
+      - name: valorliquido
+        description: "Valor líquido da fatura."
+      - name: data_liquidacao
+        description: "Data de liquidação da fatura."
+      - name: situacao
+        description: "Situação da fatura."
+      - name: dt_ingest
+        description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
+      - name: numero_contrato
+        description: "Número do contrato, propagado de contratos.numero. Nulo quando não há contrato correspondente."
+      - name: contrato_processo
+        description: "Número do processo do contrato, propagado de contratos.processo. Nulo quando não há contrato correspondente."
+      - name: fornecedor_cnpj_cpf_idgener
+        description: "CNPJ/CPF do fornecedor, propagado de contratos. Nulo quando não há contrato correspondente."
+      - name: fornecedor_tipo
+        description: "Tipo do fornecedor, propagado de contratos. Nulo quando não há contrato correspondente."
+      - name: fornecedor_nome
+        description: "Nome do fornecedor, propagado de contratos. Nulo quando não há contrato correspondente."
+      - name: objeto_contrato
+        description: "Objeto do contrato, propagado de contratos.objeto. Nulo quando não há contrato correspondente."
+      - name: unidades_requisitantes
+        description: "Unidades requisitantes do contrato, propagado de contratos. Nulo quando não há contrato correspondente."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_faturas'
+          nome_coluna: 'id'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_faturas'
+          nome_coluna: 'valor'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_faturas'
+          nome_coluna: 'valorliquido'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_faturas'
+          nome_coluna: 'emissao'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_faturas'
+          nome_coluna: 'data_liquidacao'
+          tipo_esperado: 'date'

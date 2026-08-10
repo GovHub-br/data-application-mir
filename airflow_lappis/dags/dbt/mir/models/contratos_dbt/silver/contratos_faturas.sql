@@ -32,4 +32,3 @@ select
 from faturas_base f
 left join contratos c 
     on trim(cast(f.contrato_id as text)) = c.contrato_id_key
-where f.emissao < '2026-01-01'
