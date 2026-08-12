@@ -114,6 +114,11 @@ with
 		group by id_plano_acao, pf_inscricao
 	),
 
+	emendas as (
+		select *
+		from {{ ref("numero_transferencia") }}
+	),
+
 	join_parcial as (
 		select
 			*,
@@ -144,8 +149,11 @@ select
 	prog.tx_nome_institucional_programa,
 	prog.tx_objetivo_programa,
 	jp.programa_governo,
-	jp.programa_governo_descricao
+	jp.programa_governo_descricao,
+	case when e.id_autor is not null then 'Emenda' else 'Recurso Próprio' end as origem
 from valor_firmado_tb vf
 full join join_parcial jp using (plano_acao, num_transf)
 left join programas_tb prog on plano_acao = prog.id_plano_acao
+left join emendas e
+	on trim(cast(coalesce(vf.num_transf, jp.num_transf) as text)) = trim(cast(e.numero_transferencia as text))
 where (plano_acao is not null) or (num_transf is not null)
