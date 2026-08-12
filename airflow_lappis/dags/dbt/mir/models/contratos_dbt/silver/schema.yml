@@ -1,0 +1,84 @@
+version: 2
+
+models:
+  # ----------------------------------------------------------------------------
+  # Estágios mensais (SIAFI)
+  # ----------------------------------------------------------------------------
+  - name: estagios_mensal
+    description: >
+      Camada silver que discrimina, mês a mês, os estágios da despesa (empenhado,
+      liquidado, pago e restos a pagar) extraídos do SIAFI a partir da bronze
+      empenhos_tesouro. Faz o parse de ne_ccor (nota de empenho), emissao_dia/
+      emissao_mes (mês e ano de lançamento), ne_ccor_favorecido (CNPJ/CPF) e
+      ne_info_complementar, agregando os valores por ne, cnpj_cpf e mês/ano de
+      lançamento.
+
+      Tratamento de Restos a Pagar (RAP): registros inscritos em RAP são
+      identificados pelo prefixo '000/' em emissao_dia e desdobrados entre o ano
+      de lançamento (mês original) e o ano de origem (mês 12), com o valor de
+      restos_a_pagar invertido no ano de origem para refletir a baixa da inscrição.
+      Replica a lógica validada no pipeline IPEA. Base do cruzamento
+      contratos_estagios do domínio de Contratos.
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: ne
+        description: >
+          Número da nota de empenho padronizado, extraído das 12 últimas posições
+          de ne_ccor.
+      - name: cnpj_cpf
+        description: "CNPJ ou CPF do favorecido do empenho (ne_ccor_favorecido)."
+      - name: info_complementar
+        description: >
+          Informação complementar do empenho, extraída do prefixo numérico de
+          ne_info_complementar.
+      - name: num_processo
+        description: >
+          Número do processo administrativo associado ao empenho (menor
+          ne_num_processo observado para a NE).
+      - name: mes_lancamento
+        description: >
+          Mês de referência do lançamento (primeiro dia do mês), já com o
+          desdobramento de RAP aplicado entre ano de lançamento e ano de origem.
+      - name: valor_empenhado
+        description: "Soma das despesas empenhadas no mês para a NE."
+      - name: valor_liquidado
+        description: "Soma das despesas liquidadas no mês para a NE."
+      - name: valor_pago
+        description: "Soma das despesas pagas no mês para a NE."
+      - name: restos_a_pagar
+        description: >
+          Soma dos restos a pagar inscritos no mês para a NE. No ano de origem de
+          um RAP o valor é registrado com sinal invertido.
+      - name: restos_a_pagar_pago
+        description: "Soma dos restos a pagar já quitados no mês para a NE."
+      - name: dt_ingest
+        description: >
+          Data e hora (UTC-3 Brasília) mais recente de ingestão dos dados da fonte
+          utilizada neste modelo.
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.estagios_mensal'
+          nome_coluna: 'mes_lancamento'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.estagios_mensal'
+          nome_coluna: 'valor_empenhado'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.estagios_mensal'
+          nome_coluna: 'valor_liquidado'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.estagios_mensal'
+          nome_coluna: 'valor_pago'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.estagios_mensal'
+          nome_coluna: 'restos_a_pagar'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.estagios_mensal'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
