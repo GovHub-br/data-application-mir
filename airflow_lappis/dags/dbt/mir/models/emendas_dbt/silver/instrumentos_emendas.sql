@@ -40,6 +40,8 @@ select
     e.ptres,
     e.fonte_recursos_detalhada,
     e.fonte_recursos_detalhada_descricao,
+    e.dotacao_inicial,
+    e.dotacao_atualizada,
     e.despesas_empenhadas,
     e.despesas_liquidadas,
     e.despesas_pagas,

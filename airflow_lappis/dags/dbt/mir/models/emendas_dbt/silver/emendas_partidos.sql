@@ -10,6 +10,32 @@ parlamentares_hist AS (
 	FROM {{ ref('parlamentares_historico') }}
 ),
 
+-- Dotacao agregada no grao da classificacao orcamentaria. Anexada a cada
+-- empenho como referencia da linha orcamentaria; o MESMO valor se repete
+-- entre empenhos da mesma classificacao, entao NAO deve ser somado por
+-- empenho (para totais corretos use emendas_orcamento_execucao).
+dotacao_por_classificacao AS (
+	SELECT
+		programa_governo,
+		acao_governo,
+		localizador_gasto,
+		natureza_despesa,
+		modalidade_aplicacao,
+		fonte_recursos_detalhada,
+		ptres,
+		SUM(dotacao_inicial) AS dotacao_inicial,
+		SUM(dotacao_atualizada) AS dotacao_atualizada
+	FROM {{ ref('tg_emendas_dotacao') }}
+	GROUP BY
+		programa_governo,
+		acao_governo,
+		localizador_gasto,
+		natureza_despesa,
+		modalidade_aplicacao,
+		fonte_recursos_detalhada,
+		ptres
+),
+
 tg_emendas_tratado AS (
 	SELECT
 		*,
@@ -51,6 +77,8 @@ cruzamento_bruto AS (
 		e.ptres,
 		e.fonte_recursos_detalhada,
 		e.fonte_recursos_detalhada_descricao,
+		dot.dotacao_inicial,
+		dot.dotacao_atualizada,
 		e.despesas_empenhadas,
 		e.despesas_liquidadas,
 		e.despesas_pagas,
@@ -94,6 +122,14 @@ cruzamento_bruto AS (
 	FROM tg_emendas_tratado e
 	LEFT JOIN parlamentares_hist p
 		ON e.chave_join_nome = p.chave_join_nome
+	LEFT JOIN dotacao_por_classificacao dot
+		ON e.programa_governo = dot.programa_governo
+		AND e.acao_governo = dot.acao_governo
+		AND e.localizador_gasto = dot.localizador_gasto
+		AND e.natureza_despesa = dot.natureza_despesa
+		AND e.modalidade_aplicacao = dot.modalidade_aplicacao
+		AND e.fonte_recursos_detalhada = dot.fonte_recursos_detalhada
+		AND e.ptres = dot.ptres
 ),
 
 deduplicado AS (
@@ -144,13 +180,15 @@ SELECT
 	ptres,
 	fonte_recursos_detalhada,
 	fonte_recursos_detalhada_descricao,
+	dotacao_inicial,
+	dotacao_atualizada,
 	despesas_empenhadas,
 	despesas_liquidadas,
 	despesas_pagas,
 	restos_a_pagar_inscritos,
 	restos_a_pagar_pagos,
 
-	autor_emendas_orcamento,    
+	autor_emendas_orcamento,
 
 	id_autor,
 	cargo_autor,

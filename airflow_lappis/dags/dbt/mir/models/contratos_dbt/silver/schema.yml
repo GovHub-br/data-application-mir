@@ -2,6 +2,154 @@ version: 2
 
 models:
   # ----------------------------------------------------------------------------
+  # Contratos x Faturas
+  # ----------------------------------------------------------------------------
+  - name: contratos_faturas
+    description: >
+      Camada silver do cruzamento entre faturas e contratos do Compras GOV.
+      Enriquece as faturas com dados cadastrais do contrato (fornecedor,
+      número, objeto, unidades requisitantes) via left join por contrato_id,
+      garantindo que todas as faturas sejam mantidas mesmo sem contrato
+      correspondente.
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: id
+        description: "Identificador único da fatura (herdado de faturas)."
+      - name: contrato_id
+        description: "Identificador do contrato ao qual a fatura pertence. Chave de junção com contratos.id."
+      - name: numero
+        description: "Número da fatura."
+      - name: emissao
+        description: "Data de emissão da fatura."
+      - name: vencimento
+        description: "Data de vencimento da fatura."
+      - name: valor
+        description: "Valor bruto da fatura."
+      - name: valorliquido
+        description: "Valor líquido da fatura."
+      - name: data_liquidacao
+        description: "Data de liquidação da fatura."
+      - name: situacao
+        description: "Situação da fatura."
+      - name: dt_ingest
+        description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
+      - name: numero_contrato
+        description: "Número do contrato, propagado de contratos.numero. Nulo quando não há contrato correspondente."
+      - name: contrato_processo
+        description: "Número do processo do contrato, propagado de contratos.processo. Nulo quando não há contrato correspondente."
+      - name: fornecedor_cnpj_cpf_idgener
+        description: "CNPJ/CPF do fornecedor, propagado de contratos. Nulo quando não há contrato correspondente."
+      - name: fornecedor_tipo
+        description: "Tipo do fornecedor, propagado de contratos. Nulo quando não há contrato correspondente."
+      - name: fornecedor_nome
+        description: "Nome do fornecedor, propagado de contratos. Nulo quando não há contrato correspondente."
+      - name: objeto_contrato
+        description: "Objeto do contrato, propagado de contratos.objeto. Nulo quando não há contrato correspondente."
+      - name: unidades_requisitantes
+        description: "Unidades requisitantes do contrato, propagado de contratos. Nulo quando não há contrato correspondente."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_faturas'
+          nome_coluna: 'id'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_faturas'
+          nome_coluna: 'valor'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_faturas'
+          nome_coluna: 'valorliquido'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_faturas'
+          nome_coluna: 'emissao'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_faturas'
+          nome_coluna: 'data_liquidacao'
+          tipo_esperado: 'date'
+
+  # ----------------------------------------------------------------------------
+  # Cronogramas x Faturas Mensal
+  # ----------------------------------------------------------------------------
+  - name: cronogramas_faturas_mensal
+    description: >
+      Consolida, por contrato e mês, o valor previsto em cronograma e os valores 
+      de faturas pagas e pendentes, calculando o saldo contratual disponível.
+      Enriquece a visão consolidada com dados cadastrais do contrato via left join.
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: contrato_id
+        description: "Identificador do contrato. Chave de junção com contratos.id."
+      - name: anoref
+        description: "Ano de referência do mês do cronograma."
+      - name: mesref
+        description: "Mês de referência do cronograma."
+      - name: mes_referencia
+        description: "Data do primeiro dia do mês de referência (YYYY-MM-01)."
+      - name: valor_cronograma
+        description: "Valor acumulado previsto no cronograma para o contrato no mês."
+      - name: valor_faturas_pagas
+        description: "Valor acumulado de faturas pagas (SIAFI Apropriado) emitidas no mês."
+      - name: valor_faturas_pendentes
+        description: "Valor acumulado de faturas pendentes emitidas no mês."
+      - name: saldo_contratual_disponivel
+        description: "Saldo contratual disponível calculada por (valor_cronograma - valor_faturas_pagas - valor_faturas_pendentes)."
+      - name: numero_contrato
+        description: "Número do contrato, propagado de contratos.numero. Nulo quando não há contrato correspondente."
+      - name: situacao_contrato
+        description: "Situação cadastral do contrato, propagada de contratos.situacao. Nulo quando não há contrato correspondente."
+      - name: fornecedor_nome
+        description: "Nome do fornecedor, propagado de contratos.fornecedor_nome. Nulo quando não há contrato correspondente."
+      - name: fornecedor_cnpj_cpf_idgener
+        description: "CNPJ/CPF do fornecedor, propagado de contratos. Nulo quando não há contrato correspondente."
+      - name: orgao_contratante
+        description: "Nome do órgão contratante, propagado de contratos. Nulo quando não há contrato correspondente."
+      - name: unidade_gestora
+        description: "Nome da Unidade Gestora (UG), propagado de contratos. Nulo quando não há contrato correspondente."
+      - name: vigencia_inicio
+        description: "Data de início da vigência do contrato, propagada de contratos."
+      - name: vigencia_fim
+        description: "Data de fim da vigência do contrato, propagada de contratos."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.cronogramas_faturas_mensal'
+          nome_coluna: 'contrato_id'
+          tipo_esperado: 'text'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.cronogramas_faturas_mensal'
+          nome_coluna: 'anoref'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.cronogramas_faturas_mensal'
+          nome_coluna: 'mesref'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.cronogramas_faturas_mensal'
+          nome_coluna: 'mes_referencia'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.cronogramas_faturas_mensal'
+          nome_coluna: 'valor_cronograma'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.cronogramas_faturas_mensal'
+          nome_coluna: 'valor_faturas_pagas'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.cronogramas_faturas_mensal'
+          nome_coluna: 'valor_faturas_pendentes'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.cronogramas_faturas_mensal'
+          nome_coluna: 'saldo_contratual_disponivel'
+          tipo_esperado: 'numeric' 
+
+  # ----------------------------------------------------------------------------
   # Estágios mensais (SIAFI)
   # ----------------------------------------------------------------------------
   - name: estagios_mensal

@@ -352,6 +352,25 @@ class ClientPostgresDB:
             if conn:
                 conn.close()
 
+    def export_table_to_csv(self, schema: str, table_name: str) -> str:
+        """Exporta o conteúdo de uma tabela como CSV (string), colunas incluídas."""
+        for identifier, label in ((schema, "schema"), (table_name, "table_name")):
+            if not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", identifier):
+                raise ValueError(f"{label} inválido: {identifier!r}")
+
+        query = f"SELECT * FROM {schema}.{table_name}"
+        with self._connect() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query)
+                columns = [desc[0] for desc in cursor.description]
+                rows = cursor.fetchall()
+
+        logging.info(
+            f"[cliente_postgres.py] Exportadas {len(rows)} linhas de "
+            f"{schema}.{table_name}"
+        )
+        return pd.DataFrame(rows, columns=columns).to_csv(index=False, sep=";")
+
     def get_codigo_unidade(self) -> list[dict]:
         query = """
             SELECT codigounidade, ordem_grandeza
