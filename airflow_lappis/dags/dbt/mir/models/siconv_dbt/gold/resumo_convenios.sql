@@ -142,7 +142,8 @@ with
             nr_convenio,
             string_agg(distinct autor, ', ') as parlamentares,
             string_agg(distinct partido, ', ') as partidos,
-            string_agg(distinct uf_autor, ', ') as ufs_parlamentares
+            string_agg(distinct uf_autor, ', ') as ufs_parlamentares,
+            string_agg(distinct autor_emendas_orcamento::text, ', ') as numero_emenda
         from {{ ref("emendas_convenio") }}
         where nr_convenio is not null
         group by nr_convenio
@@ -233,7 +234,7 @@ select
     em.parlamentares,
     em.partidos,
     em.ufs_parlamentares,
-    case when em.nr_convenio is not null then 'Emenda' else 'Recurso Próprio' end as origem 
+    case when em.nr_convenio is not null then 'Emenda - ' || em.numero_emenda else 'Recurso Próprio' end as origem 
 
 from base b
 left join proposta p on b.id_proposta = p.id_proposta

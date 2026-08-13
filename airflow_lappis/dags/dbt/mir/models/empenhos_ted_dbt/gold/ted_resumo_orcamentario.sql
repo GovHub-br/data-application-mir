@@ -150,7 +150,7 @@ select
 	prog.tx_objetivo_programa,
 	jp.programa_governo,
 	jp.programa_governo_descricao,
-	case when e.id_autor is not null then 'Emenda' else 'Recurso Próprio' end as origem
+	case when e.id_autor is not null then 'Emenda - ' || e.autor_emendas_orcamento::text else 'Recurso Próprio' end as origem
 from valor_firmado_tb vf
 full join join_parcial jp using (plano_acao, num_transf)
 left join programas_tb prog on plano_acao = prog.id_plano_acao
