@@ -120,6 +120,8 @@ models:
       description: "Partidos dos parlamentares que direcionaram emendas. NULL se não há emenda associada."
     - name: ufs_parlamentares
       description: "UFs dos parlamentares que direcionaram emendas. NULL se não há emenda associada."
+    - name: origem
+      description: "Indica a origem do recurso: 'Emenda' se vinculado a uma emenda parlamentar, 'Recurso Próprio' caso contrário."
 - name: resumo_termos_fomento
   description: >
     Tabela gold de termos de fomento do MIR. Consolida em uma única linha por
@@ -243,4 +245,5 @@ models:
       description: "Partidos dos parlamentares que direcionaram emendas. NULL se não há emenda associada."
     - name: ufs_parlamentares
       description: "UFs dos parlamentares que direcionaram emendas. NULL se não há emenda associada."
- 
+    - name: origem
+      description: "Indica a origem do recurso: 'Emenda' se vinculado a uma emenda parlamentar, 'Recurso Próprio' caso contrário."

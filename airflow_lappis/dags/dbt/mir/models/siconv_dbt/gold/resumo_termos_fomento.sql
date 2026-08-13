@@ -221,7 +221,9 @@ select
     -- Emendas
     em.parlamentares,
     em.partidos,
-    em.ufs_parlamentares
+    em.ufs_parlamentares,
+    case when em.nr_convenio is not null then 'Emenda' else 'Recurso Próprio' end as origem 
+
 
 from base b
 left join desembolso d on b.nr_convenio = d.nr_convenio

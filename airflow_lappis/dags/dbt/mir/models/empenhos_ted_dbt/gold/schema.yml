@@ -94,6 +94,8 @@ models:
         description: >
           Descrição do programa de governo conforme classificação orçamentária SIAFI,
           proveniente de nc_plano_acao.
+      - name: origem
+        description: "Indica a origem do recurso: 'Emenda' se vinculado a uma emenda parlamentar, 'Recurso Próprio' caso contrário."
     tests:
       - verificacao_tipagem:
           nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
