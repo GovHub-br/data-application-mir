@@ -35,17 +35,13 @@ with
     )
 
 select
-    -- Retorna estritamente as colunas originais de emendas (sem colunas _clean sobressalentes)
     e.*,
-
-    -- Identificador padronizado do instrumento
     coalesce(
         cm.nr_convenio_clean, 
         tf.nr_convenio_clean, 
         t.num_transf_clean
     ) as numero_instrumento,
 
-    -- Classificacao do instrumento
     case
         when cm.nr_convenio_clean is not null then coalesce(cm.modalidade, 'CONVENIO')
         when tf.nr_convenio_clean is not null then 'TERMO DE FOMENTO'
@@ -58,8 +54,6 @@ select
     end as tipo_instrumento
 
 from emendas e
-
--- Joins calculando a chave limpa diretamente na condição ON
 left join convenio_com_modalidade cm
     on ltrim(
         coalesce(
