@@ -64,3 +64,128 @@ models:
           nome_tabela: 'emendas.resumo_emendas_orcamento_execucao'
           nome_coluna: 'saldo_a_empenhar'
           tipo_esperado: 'numeric'
+
+  - name: emendas_instrumentos_execucao
+    description: >
+      Emendas parlamentares vinculadas a instrumentos de execução (convênio,
+      termo de fomento, TED, etc.), com identificação padronizada do
+      instrumento e seu tipo. Tem como base a tabela numero_transferencia,
+      enriquecida com a modalidade da proposta (via convenios_consolidados),
+      cruzamento com termo_fomento_consolidado, ted_resumo_orcamentario 
+      e fallback por padrões de texto nos campos descritivos.
+    columns:
+      - name: emissao_mes
+        description: "Mês de emissão do documento orçamentário/financeiro."
+      - name: emissao_dia
+        description: "Dia de emissão do documento orçamentário/financeiro."
+      - name: codigo_programa
+        description: "Código do programa orçamentário do governo ao qual a emenda está vinculada."
+      - name: programa
+        description: "Nome do programa orçamentário do governo."
+      - name: codigo_acao_ajustada
+        description: "Código da ação orçamentária ajustada vinculada à emenda."
+      - name: acao_ajustada
+        description: "Descrição da ação orçamentária ajustada."
+      - name: autor_emendas_orcamento_descricao
+        description: "Descrição textual associada ao código orçamentário da emenda."
+      - name: autor_emendas_orcamento_nome
+        description: "Nome associado ao código orçamentário da emenda."
+      - name: localizador_gasto
+        description: "Código do localizador de gasto do orçamento."
+      - name: localizador_gasto_descricao
+        description: "Descrição do localizador de gasto."
+      - name: regiao_pt
+        description: "Região do Plano de Trabalho de execução do recurso."
+      - name: uf
+        description: "UF de execução do recurso vinculada ao documento orçamentário."
+      - name: uf_descricao
+        description: "Descrição/nome por extenso da UF de execução."
+      - name: municipio
+        description: "Município de execução do recurso."
+      - name: pais
+        description: "País de execução do recurso (normalmente Brasil)."
+      - name: ne_ccor
+        description: "Código do centro de custo/órgão responsável associado à Nota de Empenho."
+      - name: ne_num_processo
+        description: "Número do processo administrativo vinculado à Nota de Empenho."
+      - name: ne_info_complementar
+        description: "Informação complementar da Nota de Empenho."
+      - name: ne_ccor_descricao
+        description: "Descrição do centro de custo/órgão responsável da Nota de Empenho."
+      - name: doc_observacao
+        description: "Observações registradas no documento orçamentário."
+      - name: codigo_gnd
+        description: "Código do Grupo de Natureza de Despesa (GND)."
+      - name: gnd
+        description: "Descrição do Grupo de Natureza de Despesa (GND)."
+      - name: natureza_despesa
+        description: "Código da natureza de despesa orçamentária."
+      - name: natureza_despesa_descricao
+        description: "Descrição da natureza de despesa orçamentária."
+      - name: codigo_modalidade
+        description: "Código da modalidade de aplicação orçamentária."
+      - name: modalidade
+        description: "Descrição da modalidade de aplicação orçamentária (não confundir com tipo_instrumento, que se refere ao tipo de instrumento de execução)."
+      - name: ne_ccor_favorecido
+        description: "Código do favorecido registrado na Nota de Empenho."
+      - name: ne_ccor_favorecido_descricao
+        description: "Nome/descrição do favorecido registrado na Nota de Empenho."
+      - name: ne_ccor_ano_emissao
+        description: "Ano de emissão da Nota de Empenho."
+      - name: ptres
+        description: "Código PTRES (Programa de Trabalho Resumido) vinculado ao recurso."
+      - name: fonte_recursos_detalhada
+        description: "Código da fonte de recursos detalhada."
+      - name: fonte_recursos_detalhada_descricao
+        description: "Descrição da fonte de recursos detalhada."
+      - name: dotacao_inicial
+        description: "Valor da dotação orçamentária inicial."
+      - name: dotacao_atualizada
+        description: "Valor da dotação orçamentária atualizada."
+      - name: despesas_empenhadas
+        description: "Valor total de despesas empenhadas."
+      - name: despesas_liquidadas
+        description: "Valor total de despesas liquidadas."
+      - name: despesas_pagas
+        description: "Valor total de despesas pagas."
+      - name: restos_a_pagar_inscritos
+        description: "Valor de restos a pagar inscritos."
+      - name: restos_a_pagar_pagos
+        description: "Valor de restos a pagar já pagos."
+      - name: autor_emendas_orcamento
+        description: "Código orçamentário da emenda (número da emenda)."
+      - name: id_autor
+        description: "Identificador do parlamentar autor da emenda. NULL quando o recurso não está vinculado a uma emenda (recurso próprio)."
+      - name: cargo_autor
+        description: "Cargo do parlamentar autor da emenda (Deputado Federal, Senador, etc.)."
+      - name: autor
+        description: "Nome do parlamentar autor da emenda."
+      - name: partido
+        description: "Partido do parlamentar autor da emenda."
+      - name: uf_autor
+        description: "UF de representação do parlamentar autor da emenda."
+      - name: url_foto_autor
+        description: "URL da foto do parlamentar autor da emenda."
+      - name: email_autor
+        description: "E-mail de contato do parlamentar autor da emenda."
+      - name: url_foto_partido
+        description: "URL do logotipo do partido do parlamentar autor da emenda."
+      - name: dt_ingest
+        description: "Data/hora de ingestão do registro na camada Silver de origem."
+      - name: numero_transferencia
+        description: "Número de transferência que identifica o instrumento de execução (convênio ou TED) associado à emenda. Base para a coluna numero_instrumento."
+      - name: numero_instrumento
+        description: >
+          Identificador do instrumento de execução vinculado à emenda:
+          nr_convenio (para convênio, termo de fomento e demais modalidades),
+          número do TED (num_transf) ou extraído via regex do texto descritivo.
+          Pode ser NULL quando a emenda se refere a despesa direta ou ainda não 
+          possui instrumento identificado.
+      - name: tipo_instrumento
+        description: >
+          Tipo do instrumento de execução vinculado à emenda (CONVENIO, TED,
+          TERMO DE FOMENTO, TERMO DE COLABORACAO, TERMO DE PARCERIA,
+          CONTRATO DE REPASSE, etc.), obtido via convenios_consolidados,
+          termo_fomento_consolidado, ted_resumo_orcamentario ou inferido via 
+          textos descritivos. Pode ser NULL para despesas diretas/contratuais 
+          sem instrumento de repasse vinculado.
