@@ -230,3 +230,153 @@ models:
           nome_tabela: 'contratos_dbt.estagios_mensal'
           nome_coluna: 'dt_ingest'
           tipo_esperado: 'timestamp with time zone'
+
+  # ----------------------------------------------------------------------------
+  # Contratos x Empenhos (SIAFI)
+  # ----------------------------------------------------------------------------
+  - name: contratos_empenhos
+    description: >
+      Camada silver que cruza os empenhos do Tesouro (SIAFI, via
+      empenhos_tesouro) com os contratos do Compras GOV, quando não há uma
+      chave direta 100% confiável entre as duas fontes. O cruzamento é
+      resolvido em cascata de 4 estratégias, em ordem decrescente de
+      confiabilidade, cada uma processando apenas os empenhos ainda não
+      resolvidos pela estratégia anterior:
+
+        1. NE (nota de empenho) + CNPJ/CPF do favorecido (full join direto
+           via identificadores).
+        2. Número do processo, restrito aos casos em que o processo é único
+           por contrato (evita fan-out quando vários contratos compartilham
+           o mesmo processo).
+        3. CNPJ/CPF do favorecido, restrito aos casos em que o CNPJ/CPF é
+           único por contrato.
+        4. Prefixo numérico de info_complementar (UG + modalidade +
+           número), restrito aos casos em que esse prefixo é único por
+           contrato. O SIAFI armazena essa informação em texto livre sem
+           formato garantido, então só o prefixo (código da UG) é
+           comparável de forma confiável entre as fontes; como o MIR cobre
+           apenas 2 UGs (230002, 810008), a restrição de unicidade faz com
+           que esta estratégia resolva pouquíssimos (tipicamente zero)
+           empenhos na prática — isso é esperado, não uma falha de
+           implementação.
+
+      Os 4 resultados parciais são unidos (union) e, ao final, um full join
+      com contratos mantém: (a) todo empenho casado a um contrato Ativo, e
+      (b) todo contrato Ativo, mesmo sem nenhum empenho correspondente
+      (colunas de empenho nulas nesse caso). Contratos não-Ativos são
+      excluídos do resultado final.
+
+      O grão do resultado replica o grão bruto de empenhos_tesouro (pode
+      haver múltiplas linhas por NE, uma por natureza de despesa/fonte de
+      recursos) — quem consumir este model num gold precisará agregar por
+      ne/contrato_id.
+
+      Percentual de empenhos não resolvidos por nenhuma das 4 estratégias:
+      <PREENCHER com o número real, obtido rodando a query documentada no
+      PR, após `dbt run --select contratos_empenhos` em ambiente com dados>.
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: contrato_id
+        description: >
+          Identificador do contrato casado com o empenho (via alguma das 4
+          estratégias) ou do contrato Ativo sem empenho correspondente.
+        tests:
+          - not_null
+      - name: ne
+        description: >
+          Nota de empenho normalizada (12 últimos caracteres de ne_ccor, em
+          maiúsculas), usada como chave na estratégia 1.
+      - name: ne_ccor
+        description: >
+          Nota de empenho completa, como registrada no SIAFI (inclui
+          prefixo da UG emissora).
+      - name: ne_num_processo
+        description: >
+          Número do processo administrativo associado ao empenho, como
+          registrado no SIAFI (normalizado para uso na estratégia 2).
+      - name: ne_info_complementar
+        description: >
+          Informação complementar do empenho, texto livre do SIAFI (usada,
+          via prefixo numérico, na estratégia 4).
+      - name: natureza_despesa
+        description: "Código da natureza de despesa do empenho."
+      - name: natureza_despesa_descricao
+        description: "Descrição da natureza de despesa do empenho."
+      - name: cnpj_cpf_favorecido
+        description: >
+          CNPJ ou CPF do favorecido do empenho (ne_ccor_favorecido), usado
+          (normalizado) nas estratégias 1 e 3.
+      - name: ne_ccor_ano_emissao
+        description: "Ano de emissão da nota de empenho."
+      - name: despesas_empenhadas
+        description: "Valor empenhado."
+      - name: despesas_liquidadas
+        description: "Valor liquidado."
+      - name: despesas_pagas
+        description: "Valor pago."
+      - name: estrategia_match
+        description: >
+          Estratégia da cascata que resolveu o cruzamento deste empenho:
+          'ne_cnpj_cpf', 'processo_unico', 'cnpj_cpf_unico',
+          'info_complementar_unico', ou nulo quando a linha veio de um
+          contrato Ativo sem nenhum empenho correspondente (originada do
+          full join final).
+      - name: numero_contrato
+        description: >
+          Número do contrato, propagado de contratos.numero. Nulo quando
+          não há contrato correspondente.
+      - name: situacao_contrato
+        description: >
+          Situação cadastral do contrato (sempre 'Ativo' neste model, dado
+          o filtro do full join final).
+      - name: fornecedor_nome
+        description: "Nome do fornecedor, propagado de contratos.fornecedor_nome."
+      - name: fornecedor_cnpj_cpf_idgener
+        description: "CNPJ/CPF do fornecedor do contrato, propagado de contratos."
+      - name: orgao_contratante
+        description: "Nome do órgão contratante, propagado de contratos."
+      - name: unidade_gestora
+        description: "Nome da Unidade Gestora (UG), propagado de contratos."
+      - name: objeto_contrato
+        description: "Objeto do contrato, propagado de contratos.objeto."
+      - name: unidades_requisitantes
+        description: "Unidades requisitantes do contrato, propagado de contratos."
+      - name: vigencia_inicio
+        description: "Data de início da vigência do contrato."
+      - name: vigencia_fim
+        description: "Data de fim da vigência do contrato."
+      - name: dt_ingest
+        description: >
+          Maior data/hora (UTC-3) de ingestão entre a fonte de empenhos e a
+          de contratos.
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_empenhos'
+          nome_coluna: 'ne_ccor_ano_emissao'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_empenhos'
+          nome_coluna: 'despesas_empenhadas'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_empenhos'
+          nome_coluna: 'despesas_liquidadas'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_empenhos'
+          nome_coluna: 'despesas_pagas'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_empenhos'
+          nome_coluna: 'vigencia_inicio'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_empenhos'
+          nome_coluna: 'vigencia_fim'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_empenhos'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
