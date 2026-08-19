@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: contratos_resumo
+    description: "Tabela consolidada na camada Gold contendo 1 linha por contrato e valores agregados de empenhos no padrão IPEA."
+    columns:
+      - name: contrato_id
+        description: "Chave primária do contrato."
+        tests:
+          - unique
+          - not_null
+
+      - name: numero_contrato
+        description: "Número do contrato ou nota de empenho."
+
+      - name: valor_global
+        description: "Valor global pactuado no contrato."
+
+      - name: total_despesas_empenhadas
+        description: "Valor total empenhado do contrato."
+
+      - name: total_despesas_liquidadas
+        description: "Valor total liquidado do contrato."
+
+      - name: total_despesas_pagas
+        description: "Valor total efetivamente pago do contrato."
+
+      - name: pendente_baixa
+        description: "Indica se o valor pago é diferente do valor global ('Sim' ou 'Não')."
+
+      - name: continuado
+        description: "Indica se o contrato é continuado com base no prazo de vigência e parcelas."
