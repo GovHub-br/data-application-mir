@@ -1,0 +1,1750 @@
+version: 2
+
+models:
+  - name: acao_nao_orcamentaria
+    description: >
+      Camada bronze do PPA/SIOP — acao_nao_orcamentaria unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: acao_nao_orcamentaria
+        description: "Ação Não-Orçamentária"
+      - name: descricao
+        description: "Descrição"
+      - name: tipo
+        description: "Tipo"
+      - name: fonte_de_informacoes
+        description: "Fonte de Informações"
+      - name: fonte_de_recursos
+        description: "Fonte de Recursos"
+      - name: especificacao_da_outra_fonte_de_financiamento
+        description: "Especificação da Outra Fonte de Financiamento"
+      - name: valor_total
+        description: "Valor Total"
+      - name: valor_previsto_para_o_1o_ano_do_ppa
+        description: "Valor Previsto para o 1o. Ano do PPA"
+      - name: valor_previsto_para_o_2o_ano_do_ppa
+        description: "Valor Previsto para o 2o. Ano do PPA"
+      - name: valor_previsto_para_o_3o_ano_do_ppa
+        description: "Valor Previsto para o 3o. Ano do PPA"
+      - name: valor_previsto_para_o_4o_ano_do_ppa
+        description: "Valor Previsto para o 4o. Ano do PPA"
+      - name: produto
+        description: "Produto"
+      - name: especificacao_do_produto
+        description: "Especificação do Produto"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: meta_fisica
+        description: "Meta Física"
+      - name: titulo
+        description: "Título"
+      - name: responsavel_pela_informacao
+        description: "Responsável pela informação"
+      - name: tributo
+        description: "Tributo"
+      - name: valor_previsto_para_2028
+        description: "Valor Previsto para 2028"
+      - name: funcao
+        description: "Função"
+      - name: subfuncao
+        description: "Subfunção"
+      - name: inicio_da_vigencia
+        description: "Início da  Vigência"
+      - name: termino_da_vigencia
+        description: "Término da vigência"
+      - name: vigencia_indeterminada
+        description: "Vigência indeterminada"
+      - name: fonte_dos_dados
+        description: "Fonte dos Dados"
+      - name: base_legal
+        description: "Base Legal"
+      - name: tipo_de_beneficiario
+        description: "Tipo de beneficiário"
+      - name: descricao_do_beneficiario
+        description: "Descrição do beneficiário"
+      - name: total_de_beneficiarios_previstos_1_ano_de_ppa
+        description: "Total de beneficiários previstos 1° Ano de PPA"
+      - name: total_de_beneficiarios_previstos_2_ano_de_ppa
+        description: "Total de beneficiários previstos 2° Ano de PPA"
+      - name: total_de_beneficiarios_previstos_3_ano_de_ppa
+        description: "Total de beneficiários previstos 3° Ano de PPA"
+      - name: total_de_beneficiarios_previstos_4_ano_de_ppa
+        description: "Total de beneficiários previstos 4° Ano de PPA"
+      - name: valor_previsto_para_2029
+        description: "Valor Previsto para 2029"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.acao_nao_orcamentaria'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.acao_nao_orcamentaria'
+          nome_coluna: 'inicio_da_vigencia'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.acao_nao_orcamentaria'
+          nome_coluna: 'valor_total'
+          tipo_esperado: 'numeric'
+
+  - name: programa
+    description: >
+      Camada bronze do PPA/SIOP — programa unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: titulo
+        description: "Título"
+      - name: tipo
+        description: "Tipo"
+      - name: orgao
+        description: "Órgão"
+      - name: publico_alvo
+        description: "Público-alvo"
+      - name: descricao_do_problema
+        description: "Descrição do Problema"
+      - name: causa_do_problema
+        description: "Causa do Problema"
+      - name: evidencias_do_problema
+        description: "Evidências do Problema"
+      - name: justificativa_para_a_intervencao
+        description: "Justificativa para a intervenção"
+      - name: evolucao_historica
+        description: "Evolução Histórica"
+      - name: comparacoes_internacionais
+        description: "Comparações Internacionais"
+      - name: relacao_com_os_ods
+        description: "Relação com os ODS"
+      - name: agentes_envolvidos
+        description: "Agentes Envolvidos"
+      - name: articulacao_federativa
+        description: "Articulação Federativa"
+      - name: enfoque_transversal
+        description: "Enfoque Transversal"
+      - name: marco_legal
+        description: "Marco Legal"
+      - name: planos_nacionais_setoriais_e_regionais
+        description: "Planos nacionais, setoriais e regionais"
+      - name: despesa_corrente_1o_ano_ppa
+        description: "Despesa Corrente - 1º ano PPA"
+      - name: despesa_capital_1o_ano_ppa
+        description: "Despesa Capital - 1º ano PPA"
+      - name: orcamento_investimento_empresas_estatais_1o_ano_ppa
+        description: "Orçamento Investimento Empresas Estatais - 1º ano PPA"
+      - name: gastos_tributarios_1o_ano_ppa
+        description: "Gastos Tributários - 1º ano PPA"
+      - name: outras_fontes_1o_ano_ppa
+        description: "Outras Fontes - 1º ano PPA"
+      - name: despesa_corrente_2o_ano_ppa
+        description: "Despesa Corrente - 2º ano PPA"
+      - name: despesa_capital_2o_ano_ppa
+        description: "Despesa Capital - 2º ano PPA"
+      - name: orcamento_investimento_empresas_estatais_2o_ano_ppa
+        description: "Orçamento Investimento Empresas Estatais - 2º ano PPA"
+      - name: gastos_tributarios_2o_ano_ppa
+        description: "Gastos Tributários - 2º ano PPA"
+      - name: outras_fontes_2o_ano_ppa
+        description: "Outras Fontes - 2º ano PPA"
+      - name: despesa_corrente_3o_ano_ppa
+        description: "Despesa Corrente - 3º ano PPA"
+      - name: despesa_capital_3o_ano_ppa
+        description: "Despesa Capital - 3º ano PPA"
+      - name: orcamento_investimento_empresas_estatais_3o_ano_ppa
+        description: "Orçamento Investimento Empresas Estatais - 3º ano PPA"
+      - name: gastos_tributarios_3o_ano_ppa
+        description: "Gastos Tributários - 3º ano PPA"
+      - name: outras_fontes_3o_ano_ppa
+        description: "Outras Fontes - 3º ano PPA"
+      - name: despesa_corrente_4o_ano_ppa
+        description: "Despesa Corrente - 4º ano PPA"
+      - name: despesa_capital_4o_ano_ppa
+        description: "Despesa Capital - 4º ano PPA"
+      - name: orcamento_investimento_empresas_estatais_4o_ano_ppa
+        description: "Orçamento Investimento Empresas Estatais - 4º ano PPA"
+      - name: gastos_tributarios_4o_ano_ppa
+        description: "Gastos Tributários - 4º ano PPA"
+      - name: outras_fontes_4o_ano_ppa
+        description: "Outras Fontes - 4º ano PPA"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.programa'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.programa'
+          nome_coluna: 'despesa_corrente_1o_ano_ppa'
+          tipo_esperado: 'numeric'
+
+  - name: objetivo_geral
+    description: >
+      Camada bronze do PPA/SIOP — objetivo_geral unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: enunciado
+        description: "Enunciado"
+      - name: descricao
+        description: "Descrição"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.objetivo_geral'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+
+  - name: objetivo_especifico
+    description: >
+      Camada bronze do PPA/SIOP — objetivo_especifico unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: enunciado
+        description: "Enunciado"
+      - name: descricao
+        description: "Descrição"
+      - name: orgao
+        description: "Órgão"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.objetivo_especifico'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+
+  - name: objetivo_estrategico_programa
+    description: >
+      Camada bronze do PPA/SIOP — objetivo_estrategico_programa unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: objetivo_estrategico
+        description: "Objetivo Estratégico"
+      - name: titulo_objetivo_estrategico
+        description: "Título - Objetivo Estratégico"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.objetivo_estrategico_programa'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+
+  - name: meta_objetivo_especifico
+    description: >
+      Camada bronze do PPA/SIOP — meta_objetivo_especifico unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_do_objetivo_especifico
+        description: "Meta do Objetivo Específico"
+      - name: meta_cumulativa
+        description: "Meta Cumulativa"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.meta_objetivo_especifico'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.meta_objetivo_especifico'
+          nome_coluna: 'valor_esperado_1o_ano_ppa'
+          tipo_esperado: 'numeric'
+
+  - name: entrega
+    description: >
+      Camada bronze do PPA/SIOP — entrega unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: enunciado
+        description: "Enunciado"
+      - name: descricao
+        description: "Descrição"
+      - name: orgao
+        description: "Órgão"
+      - name: unidade_responsavel
+        description: "Unidade Responsável"
+      - name: projeto_de_investimento
+        description: "Projeto de Investimento"
+      - name: data_de_inicio
+        description: "Data de Início"
+      - name: data_de_termino
+        description: "Data de Término"
+      - name: valor_total
+        description: "Valor Total"
+      - name: execucao_fisica_acumulada
+        description: "Execução Física Acumulada"
+      - name: meta_da_execucao_fisica
+        description: "Meta da Execução Física"
+      - name: pac
+        description: "PAC"
+      - name: identificador_cadastro_novo_pac_governa
+        description: "Identificador Cadastro Novo PAC (Governa)"
+      - name: concluida
+        description: "Concluída"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.entrega'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.entrega'
+          nome_coluna: 'data_de_inicio'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.entrega'
+          nome_coluna: 'valor_total'
+          tipo_esperado: 'numeric'
+
+  - name: meta_entrega
+    description: >
+      Camada bronze do PPA/SIOP — meta_entrega unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_da_entrega
+        description: "Meta da Entrega"
+      - name: meta_cumulativa
+        description: "Meta Cumulativa"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.meta_entrega'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.meta_entrega'
+          nome_coluna: 'valor_esperado_1o_ano_ppa'
+          tipo_esperado: 'numeric'
+
+  - name: indicador_objetivo_especifico
+    description: >
+      Camada bronze do PPA/SIOP — indicador_objetivo_especifico unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: denominacao
+        description: "Denominação"
+      - name: sigla
+        description: "Sigla"
+      - name: indice_de_referencia
+        description: "Índice de Referência"
+      - name: em_apuracao
+        description: "Em Apuração"
+      - name: data_de_apuracao
+        description: "Data de Apuração"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: descricao
+        description: "Descrição"
+      - name: periodo_ou_data_a_que_se_refere
+        description: "Período ou Data a que se Refere"
+      - name: data_de_divulgacao_disponibilizacao
+        description: "Data de Divulgação/Disponibilização"
+      - name: periodicidade
+        description: "Periodicidade"
+      - name: polaridade
+        description: "Polaridade"
+      - name: formula_de_calculo
+        description: "Fórmula de Cálculo"
+      - name: variaveis_de_calculo
+        description: "Variáveis de Cálculo"
+      - name: fonte_de_dados_das_variaveis_de_calculo
+        description: "Fonte de Dados das Variáveis de Cálculo"
+      - name: forma_de_disponibilizacao
+        description: "Forma de Disponibilização"
+      - name: procedimento_de_calculo
+        description: "Procedimento de Cálculo"
+      - name: limitacoes
+        description: "Limitações"
+      - name: notas_explicativas
+        description: "Notas Explicativas"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.indicador_objetivo_especifico'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.indicador_objetivo_especifico'
+          nome_coluna: 'data_de_apuracao'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.indicador_objetivo_especifico'
+          nome_coluna: 'indice_de_referencia'
+          tipo_esperado: 'numeric'
+
+  - name: indicador_entrega
+    description: >
+      Camada bronze do PPA/SIOP — indicador_entrega unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: denominacao
+        description: "Denominação"
+      - name: sigla
+        description: "Sigla"
+      - name: indice_de_referencia
+        description: "Índice de Referência"
+      - name: em_apuracao
+        description: "Em Apuração"
+      - name: data_de_apuracao
+        description: "Data de Apuração"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: descricao
+        description: "Descrição"
+      - name: periodo_ou_data_a_que_se_refere
+        description: "Período ou Data a que se Refere"
+      - name: data_de_divulgacao_disponibilizacao
+        description: "Data de Divulgação/Disponibilização"
+      - name: periodicidade
+        description: "Periodicidade"
+      - name: polaridade
+        description: "Polaridade"
+      - name: formula_de_calculo
+        description: "Fórmula de Cálculo"
+      - name: variaveis_de_calculo
+        description: "Variáveis de Cálculo"
+      - name: fonte_de_dados_das_variaveis_de_calculo
+        description: "Fonte de Dados das Variáveis de Cálculo"
+      - name: forma_de_disponibilizacao
+        description: "Forma de Disponibilização"
+      - name: procedimento_de_calculo
+        description: "Procedimento de Cálculo"
+      - name: limitacoes
+        description: "Limitações"
+      - name: notas_explicativas
+        description: "Notas Explicativas"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.indicador_entrega'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.indicador_entrega'
+          nome_coluna: 'data_de_apuracao'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.indicador_entrega'
+          nome_coluna: 'indice_de_referencia'
+          tipo_esperado: 'numeric'
+
+  - name: desagregacao_meta_objetivo_especifico
+    description: >
+      Camada bronze do PPA/SIOP — desagregacao_meta_objetivo_especifico unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_do_objetivo_especifico
+        description: "Meta do Objetivo Específico"
+      - name: publico
+        description: "Público"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.desagregacao_meta_objetivo_especifico'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.desagregacao_meta_objetivo_especifico'
+          nome_coluna: 'valor_esperado_1o_ano_ppa'
+          tipo_esperado: 'numeric'
+
+  - name: desagregacao_meta_entrega
+    description: >
+      Camada bronze do PPA/SIOP — desagregacao_meta_entrega unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_da_entrega
+        description: "Meta da Entrega"
+      - name: publico
+        description: "Público"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.desagregacao_meta_entrega'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.desagregacao_meta_entrega'
+          nome_coluna: 'valor_esperado_1o_ano_ppa'
+          tipo_esperado: 'numeric'
+
+  - name: regionalizacao_meta_objetivo_especifico
+    description: >
+      Camada bronze do PPA/SIOP — regionalizacao_meta_objetivo_especifico unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_do_objetivo_especifico
+        description: "Meta do Objetivo Específico"
+      - name: regiao
+        description: "Região"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.regionalizacao_meta_objetivo_especifico'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.regionalizacao_meta_objetivo_especifico'
+          nome_coluna: 'valor_esperado_1o_ano_ppa'
+          tipo_esperado: 'numeric'
+
+  - name: regionalizacao_meta_entrega
+    description: >
+      Camada bronze do PPA/SIOP — regionalizacao_meta_entrega unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_da_entrega
+        description: "Meta da Entrega"
+      - name: regiao
+        description: "Região"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.regionalizacao_meta_entrega'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.regionalizacao_meta_entrega'
+          nome_coluna: 'valor_esperado_1o_ano_ppa'
+          tipo_esperado: 'numeric'
+
+  - name: medida_institucional_objetivo_especifico
+    description: >
+      Camada bronze do PPA/SIOP — medida_institucional_objetivo_especifico unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: objetivo_geral
+        description: "Objetivo Geral"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: descricao
+        description: "Descrição"
+      - name: enunciado
+        description: "Enunciado"
+      - name: unidade_responsavel
+        description: "Unidade Responsável"
+      - name: resultados_esperados
+        description: "Resultados Esperados"
+      - name: prioritaria
+        description: "Prioritária"
+      - name: pac
+        description: "PAC"
+      - name: objetivo
+        description: "Objetivo"
+      - name: medida_institucional_normativa
+        description: "Medida Institucional Normativa"
+      - name: orgao_responsavel
+        description: "Órgão Responsável"
+      - name: concluida
+        description: "Concluída"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.medida_institucional_objetivo_especifico'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+
+  - name: medida_institucional_programa
+    description: >
+      Camada bronze do PPA/SIOP — medida_institucional_programa unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Programa"
+      - name: descricao
+        description: "Descrição"
+      - name: enunciado
+        description: "Enunciado"
+      - name: unidade_responsavel
+        description: "Unidade Responsável"
+      - name: resultados_esperados
+        description: "Resultados Esperados"
+      - name: prioritaria
+        description: "Prioritária"
+      - name: pac
+        description: "PAC"
+      - name: medida_institucional_normativa
+        description: "Medida Institucional Normativa"
+      - name: orgao_responsavel
+        description: "Órgão Responsável"
+      - name: concluida
+        description: "Concluída"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.medida_institucional_programa'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+
+  - name: agenda
+    description: >
+      Camada bronze do PPA/SIOP — agenda unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo
+        description: "Código"
+      - name: titulo
+        description: "Título"
+      - name: descricao
+        description: "Descrição"
+      - name: tipo
+        description: "Tipo"
+      - name: nome
+        description: "Nome"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+
+  - name: agenda_programa
+    description: >
+      Camada bronze do PPA/SIOP — agenda_programa unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: titulo
+        description: "Título"
+      - name: tipo
+        description: "Tipo"
+      - name: orgao
+        description: "Órgão"
+      - name: publico_alvo
+        description: "Público-alvo"
+      - name: descricao_do_problema
+        description: "Descrição do Problema"
+      - name: causa_do_problema
+        description: "Causa do Problema"
+      - name: evidencias_do_problema
+        description: "Evidências do Problema"
+      - name: justificativa_para_a_intervencao
+        description: "Justificativa para a intervenção"
+      - name: evolucao_historica
+        description: "Evolução Histórica"
+      - name: comparacoes_internacionais
+        description: "Comparações Internacionais"
+      - name: relacao_com_os_ods
+        description: "Relação com os ODS"
+      - name: agentes_envolvidos
+        description: "Agentes Envolvidos"
+      - name: articulacao_federativa
+        description: "Articulação Federativa"
+      - name: enfoque_transversal
+        description: "Enfoque Transversal"
+      - name: marco_legal
+        description: "Marco Legal"
+      - name: planos_nacionais_setoriais_e_regionais
+        description: "Planos nacionais, setoriais e regionais"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_programa'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+
+  - name: agenda_objetivo_geral
+    description: >
+      Camada bronze do PPA/SIOP — agenda_objetivo_geral unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: enunciado
+        description: "Enunciado"
+      - name: descricao
+        description: "Descrição"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_objetivo_geral'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+
+  - name: agenda_objetivo_especifico
+    description: >
+      Camada bronze do PPA/SIOP — agenda_objetivo_especifico unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: enunciado
+        description: "Enunciado"
+      - name: descricao
+        description: "Descrição"
+      - name: orgao
+        description: "Órgão"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_objetivo_especifico'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+
+  - name: agenda_entrega
+    description: >
+      Camada bronze do PPA/SIOP — agenda_entrega unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: enunciado
+        description: "Enunciado"
+      - name: descricao
+        description: "Descrição"
+      - name: orgao
+        description: "Órgão"
+      - name: unidade_responsavel
+        description: "Unidade Responsável"
+      - name: projeto_de_investimento
+        description: "Projeto de Investimento"
+      - name: data_de_inicio
+        description: "Data de Início"
+      - name: data_de_termino
+        description: "Data de Término"
+      - name: valor_total
+        description: "Valor Total"
+      - name: execucao_fisica_acumulada
+        description: "Execução Física Acumulada"
+      - name: meta_da_execucao_fisica
+        description: "Meta da Execução Física"
+      - name: pac
+        description: "PAC"
+      - name: identificador_cadastro_novo_pac_governa
+        description: "Identificador Cadastro Novo PAC (Governa)"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: concluida
+        description: "Concluída"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_entrega'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_entrega'
+          nome_coluna: 'data_de_inicio'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_entrega'
+          nome_coluna: 'valor_total'
+          tipo_esperado: 'numeric'
+
+  - name: agenda_meta_entrega
+    description: >
+      Camada bronze do PPA/SIOP — agenda_meta_entrega unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_da_entrega
+        description: "Meta da Entrega"
+      - name: meta_cumulativa
+        description: "Meta Cumulativa"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_meta_entrega'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_meta_entrega'
+          nome_coluna: 'valor_esperado_1o_ano_ppa'
+          tipo_esperado: 'numeric'
+
+  - name: agenda_meta_objetivo_especifico
+    description: >
+      Camada bronze do PPA/SIOP — agenda_meta_objetivo_especifico unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_do_objetivo_especifico
+        description: "Meta do Objetivo Específico"
+      - name: meta_cumulativa
+        description: "Meta Cumulativa"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_meta_objetivo_especifico'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_meta_objetivo_especifico'
+          nome_coluna: 'valor_esperado_1o_ano_ppa'
+          tipo_esperado: 'numeric'
+
+  - name: agenda_indicador_entrega
+    description: >
+      Camada bronze do PPA/SIOP — agenda_indicador_entrega unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: denominacao
+        description: "Denominação"
+      - name: sigla
+        description: "Sigla"
+      - name: indice_de_referencia
+        description: "Índice de Referência"
+      - name: em_apuracao
+        description: "Em Apuração"
+      - name: data_de_apuracao
+        description: "Data de Apuração"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: descricao
+        description: "Descrição"
+      - name: periodo_ou_data_a_que_se_refere
+        description: "Período ou Data a que se Refere"
+      - name: data_de_divulgacao_disponibilizacao
+        description: "Data de Divulgação/Disponibilização"
+      - name: periodicidade
+        description: "Periodicidade"
+      - name: polaridade
+        description: "Polaridade"
+      - name: formula_de_calculo
+        description: "Fórmula de Cálculo"
+      - name: variaveis_de_calculo
+        description: "Variáveis de Cálculo"
+      - name: fonte_de_dados_das_variaveis_de_calculo
+        description: "Fonte de Dados das Variáveis de Cálculo"
+      - name: forma_de_disponibilizacao
+        description: "Forma de Disponibilização"
+      - name: procedimento_de_calculo
+        description: "Procedimento de Cálculo"
+      - name: limitacoes
+        description: "Limitações"
+      - name: notas_explicativas
+        description: "Notas Explicativas"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_indicador_entrega'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_indicador_entrega'
+          nome_coluna: 'data_de_apuracao'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_indicador_entrega'
+          nome_coluna: 'indice_de_referencia'
+          tipo_esperado: 'numeric'
+
+  - name: agenda_indicador_objetivo_especifico
+    description: >
+      Camada bronze do PPA/SIOP — agenda_indicador_objetivo_especifico unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: denominacao
+        description: "Denominação"
+      - name: sigla
+        description: "Sigla"
+      - name: indice_de_referencia
+        description: "Índice de Referência"
+      - name: em_apuracao
+        description: "Em Apuração"
+      - name: data_de_apuracao
+        description: "Data de Apuração"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: descricao
+        description: "Descrição"
+      - name: periodo_ou_data_a_que_se_refere
+        description: "Período ou Data a que se Refere"
+      - name: data_de_divulgacao_disponibilizacao
+        description: "Data de Divulgação/Disponibilização"
+      - name: periodicidade
+        description: "Periodicidade"
+      - name: polaridade
+        description: "Polaridade"
+      - name: formula_de_calculo
+        description: "Fórmula de Cálculo"
+      - name: variaveis_de_calculo
+        description: "Variáveis de Cálculo"
+      - name: fonte_de_dados_das_variaveis_de_calculo
+        description: "Fonte de Dados das Variáveis de Cálculo"
+      - name: forma_de_disponibilizacao
+        description: "Forma de Disponibilização"
+      - name: procedimento_de_calculo
+        description: "Procedimento de Cálculo"
+      - name: limitacoes
+        description: "Limitações"
+      - name: notas_explicativas
+        description: "Notas Explicativas"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_indicador_objetivo_especifico'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_indicador_objetivo_especifico'
+          nome_coluna: 'data_de_apuracao'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_indicador_objetivo_especifico'
+          nome_coluna: 'indice_de_referencia'
+          tipo_esperado: 'numeric'
+
+  - name: agenda_desagregacao_meta_entrega
+    description: >
+      Camada bronze do PPA/SIOP — agenda_desagregacao_meta_entrega unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_da_entrega
+        description: "Meta da Entrega"
+      - name: publico
+        description: "Público"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_desagregacao_meta_entrega'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_desagregacao_meta_entrega'
+          nome_coluna: 'valor_esperado_1o_ano_ppa'
+          tipo_esperado: 'numeric'
+
+  - name: agenda_desagregacao_meta_objetivo_especifico
+    description: >
+      Camada bronze do PPA/SIOP — agenda_desagregacao_meta_objetivo_especifico unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_do_objetivo_especifico
+        description: "Meta do Objetivo Específico"
+      - name: publico
+        description: "Público"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_desagregacao_meta_objetivo_especifico'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_desagregacao_meta_objetivo_especifico'
+          nome_coluna: 'valor_esperado_1o_ano_ppa'
+          tipo_esperado: 'numeric'
+
+  - name: agenda_regionalizacao_meta_entrega
+    description: >
+      Camada bronze do PPA/SIOP — agenda_regionalizacao_meta_entrega unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_da_entrega
+        description: "Meta da Entrega"
+      - name: regiao
+        description: "Região"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_regionalizacao_meta_entrega'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_regionalizacao_meta_entrega'
+          nome_coluna: 'valor_esperado_1o_ano_ppa'
+          tipo_esperado: 'numeric'
+
+  - name: agenda_regionalizacao_meta_objetivo_especifico
+    description: >
+      Camada bronze do PPA/SIOP — agenda_regionalizacao_meta_objetivo_especifico unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_do_objetivo_especifico
+        description: "Meta do Objetivo Específico"
+      - name: regiao
+        description: "Região"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_regionalizacao_meta_objetivo_especifico'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_regionalizacao_meta_objetivo_especifico'
+          nome_coluna: 'valor_esperado_1o_ano_ppa'
+          tipo_esperado: 'numeric'
+
+  - name: agenda_medida_institucional_objetivo_especifico
+    description: >
+      Camada bronze do PPA/SIOP — agenda_medida_institucional_objetivo_especifico unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: objetivo_geral
+        description: "Objetivo Geral"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: descricao
+        description: "Descrição"
+      - name: enunciado
+        description: "Enunciado"
+      - name: unidade_responsavel
+        description: "Unidade Responsável"
+      - name: resultados_esperados
+        description: "Resultados Esperados"
+      - name: prioritaria
+        description: "Prioritária"
+      - name: pac
+        description: "PAC"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: objetivo
+        description: "Objetivo"
+      - name: medida_institucional_normativa
+        description: "Medida Institucional Normativa"
+      - name: orgao_responsavel
+        description: "Órgão Responsável"
+      - name: concluida
+        description: "Concluída"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_medida_institucional_objetivo_especifico'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
+
+  - name: agenda_medida_institucional_programa
+    description: >
+      Camada bronze do PPA/SIOP — agenda_medida_institucional_programa unificada (2024-2026) por
+      ano_ppa, com conversão de tipos e auditoria (dt_ingest).
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+      - name: programa
+        description: "Programa"
+      - name: descricao
+        description: "Descrição"
+      - name: enunciado
+        description: "Enunciado"
+      - name: unidade_responsavel
+        description: "Unidade Responsável"
+      - name: resultados_esperados
+        description: "Resultados Esperados"
+      - name: prioritaria
+        description: "Prioritária"
+      - name: pac
+        description: "PAC"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: medida_institucional_normativa
+        description: "Medida Institucional Normativa"
+      - name: orgao_responsavel
+        description: "Órgão Responsável"
+      - name: concluida
+        description: "Concluída"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate (md5 das colunas de negócio + ano_ppa); garante unicidade/idempotência."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.agenda_medida_institucional_programa'
+          nome_coluna: 'ano_ppa'
+          tipo_esperado: 'integer'
