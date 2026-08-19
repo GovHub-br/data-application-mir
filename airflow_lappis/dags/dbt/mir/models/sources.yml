@@ -80,3 +80,38 @@ sources:
       - name: empenhos
       - name: cronograma
       - name: terceirizados
+
+  - name: ppa
+    schema: ppa
+    tables:
+      - name: acao_nao_orcamentaria
+      - name: programa
+      - name: objetivo_geral
+      - name: objetivo_especifico
+      - name: objetivo_estrategico_programa
+      - name: meta_objetivo_especifico
+      - name: entrega
+      - name: meta_entrega
+      - name: indicador_objetivo_especifico
+      - name: indicador_entrega
+      - name: desagregacao_meta_objetivo_especifico
+      - name: desagregacao_meta_entrega
+      - name: regionalizacao_meta_objetivo_especifico
+      - name: regionalizacao_meta_entrega
+      - name: medida_institucional_objetivo_especifico
+      - name: medida_institucional_programa
+      - name: agenda
+      - name: agenda_programa
+      - name: agenda_objetivo_geral
+      - name: agenda_objetivo_especifico
+      - name: agenda_entrega
+      - name: agenda_meta_entrega
+      - name: agenda_meta_objetivo_especifico
+      - name: agenda_indicador_entrega
+      - name: agenda_indicador_objetivo_especifico
+      - name: agenda_desagregacao_meta_entrega
+      - name: agenda_desagregacao_meta_objetivo_especifico
+      - name: agenda_regionalizacao_meta_entrega
+      - name: agenda_regionalizacao_meta_objetivo_especifico
+      - name: agenda_medida_institucional_objetivo_especifico
+      - name: agenda_medida_institucional_programa

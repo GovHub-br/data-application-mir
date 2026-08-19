@@ -37,6 +37,9 @@ models:
     compras_gov_dbt:
       +materialized: table
       +schema: compras_gov_dbt
+    ppa_dbt:
+      +materialized: table
+      +schema: ppa_dbt
 
 
 
