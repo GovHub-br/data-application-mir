@@ -46,3 +46,44 @@ models:
           Nota de empenho (NE), priorizando a origem de empenhos/faturas sobre
           o número do contrato. Normalizada (somente alfanuméricos, maiúscula).
           Nula quando o valor normalizado não possui exatamente 12 caracteres.
+
+  - name: preenchimento_meses
+    description: >
+      View de apoio criada para eliminar descontinuidades temporais nas
+      visualizações em série mensal (camada Gold). Gera a grade completa de
+      meses de referência para cada contrato, entre o seu primeiro (min) e
+      último (max) mês de referência registrados em cronogramas_faturas_mensal,
+      mesmo em períodos sem movimentação financeira.
+    columns:
+      - name: contrato_id
+        description: "Identificador único do contrato."
+        tests:
+          - not_null
+      - name: mes_referencia
+        description: "Mês de referência na série temporal (primeiro dia do mês)."
+        tests:
+          - not_null
+      - name: valor_cronograma
+        description: "Valor do cronograma previsto para o mês de referência."
+      - name: valor_faturas_pagas
+        description: "Soma dos valores de faturas pagas no mês de referência."
+      - name: valor_faturas_pendentes
+        description: "Soma dos valores de faturas pendentes no mês de referência."
+      - name: saldo_contratual_disponivel
+        description: "Saldo contratual disponível no mês de referência."
+      - name: numero_contrato
+        description: "Número oficial do contrato."
+      - name: situacao_contrato
+        description: "Situação atual do contrato (ex: Ativo)."
+      - name: fornecedor_nome
+        description: "Nome ou razão social do fornecedor contratado."
+      - name: fornecedor_cnpj_cpf_idgener
+        description: "Identificador (CNPJ, CPF ou ID estrangeiro) do fornecedor."
+      - name: orgao_contratante
+        description: "Nome do órgão contratante."
+      - name: unidade_gestora
+        description: "Nome da unidade gestora responsável."
+      - name: vigencia_inicio
+        description: "Data de início da vigência do contrato."
+      - name: vigencia_fim
+        description: "Data de término da vigência do contrato."
