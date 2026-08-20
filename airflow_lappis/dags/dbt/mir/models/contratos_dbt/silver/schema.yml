@@ -380,3 +380,127 @@ models:
           nome_tabela: 'contratos_dbt.contratos_empenhos'
           nome_coluna: 'dt_ingest'
           tipo_esperado: 'timestamp with time zone'
+
+  # ----------------------------------------------------------------------------
+  # Contratos x Estágios mensais (SIAFI)
+  # ----------------------------------------------------------------------------
+  - name: contratos_estagios
+    description: >
+      Camada silver que consolida os estágios mensais da despesa
+      (estagios_mensal) por contrato do Compras GOV, usando a mesma lógica
+      de correspondência em cascata da contratos_empenhos, porém em 3
+      níveis, em ordem decrescente de confiabilidade, cada um processando
+      apenas os estágios ainda não resolvidos pelo anterior:
+
+        1. NE (nota de empenho) + CNPJ/CPF do favorecido (left join direto
+           via identificadores), excluindo identificadores de contratos de
+           categoria "Cessão".
+        2. CNPJ/CPF do favorecido + número do processo.
+        3. CNPJ/CPF do favorecido + info_complementar (prefixo numérico da
+           UG emissora, único formato comparável de forma confiável entre
+           as fontes).
+
+      Os 3 resultados parciais são unidos (union) e agregados por
+      contrato_id + mes_lancamento (soma de valor empenhado, liquidado,
+      pago e restos a pagar/RAP). Ao final, um full join com contratos
+      mantém: (a) todo mês/estágio casado a um contrato Ativo, e (b) todo
+      contrato Ativo, mesmo sem nenhum estágio correspondente (colunas de
+      estágio nulas nesse caso). Contratos não-Ativos são excluídos do
+      resultado final.
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: contrato_id
+        description: >
+          Identificador do contrato casado com o estágio mensal (via
+          alguma das 3 estratégias) ou do contrato Ativo sem estágio
+          correspondente.
+        tests:
+          - not_null
+      - name: mes_lancamento
+        description: >
+          Mês de referência do lançamento (primeiro dia do mês), herdado de
+          estagios_mensal.mes_lancamento, já com o desdobramento de RAP
+          aplicado.
+      - name: valor_empenhado
+        description: "Soma das despesas empenhadas no mês para o contrato."
+      - name: valor_liquidado
+        description: "Soma das despesas liquidadas no mês para o contrato."
+      - name: valor_pago
+        description: "Soma das despesas pagas no mês para o contrato."
+      - name: restos_a_pagar
+        description: >
+          Soma dos restos a pagar inscritos no mês para o contrato. No ano
+          de origem de um RAP o valor é registrado com sinal invertido
+          (herdado de estagios_mensal).
+      - name: restos_a_pagar_pago
+        description: "Soma dos restos a pagar já quitados no mês para o contrato."
+      - name: estrategias_match
+        description: >
+          Lista das estratégias da cascata que resolveram os estágios
+          agregados neste contrato/mês: 'ne_cnpj_cpf', 'cnpj_cpf_processo',
+          'cnpj_cpf_info_complementar', ou nulo quando a linha veio de um
+          contrato Ativo sem nenhum estágio correspondente (originada do
+          full join final).
+      - name: numero_contrato
+        description: >
+          Número do contrato, propagado de contratos.numero. Nulo quando
+          não há contrato correspondente.
+      - name: situacao_contrato
+        description: >
+          Situação cadastral do contrato (sempre 'Ativo' neste model, dado
+          o filtro do full join final).
+      - name: fornecedor_nome
+        description: "Nome do fornecedor, propagado de contratos.fornecedor_nome."
+      - name: fornecedor_cnpj_cpf_idgener
+        description: "CNPJ/CPF do fornecedor do contrato, propagado de contratos."
+      - name: orgao_contratante
+        description: "Nome do órgão contratante, propagado de contratos."
+      - name: unidade_gestora
+        description: "Nome da Unidade Gestora (UG), propagado de contratos."
+      - name: objeto_contrato
+        description: "Objeto do contrato, propagado de contratos.objeto."
+      - name: unidades_requisitantes
+        description: "Unidades requisitantes do contrato, propagado de contratos."
+      - name: vigencia_inicio
+        description: "Data de início da vigência do contrato."
+      - name: vigencia_fim
+        description: "Data de fim da vigência do contrato."
+      - name: dt_ingest
+        description: >
+          Maior data/hora (UTC-3) de ingestão entre a fonte de estágios
+          mensais e a de contratos.
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_estagios'
+          nome_coluna: 'mes_lancamento'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_estagios'
+          nome_coluna: 'valor_empenhado'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_estagios'
+          nome_coluna: 'valor_liquidado'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_estagios'
+          nome_coluna: 'valor_pago'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_estagios'
+          nome_coluna: 'restos_a_pagar'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_estagios'
+          nome_coluna: 'vigencia_inicio'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_estagios'
+          nome_coluna: 'vigencia_fim'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_estagios'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
