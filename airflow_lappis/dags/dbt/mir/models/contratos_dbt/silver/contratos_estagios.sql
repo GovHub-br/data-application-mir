@@ -17,7 +17,7 @@ with
 
     -- Identificadores excluindo a categoria "Cessão": contratos de cessão não
     -- possuem execução financeira própria no SIAFI, então cruzá-los geraria
-    -- falsos positivos na estratégia 1 (NE + CNPJ/CPF).
+    -- falsos positivos em qualquer uma das 3 estratégias.
     identificadores_sem_cessao as (
         select
             contrato_id,
@@ -197,6 +197,7 @@ with
             sum(valor_pago) as valor_pago,
             sum(restos_a_pagar) as restos_a_pagar,
             sum(restos_a_pagar_pago) as restos_a_pagar_pago,
+            array_agg(distinct estrategia_match) as estrategias_match,
             max(dt_ingest) as dt_ingest
         from resultado_final
         group by contrato_id, mes_lancamento
@@ -228,6 +229,7 @@ select
     am.valor_pago,
     am.restos_a_pagar,
     am.restos_a_pagar_pago,
+    am.estrategias_match,
     ca.numero as numero_contrato,
     ca.situacao as situacao_contrato,
     ca.fornecedor_nome,

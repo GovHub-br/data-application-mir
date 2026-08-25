@@ -440,6 +440,13 @@ models:
           de estagios_mensal).
       - name: restos_a_pagar_pago
         description: "Soma dos restos a pagar já quitados no mês para o contrato."
+      - name: estrategias_match
+        description: >
+          Lista das estratégias da cascata que resolveram os estágios
+          agregados neste contrato/mês: 'ne_cnpj_cpf', 'cnpj_cpf_processo',
+          'cnpj_cpf_info_complementar', ou nulo quando a linha veio de um
+          contrato Ativo sem nenhum estágio correspondente (originada do
+          full join final).
       - name: numero_contrato
         description: >
           Número do contrato, propagado de contratos.numero. Nulo quando não
