@@ -8,7 +8,8 @@ import json
 import pandas as pd
 import io
 from schedule_loader import get_dynamic_schedule
-from cliente_email import fetch_and_process_email
+from cliente_email import fetch_and_process_email, resolve_email_date_range
+from email_ingest_params import date_range_params
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
 
@@ -52,6 +53,7 @@ with DAG(
     schedule_interval=get_dynamic_schedule("pf_tesouro_mir_ingest_dag"),
     start_date=datetime(2023, 12, 1),
     catchup=False,
+    params=date_range_params(),
     tags=["email", "pfs", "tesouro", "MIR"],
 ) as dag:
 
@@ -65,6 +67,10 @@ with DAG(
         PASSWORD = creds["password"]
         IMAP_SERVER = creds["imap_server"]
         SENDER_EMAIL = creds["sender_email"]
+        params = context.get("params", {})
+        data_inicial, data_final = resolve_email_date_range(
+            params.get("data_inicial"), params.get("data_final")
+        )
 
         try:
             logging.info("Iniciando o processamento do email de programações financeiras")
@@ -76,6 +82,8 @@ with DAG(
                 EMAIL_SUBJECT,
                 column_mapping=COLUMN_MAPPING,
                 skiprows=SKIPROWS,
+                start_date=data_inicial,
+                end_date=data_final,
             )
             if not csv_data:
                 logging.warning("Nenhum e-mail encontrado com o assunto configurado")
