@@ -48,6 +48,7 @@ sources:
     tables:
         - name: ne_tesouro
         - name: ne_tesouro_emendas
+        - name: ne_tesouro_ppa
         - name: nc_tesouro_pos__2026
         - name: nc_tesouro_pre_2026
         - name: pf_tesouro
