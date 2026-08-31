@@ -1,3 +1,76 @@
+{{ config(materialized="table") }}
+
+{#
+  Cascata de métodos de extração de num_transf: cada NE é processada pelo primeiro método
+  (nesta ordem) que conseguir extrair um valor; o que sobra passa para o método seguinte.
+  Ver schema.yml para a descrição de cada método e docs/superpowers/specs/2026-08-14-*
+  para o histórico de como cada padrão foi validado.
+#}
+{% set bronze_columns = [
+    'programa_governo', 'programa_governo_descricao', 'acao_governo', 'acao_governo_descricao',
+    'emissao_mes', 'emissao_dia', 'ne_ccor', 'ne_num_processo', 'ne_info_complementar',
+    'ne_ccor_descricao', 'doc_observacao', 'natureza_despesa', 'natureza_despesa_descricao',
+    'ne_ccor_favorecido', 'ne_ccor_favorecido_descricao', 'ne_ccor_ano_emissao', 'ptres',
+    'fonte_recursos_detalhada', 'fonte_recursos_detalhada_descricao', 'despesas_empenhadas',
+    'despesas_liquidadas', 'despesas_pagas', 'restos_a_pagar_inscritos', 'restos_a_pagar_pagos',
+    'dt_ingest'
+] %}
+{% set passthrough_columns = bronze_columns + ['ne', 'orgao_id'] %}
+{#
+  A partir do método 6 (backfill por ne_ccor) o modelo original já não repassava
+  programa_governo/programa_governo_descricao/acao_governo/acao_governo_descricao —
+  não documentados no schema.yml final. Preservado aqui para manter o comportamento
+  idêntico ao pré-refatoração.
+#}
+{% set narrow_columns = bronze_columns
+    | reject('in', ['programa_governo', 'programa_governo_descricao', 'acao_governo', 'acao_governo_descricao'])
+    | list %}
+{% set narrow_passthrough = narrow_columns + ['ne', 'orgao_id'] %}
+
+{% set methods_yaml %}
+- label: "metodo 1"
+  field: ne_ccor_descricao
+  group: 2
+  regex: '(FERENCIA|TED|CRICAO|TRANSF.|TRANF.|TRANSFERENCIA)[\s:.-]*(?<![0-9])([0-9]{6}|1\w{5}|[0-9]{3}\.[0-9]{3})(?![0-9])'
+- label: "metodo 2"
+  field: ne_ccor_descricao
+  group: 2
+  regex: '.*(?:NOTA DE (TRANSFERENCIA|TRANFERENCIA|CREDITO))[:.[:space:]-]*((?=[A-Za-z0-9]*[0-9])[A-Za-z0-9]{6,})'
+- label: "metodo 3"
+  field: ne_ccor_descricao
+  group: 1
+  regex: '.*(?:(?:TED(?:[[:space:]]*[-.N∞øº°∅()]*))[[:space:]]*|(?:SIAFI[[:space:]]+N∫))[[:space:].-]*(?<![0-9])(([0-9]{6})|(1[A-Za-z0-9]{5}))(?![0-9])'
+- label: "metodo 4"
+  field: fonte_recursos_detalhada_descricao
+  group: 1
+  regex: 'TED(?::)?(?:[[:space:]]+[A-Z/]+)?[[:space:]:-]*N?[∞∫ºo]?[[:space:]]*[0-9/]*[[:space:]:;,-]*[ø-]?[[:space:]]*([0-9]{6}|1[A-Z0-9]{5})'
+- label: "metodo 5"
+  field: ne_info_complementar
+  group: 1
+  regex: '^([0-9]{6}|1[A-Za-z0-9]{5})$'
+- label: "metodo 10"
+  field: doc_observacao
+  group: 2
+  regex: '(FERENCIA|TED|CRICAO|TRANSF.|TRANF.|TRANSFERENCIA)[\s:.-]*(?<![0-9])([0-9]{6}|1\w{5}|[0-9]{3}\.[0-9]{3})(?![0-9])'
+- label: "metodo 11"
+  field: ne_ccor_descricao
+  group: 1
+  regex: '\mNT[.: ]*(?<![0-9])([0-9]{6}|1[A-Za-z0-9]{5})(?![0-9])'
+- label: "metodo 14"
+  field: ne_ccor_descricao
+  group: 1
+  regex: 'TRANSFEREGOV\s*(?:N[∞∫øºo°.]{0,2}\s*)?(?<![0-9])([0-9]{6}|1[A-Za-z0-9]{5})(?![0-9])'
+- label: "metodo 15"
+  field: fonte_recursos_detalhada_descricao
+  group: 1
+  regex: 'TRANSFEREGOV\s*(?:N[∞∫øºo°.]{0,2}\s*)?(?<![0-9])([0-9]{6}|1[A-Za-z0-9]{5})(?![0-9])'
+- label: "metodo 16"
+  field: ne_ccor_descricao
+  group: 1
+  regex: 'TED[^()]{0,30}?\((?:SIAFI\s+)?(?<![0-9])([0-9]{6}|1[A-Za-z0-9]{5})(?![0-9])\)'
+{% endset %}
+{% set num_transf_methods = fromyaml(methods_yaml) %}
+
 with
 base as (
   -- Grao de empenho do modelo unico ppa_tesouro (que sucede
@@ -57,353 +130,73 @@ empenhos_sem_vinculo_ted as(
 empenhos_filtrados as(
   select
     *
-  from base
+  from {{ ref("empenhos_tesouro_ted") }}
   where
     ne_ccor_descricao !~* '\bTED[[:space:]:/().-]*(S/?[VN]|S/?VINCULO)'
     and ne_ccor_descricao !~* 'SEM[[:space:]]+VINC[[:space:]]*(ULO|/TED)'
-
 ),
-empenhos_orgaos_metodo_1 as (
+empenhos_seed as (
   select
-      *,
-      -- Uma série de extrações que servirão de identificadores 
-      right(ne_ccor, 12) as ne,
-      left(ne_ccor,6) as orgao_id,
-      {{ target.schema }}.format_nc(
-            regexp_substr(ne_ccor_descricao, '([0-9]{4}NC[0-9]+)')
-      ) as nc,
-      replace(
-        (regexp_match(
-          ne_ccor_descricao,
-          '(FERENCIA|TED|CRICAO|TRANSF.|TRANF.|TRANF. |TRANSFERENCIA |TRANSFERENCIA:)(\s|^|-|)([0-9]{6}|1\w{5}|[0-9]{3}\.[0-9]{3})(\s|$|\.|,|-|\/)',
-          'i'
-        ))[3],
-          '.',
-          ''
-      ) as num_transf,
-      'metodo 1' as metodo
+    {{ star_except(bronze_columns) }},
+    right(ne_ccor, 12) as ne,
+    left(ne_ccor, 6) as orgao_id,
+    {{ target.schema }}.format_nc(
+      regexp_substr(ne_ccor_descricao, '([0-9]{4}NC[0-9]+)')
+    ) as nc,
+    null::text as num_transf,
+    null::text as metodo
   from empenhos_filtrados
-),
+)
 
-empenhos_restantes_metodo_1 as(
-select * from empenhos_orgaos_metodo_1 where num_transf is null AND nc is null
-),
+{% for m in num_transf_methods %}
+{% set safe_label = m.label | replace(' ', '_') %}
+{% set prev = 'empenhos_seed' if loop.first else 'empenhos_restantes_' ~ (num_transf_methods[loop.index0 - 1].label | replace(' ', '_')) %}
+, empenhos_orgaos_{{ safe_label }} as (
+    select
+        {{ star_except(passthrough_columns) }},
+        nc,
+        replace(
+            (regexp_match({{ m.field }}, '{{ m.regex }}', 'i'))[{{ m.group }}],
+            '.',
+            ''
+        ) as num_transf,
+        '{{ m.label }}' as metodo
+    from {{ prev }}
+)
+, empenhos_restantes_{{ safe_label }} as (
+    select * from empenhos_orgaos_{{ safe_label }} where num_transf is null and nc is null
+)
+{% endfor %}
 
-empenhos_orgaos_metodo_2 as (
-  select
-      programa_governo,
-      programa_governo_descricao,
-      acao_governo,
-      acao_governo_descricao,
-      emissao_mes,
-      emissao_dia,
-      ne_ccor,
-      ug_responsavel_codigo,
-      ug_responsavel_nome,
-      plano_orcamentario_codigo_uo,
-      plano_orcamentario_codigo_funcao,
-      plano_orcamentario_codigo_subfuncao,
-      plano_orcamentario_codigo_programa,
-      plano_orcamentario_codigo_acao,
-      ne_num_processo,
-      ne_info_complementar,
-      ne_ccor_descricao,
-      doc_observacao,
-      natureza_despesa,
-      natureza_despesa_descricao,
-      ne_ccor_favorecido,
-      ne_ccor_favorecido_descricao,
-      ne_ccor_ano_emissao,
-      ptres,
-      fonte_recursos_detalhada,
-      fonte_recursos_detalhada_descricao,
-      despesas_empenhadas,
-      despesas_liquidadas,
-      despesas_pagas,
-      restos_a_pagar_inscritos,
-      restos_a_pagar_pagos,
-      dt_ingest,
-      ne,
-      orgao_id,
-      nc,
-      replace(
-          (regexp_match(
-            ne_ccor_descricao,
-            '.*(?:NOTA DE (TRANSFERENCIA|TRANFERENCIA|CREDITO))[:.[:space:]-]*((?=[A-Za-z0-9]*[0-9])[A-Za-z0-9]{6,})',
-            'i'
-          ))[2],
-          '.',
-          ''
-      ) as num_transf,
-      'metodo 2' as metodo
-  from empenhos_restantes_metodo_1 p
-),
-
-empenhos_restantes_metodo_2 as(
-select * from empenhos_orgaos_metodo_2 where num_transf is null AND nc is null
-),
-
-empenhos_orgaos_metodo_3 as (
-  select
-      programa_governo,
-      programa_governo_descricao,
-      acao_governo,
-      acao_governo_descricao,
-      emissao_mes,
-      emissao_dia,
-      ne_ccor,
-      ug_responsavel_codigo,
-      ug_responsavel_nome,
-      plano_orcamentario_codigo_uo,
-      plano_orcamentario_codigo_funcao,
-      plano_orcamentario_codigo_subfuncao,
-      plano_orcamentario_codigo_programa,
-      plano_orcamentario_codigo_acao,
-      ne_num_processo,
-      ne_info_complementar,
-      ne_ccor_descricao,
-      doc_observacao,
-      natureza_despesa,
-      natureza_despesa_descricao,
-      ne_ccor_favorecido,
-      ne_ccor_favorecido_descricao,
-      ne_ccor_ano_emissao,
-      ptres,
-      fonte_recursos_detalhada,
-      fonte_recursos_detalhada_descricao,
-      despesas_empenhadas,
-      despesas_liquidadas,
-      despesas_pagas,
-      restos_a_pagar_inscritos,
-      restos_a_pagar_pagos,
-      dt_ingest,
-      ne,
-      orgao_id,
-      nc,
-      replace(
-          (regexp_match(
-            ne_ccor_descricao,
-            '.*(?:(?:TED(?:[[:space:]]*[-.N∞øº°∅()]*))[[:space:]]*|(?:SIAFI[[:space:]]+N∫))[[:space:].-]*(?<![0-9])(([0-9]{6})|(1[A-Za-z0-9]{5}))(?![0-9])',
-            'i'
-          ))[1],
-          '.',
-          ''
-      ) as num_transf,
-      'metodo 3' as metodo
-  from empenhos_restantes_metodo_2 p
-),
-
-empenhos_restantes_metodo_3 as(
-select * from empenhos_orgaos_metodo_3 where num_transf is null AND nc is null
-),
-
-empenhos_orgaos_metodo_4 as (
-  select
-      programa_governo,
-      programa_governo_descricao,
-      acao_governo,
-      acao_governo_descricao,
-      emissao_mes,
-      emissao_dia,
-      ne_ccor,
-      ug_responsavel_codigo,
-      ug_responsavel_nome,
-      plano_orcamentario_codigo_uo,
-      plano_orcamentario_codigo_funcao,
-      plano_orcamentario_codigo_subfuncao,
-      plano_orcamentario_codigo_programa,
-      plano_orcamentario_codigo_acao,
-      ne_num_processo,
-      ne_info_complementar,
-      ne_ccor_descricao,
-      doc_observacao,
-      natureza_despesa,
-      natureza_despesa_descricao,
-      ne_ccor_favorecido,
-      ne_ccor_favorecido_descricao,
-      ne_ccor_ano_emissao,
-      ptres,
-      fonte_recursos_detalhada,
-      fonte_recursos_detalhada_descricao,
-      despesas_empenhadas,
-      despesas_liquidadas,
-      despesas_pagas,
-      restos_a_pagar_inscritos,
-      restos_a_pagar_pagos,
-      dt_ingest,
-      ne,
-      orgao_id,
-      nc,
-      replace(
-          (regexp_match(
-            fonte_recursos_detalhada_descricao,
-            'TED(?::)?(?:[[:space:]]+[A-Z/]+)?[[:space:]:-]*N?[∞∫ºo]?[[:space:]]*[0-9/]*[[:space:]:;,-]*[ø-]?[[:space:]]*([0-9]{6}|1[A-Z0-9]{5})',
-            'i'
-          ))[1],
-          '.',
-          ''
-      ) as num_transf,
-      'metodo 4' as metodo
-  from empenhos_restantes_metodo_3 p
-),
-
-empenhos_restantes_metodo_4 as(
-select * from empenhos_orgaos_metodo_4 where num_transf is null AND nc is null
-),
-
-empenhos_orgaos_metodo_5 as (
-select 
-      programa_governo,
-      programa_governo_descricao,
-      acao_governo,
-      acao_governo_descricao,
-      emissao_mes,
-      emissao_dia,
-      ne_ccor,
-      ug_responsavel_codigo,
-      ug_responsavel_nome,
-      plano_orcamentario_codigo_uo,
-      plano_orcamentario_codigo_funcao,
-      plano_orcamentario_codigo_subfuncao,
-      plano_orcamentario_codigo_programa,
-      plano_orcamentario_codigo_acao,
-      ne_num_processo,
-      ne_info_complementar,
-      ne_ccor_descricao,
-      doc_observacao,
-      natureza_despesa,
-      natureza_despesa_descricao,
-      ne_ccor_favorecido,
-      ne_ccor_favorecido_descricao,
-      ne_ccor_ano_emissao,
-      ptres,
-      fonte_recursos_detalhada,
-      fonte_recursos_detalhada_descricao,
-      despesas_empenhadas,
-      despesas_liquidadas,
-      despesas_pagas,
-      restos_a_pagar_inscritos,
-      restos_a_pagar_pagos,
-      dt_ingest,
-      ne,
-      orgao_id,
-      nc,
-      replace(
-          (regexp_match(
-            ne_info_complementar,
-            '^([0-9]{6}|1[A-Z0-9]{5})$',
-            'i'
-          ))[1],
-          '.',
-          ''
-      ) as num_transf,
-      'metodo 5' as metodo
-from empenhos_restantes_metodo_4),
-
-empenhos_restantes_metodo_5 as(
-select * from empenhos_orgaos_metodo_5 where num_transf is null AND nc is null
-),
-
-empenhos_teds_invalidos as(
+{% set last_label = num_transf_methods[-1].label | replace(' ', '_') %}
+, empenhos_teds_invalidos as(
 select
-      programa_governo,
-      programa_governo_descricao,
-      acao_governo,
-      acao_governo_descricao,
-      emissao_mes,
-      emissao_dia,
-      ne_ccor,
-      ug_responsavel_codigo,
-      ug_responsavel_nome,
-      plano_orcamentario_codigo_uo,
-      plano_orcamentario_codigo_funcao,
-      plano_orcamentario_codigo_subfuncao,
-      plano_orcamentario_codigo_programa,
-      plano_orcamentario_codigo_acao,
-      ne_num_processo,
-      ne_info_complementar,
-      ne_ccor_descricao,
-      doc_observacao,
-      natureza_despesa,
-      natureza_despesa_descricao,
-      ne_ccor_favorecido,
-      ne_ccor_favorecido_descricao,
-      ne_ccor_ano_emissao,
-      ptres,
-      fonte_recursos_detalhada,
-      fonte_recursos_detalhada_descricao,
-      despesas_empenhadas,
-      despesas_liquidadas,
-      despesas_pagas,
-      restos_a_pagar_inscritos,
-      restos_a_pagar_pagos,
-      dt_ingest,
-      ne,
-      orgao_id,
-      regexp_substr(ne_ccor_descricao, '((?<![0-9])[0-9]{0,3}NC[0-9]+|[0-9]{5,}NC[0-9]+|[0-9]{4}NC(?![0-9]))') as nc,
-      null as num_transf,
-      'ted ou nc invalido' as metodo
-      from empenhos_restantes_metodo_5
+    {{ star_except(passthrough_columns) }},
+    regexp_substr(ne_ccor_descricao, '((?<![0-9])[0-9]{0,3}NC[0-9]+|[0-9]{5,}NC[0-9]+|[0-9]{4}NC(?![0-9]))') as nc,
+    null as num_transf,
+    'ted ou nc invalido' as metodo
+    from empenhos_restantes_{{ last_label }}
 ),
 
 empenhos_restantes_teds_invalidos as(
 select
-programa_governo,
-programa_governo_descricao,
-acao_governo,
-acao_governo_descricao,
-emissao_mes,
-emissao_dia,
-ne_ccor,
-ug_responsavel_codigo,
-ug_responsavel_nome,
-plano_orcamentario_codigo_uo,
-plano_orcamentario_codigo_funcao,
-plano_orcamentario_codigo_subfuncao,
-plano_orcamentario_codigo_programa,
-plano_orcamentario_codigo_acao,
-ne_num_processo,
-ne_info_complementar,
-ne_ccor_descricao,
-doc_observacao,
-natureza_despesa,
-natureza_despesa_descricao,
-ne_ccor_favorecido,
-ne_ccor_favorecido_descricao,
-ne_ccor_ano_emissao,
-ptres,
-fonte_recursos_detalhada,
-fonte_recursos_detalhada_descricao,
-despesas_empenhadas,
-despesas_liquidadas,
-despesas_pagas,
-restos_a_pagar_inscritos,
-restos_a_pagar_pagos,
-dt_ingest,
-ne,
-orgao_id,
-nc,
-num_transf,
-'vinculo nao encontrado' as metodo
+    {{ star_except(passthrough_columns) }},
+    nc,
+    num_transf,
+    'vinculo nao encontrado' as metodo
 from empenhos_teds_invalidos where num_transf is null AND nc is null
 ),
 
 raw_union AS (
-  select * from empenhos_sem_vinculo_ted
+  select {{ star_except(passthrough_columns) }}, nc, num_transf, metodo from empenhos_sem_vinculo_ted
+  {% for m in num_transf_methods %}
   UNION ALL
-  select * from empenhos_orgaos_metodo_1 where num_transf is not null OR nc is not null
+  select {{ star_except(passthrough_columns) }}, nc, num_transf, metodo from empenhos_orgaos_{{ m.label | replace(' ', '_') }} where num_transf is not null OR nc is not null
+  {% endfor %}
   UNION ALL
-  select * from empenhos_orgaos_metodo_2 where num_transf is not null OR nc is not null
+  select {{ star_except(passthrough_columns) }}, nc, num_transf, metodo from empenhos_teds_invalidos where num_transf is not null OR nc is not null
   UNION ALL
-  select * from empenhos_orgaos_metodo_3 where num_transf is not null OR nc is not null
-  UNION ALL
-  select * from empenhos_orgaos_metodo_4 where num_transf is not null OR nc is not null
-  UNION ALL
-  select * from empenhos_orgaos_metodo_5 where num_transf is not null OR nc is not null
-  UNION ALL
-  select * from empenhos_teds_invalidos where num_transf is not null OR nc is not null
-  UNION ALL
-  select * from empenhos_restantes_teds_invalidos
+  select {{ star_except(passthrough_columns) }}, nc, num_transf, metodo from empenhos_restantes_teds_invalidos
 ),
 
 ids_agregados_nc_ccor AS (
@@ -417,7 +210,7 @@ ids_agregados_nc_ccor AS (
 
 empenhos_orgaos_metodo_6 AS (
 SELECT
-    ert.emissao_mes,ert.emissao_dia,ert.ne_ccor,ert.ug_responsavel_codigo,ert.ug_responsavel_nome,ert.plano_orcamentario_codigo_uo,ert.plano_orcamentario_codigo_funcao,ert.plano_orcamentario_codigo_subfuncao,ert.plano_orcamentario_codigo_programa,ert.plano_orcamentario_codigo_acao,ert.ne_num_processo,ert.ne_info_complementar,ert.ne_ccor_descricao,ert.doc_observacao,ert.natureza_despesa,ert.natureza_despesa_descricao,ert.ne_ccor_favorecido,ert.ne_ccor_favorecido_descricao,ert.ne_ccor_ano_emissao,ert.ptres,ert.fonte_recursos_detalhada,ert.fonte_recursos_detalhada_descricao,ert.despesas_empenhadas,ert.despesas_liquidadas,ert.despesas_pagas,ert.restos_a_pagar_inscritos,ert.restos_a_pagar_pagos,ert.dt_ingest, ert.ne,ert.orgao_id,
+    {{ star_except(narrow_passthrough, ['ne_ccor']) }}, ert.ne_ccor,
     COALESCE(ert.nc, r.nc) AS nc,
     COALESCE(ert.num_transf, r.num_transf) AS num_transf,
     -- método calculado dinamicamente
@@ -432,7 +225,7 @@ SELECT
 ),
 
 base_empenhos_orgaos_metodo_7 as (
-select 
+select
   -- seleciona todas as colunas do órgãos 1, exceto nc e num_transf
       *,
       trim(both ' -' from regexp_replace((regexp_match(
@@ -515,9 +308,9 @@ empenhos_restantes_metodo_7 as(
 ),
 
 base_empenhos_orgaos_metodo_8 as (
-select 
+select
   -- seleciona todas as colunas do órgãos 1, exceto nc e num_transf
-      emissao_mes,emissao_dia,ne_ccor,ug_responsavel_codigo,ug_responsavel_nome,plano_orcamentario_codigo_uo,plano_orcamentario_codigo_funcao,plano_orcamentario_codigo_subfuncao,plano_orcamentario_codigo_programa,plano_orcamentario_codigo_acao,ne_num_processo,ne_info_complementar,ne_ccor_descricao,doc_observacao,natureza_despesa,natureza_despesa_descricao,ne_ccor_favorecido,ne_ccor_favorecido_descricao,ne_ccor_ano_emissao,ptres,fonte_recursos_detalhada,fonte_recursos_detalhada_descricao,despesas_empenhadas,despesas_liquidadas,despesas_pagas,restos_a_pagar_inscritos,restos_a_pagar_pagos,dt_ingest, ne,orgao_id,nc,num_transf,metodo,
+      {{ star_except(narrow_passthrough) }},nc,num_transf,metodo,
       trim(both ' -' from regexp_replace((regexp_match(
           doc_observacao,
           'TED [[:space:].:NR∫º°-]*(?:([A-Za-zÀ-ÿ/][A-Za-zÀ-ÿ0-9/ \\-]*)[[:space:]\\-]+)?([0-9]{1,5}(?:[./ \\-][0-9]{2,4})?)',
@@ -554,11 +347,14 @@ norm_metodo_8 AS (
 ),
 agrupado_metodo_8 AS (
   -- calculamos o ano oficial APENAS para numero_base "longos"
+  -- CORRIGIDO: lia de norm_metodo_7 por engano (copy-paste do método 7) — agora lê do
+  -- próprio norm_metodo_8, agrupando os TEDs extraídos de doc_observacao, não de
+  -- ne_ccor_descricao.
   SELECT
     orgao_id,
     numero_base,
     MAX(ano_normalizado) AS ano_oficial
-  FROM norm_metodo_7
+  FROM norm_metodo_8
   WHERE length(numero_base) >= 3
     AND ano_normalizado IS NOT NULL
   GROUP BY orgao_id, numero_base
@@ -596,14 +392,17 @@ empenhos_restantes_metodo_8 as(
 ),
 
 union_metodo_7_8 as(
-select * from empenhos_orgaos_metodo_7 WHERE numero_ted_normalizado is not null
+select {{ star_except(narrow_passthrough) }},nc,num_transf,metodo,complemento_ted,num_ted,metodo_ted,numero_base,ano_raw,ano_normalizado,ano_oficial,numero_ted_normalizado, 'TED' as tipo_instrumento
+from empenhos_orgaos_metodo_7 WHERE numero_ted_normalizado is not null
 UNION ALL
-select * from empenhos_orgaos_metodo_8 WHERE numero_ted_normalizado is not null
+select {{ star_except(narrow_passthrough) }},nc,num_transf,metodo,complemento_ted,num_ted,metodo_ted,numero_base,ano_raw,ano_normalizado,ano_oficial,numero_ted_normalizado, 'TED' as tipo_instrumento
+from empenhos_orgaos_metodo_8 WHERE numero_ted_normalizado is not null
 UNION ALL
-select * from empenhos_restantes_metodo_8),
+select {{ star_except(narrow_passthrough) }},nc,num_transf,metodo,complemento_ted,num_ted,metodo_ted,numero_base,ano_raw,ano_normalizado,ano_oficial,numero_ted_normalizado, null as tipo_instrumento
+from empenhos_restantes_metodo_8),
 
 ids_agregados_num_ted_normalizado as(
-select 
+select
   orgao_id,
   numero_ted_normalizado,
   MAX(nc) AS nc,
@@ -614,20 +413,17 @@ GROUP BY orgao_id,numero_ted_normalizado
 
 empenhos_orgaos_metodo_9 AS (
 SELECT
-    ert.emissao_mes,ert.emissao_dia,ert.ne_ccor,ert.ug_responsavel_codigo,ert.ug_responsavel_nome,ert.plano_orcamentario_codigo_uo,ert.plano_orcamentario_codigo_funcao,ert.plano_orcamentario_codigo_subfuncao,ert.plano_orcamentario_codigo_programa,ert.plano_orcamentario_codigo_acao,ert.ne_num_processo,ert.ne_info_complementar,ert.ne_ccor_descricao,ert.doc_observacao,ert.natureza_despesa,ert.natureza_despesa_descricao,ert.ne_ccor_favorecido,ert.ne_ccor_favorecido_descricao,ert.ne_ccor_ano_emissao,ert.ptres,ert.fonte_recursos_detalhada,ert.fonte_recursos_detalhada_descricao,ert.despesas_empenhadas,ert.despesas_liquidadas,ert.despesas_pagas,ert.restos_a_pagar_inscritos,ert.restos_a_pagar_pagos,ert.dt_ingest, ert.ne,ert.orgao_id,
+    {{ star_except(narrow_passthrough, ['ne_ccor']) }}, ert.ne_ccor,
     COALESCE(ert.nc, r.nc) AS nc,
     COALESCE(ert.num_transf, r.num_transf) AS num_transf,
-    -- método calculado dinamicamente
-    /*
     CASE
         WHEN (ert.nc IS NULL AND r.nc IS NOT NULL)
           OR (ert.num_transf IS NULL AND r.num_transf IS NOT NULL)
         THEN 'metodo 9'
         ELSE ert.metodo
     END AS metodo,
-    */
     complemento_ted, num_ted, numero_base, ano_raw, ano_normalizado, ano_oficial,
-    numero_ted_normalizado
+    numero_ted_normalizado AS numero_instrumento, ert.tipo_instrumento
     FROM union_metodo_7_8 ert
     LEFT JOIN ids_agregados_num_ted_normalizado r USING (orgao_id,numero_ted_normalizado)
 ),
