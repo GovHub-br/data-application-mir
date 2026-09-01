@@ -30,3 +30,112 @@ models:
 
       - name: continuado
         description: "Indica se o contrato é continuado com base no prazo de vigência e parcelas."
+
+  # ----------------------------------------------------------------------------
+  # Contratos: comparativo mensal SIAFI x Compras GOV
+  # ----------------------------------------------------------------------------
+  - name: contratos_comparativo_mensal
+    description: >
+      Compara, mês a mês por contrato, os valores do lado Compras GOV
+      (cronograma previsto e faturas pagas/pendentes) com os valores do lado
+      SIAFI (empenhado, liquidado, pago e restos a pagar).
+
+      O cruzamento é feito em 3 etapas:
+
+        1. Full join entre contratos_estagios (dados SIAFI) e
+           cronogramas_faturas_mensal (dados Compras GOV) por contrato_id +
+           mês de referência.
+        2. Full join do resultado com preenchimento_meses, para garantir uma
+           série mensal contínua (sem lacunas) para cada contrato, mesmo em
+           meses sem movimentação em nenhum dos dois lados.
+        3. Left join final com contratos, para trazer os dados cadastrais
+           (número, fornecedor, órgão, vigência etc).
+
+      Como preenchimento_meses restringe a grade de meses às Unidades
+      Gestoras cobertas pelo MIR (230002, 810008), a série contínua garantida
+      pela etapa 2 vale apenas para contratos dessas UGs; contratos de outras
+      UGs presentes em contratos_estagios ou cronogramas_faturas_mensal ainda
+      aparecem no resultado, mas só nos meses em que há movimentação em
+      algum dos dois lados.
+    meta:
+      tags:
+        - gold
+    columns:
+      - name: contrato_id
+        description: >
+          Identificador do contrato. Vem de contratos_estagios,
+          cronogramas_faturas_mensal ou preenchimento_meses, o que estiver
+          disponível para a linha.
+        tests:
+          - not_null
+      - name: mes_referencia
+        description: "Mês de referência da série comparativa (primeiro dia do mês)."
+        tests:
+          - not_null
+      - name: valor_empenhado
+        description: "Valor empenhado no mês para o contrato (lado SIAFI). Nulo quando não há movimentação SIAFI no mês."
+      - name: valor_liquidado
+        description: "Valor liquidado no mês para o contrato (lado SIAFI). Nulo quando não há movimentação SIAFI no mês."
+      - name: valor_pago
+        description: "Valor pago no mês para o contrato (lado SIAFI). Nulo quando não há movimentação SIAFI no mês."
+      - name: restos_a_pagar
+        description: "Restos a pagar inscritos no mês para o contrato (lado SIAFI)."
+      - name: restos_a_pagar_pago
+        description: "Restos a pagar já quitados no mês para o contrato (lado SIAFI)."
+      - name: estrategias_match
+        description: "Estratégias da cascata que resolveram os estágios SIAFI agregados neste contrato/mês, propagado de contratos_estagios."
+      - name: valor_cronograma
+        description: "Valor previsto em cronograma para o mês (lado Compras GOV)."
+      - name: valor_faturas_pagas
+        description: "Valor de faturas pagas (SIAFI Apropriado) emitidas no mês (lado Compras GOV)."
+      - name: valor_faturas_pendentes
+        description: "Valor de faturas pendentes emitidas no mês (lado Compras GOV)."
+      - name: saldo_contratual_disponivel
+        description: "Saldo contratual disponível no mês, calculado no lado Compras GOV (cronograma - faturas pagas - faturas pendentes)."
+      - name: numero_contrato
+        description: "Número do contrato, propagado de contratos.numero."
+      - name: situacao_contrato
+        description: "Situação cadastral do contrato, propagada de contratos.situacao."
+      - name: fornecedor_nome
+        description: "Nome do fornecedor, propagado de contratos.fornecedor_nome."
+      - name: fornecedor_cnpj_cpf_idgener
+        description: "CNPJ/CPF do fornecedor, propagado de contratos."
+      - name: orgao_contratante
+        description: "Nome do órgão contratante, propagado de contratos."
+      - name: unidade_gestora
+        description: "Nome da Unidade Gestora (UG), propagado de contratos."
+      - name: objeto_contrato
+        description: "Objeto do contrato, propagado de contratos.objeto."
+      - name: unidades_requisitantes
+        description: "Unidades requisitantes do contrato, propagado de contratos."
+      - name: vigencia_inicio
+        description: "Data de início da vigência do contrato."
+      - name: vigencia_fim
+        description: "Data de fim da vigência do contrato."
+      - name: dt_ingest
+        description: "Maior data/hora (UTC-3) de ingestão entre a fonte de estágios SIAFI e a de contratos."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'mir.contratos_comparativo_mensal'
+          nome_coluna: 'mes_referencia'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'mir.contratos_comparativo_mensal'
+          nome_coluna: 'valor_empenhado'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'mir.contratos_comparativo_mensal'
+          nome_coluna: 'valor_cronograma'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'mir.contratos_comparativo_mensal'
+          nome_coluna: 'saldo_contratual_disponivel'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'mir.contratos_comparativo_mensal'
+          nome_coluna: 'vigencia_inicio'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'mir.contratos_comparativo_mensal'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
