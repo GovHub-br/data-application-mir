@@ -2,12 +2,16 @@ from typing import Dict, Any, List
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.models import Variable
-from airflow.models.param import Param
 from datetime import datetime, timedelta
 import logging
 import json
 from schedule_loader import get_dynamic_schedule
-from cliente_email import fetch_email_with_zip, extract_csv_from_zip
+from cliente_email import (
+    fetch_email_with_zip,
+    extract_csv_from_zip,
+    resolve_email_date_range,
+)
+from email_ingest_params import date_range_params
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
 
@@ -72,17 +76,7 @@ with DAG(
     schedule_interval=get_dynamic_schedule("empenhos_tesouro_parlamentares_ingest_dag"),
     start_date=datetime(2023, 12, 1),
     catchup=False,
-    params={
-        "data_referencia": Param(
-            default=None,
-            type=["string", "null"],
-            title="Data de Referencia",
-            description=(
-                "Data para filtrar os e-mails recebidos (formato YYYY-MM-DD). "
-                "Se nao informado, usa o dia atual."
-            ),
-        )
-    },
+    params=date_range_params(),
     tags=["MIR", "email", "empenhos", "tesouro"],
 ) as dag:
 
@@ -131,20 +125,8 @@ with DAG(
         """Processa cada anexo e ingere imediatamente, evitando acúmulo em memória."""
         creds = json.loads(Variable.get("email_credentials"))
         params = context.get("params", {})
-        data_referencia = params.get("data_referencia")
-
-        target_date = None
-        if data_referencia:
-            try:
-                target_date = datetime.strptime(data_referencia, "%Y-%m-%d").date()
-            except ValueError as exc:
-                raise ValueError(
-                    "Parametro 'data_referencia' invalido. Use o formato YYYY-MM-DD."
-                ) from exc
-
-        logging.info(
-            "Buscando e-mails para a data: %s",
-            target_date.isoformat() if target_date else "dia atual",
+        start_date, end_date = resolve_email_date_range(
+            params.get("data_inicial"), params.get("data_final")
         )
 
         zip_payloads: List[bytes] = fetch_email_with_zip(
@@ -153,8 +135,9 @@ with DAG(
             creds["password"],
             creds["sender_email"],
             None,
-            target_date=target_date,
             subject_suffix=EMAIL_SUBJECT,
+            start_date=start_date,
+            end_date=end_date,
         )
 
         if not zip_payloads:

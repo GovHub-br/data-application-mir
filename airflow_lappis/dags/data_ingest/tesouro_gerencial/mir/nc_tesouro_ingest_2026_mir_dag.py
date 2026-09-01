@@ -8,7 +8,8 @@ import json
 import pandas as pd
 import io
 from schedule_loader import get_dynamic_schedule
-from cliente_email import fetch_and_process_email
+from cliente_email import fetch_and_process_email, resolve_email_date_range
+from email_ingest_params import date_range_params
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
 from functools import partial
@@ -62,11 +63,16 @@ with DAG(
     schedule_interval=get_dynamic_schedule("email_notas_credito_ingest_mir_post_2026"),
     start_date=datetime(2024, 1, 1),
     catchup=False,
+    params=date_range_params(),
     tags=["MIR", "email", "notas_credito"],
 ) as dag:
 
     def process_email_data(**context: Dict[str, Any]) -> Optional[Any]:
         creds = json.loads(Variable.get("email_credentials"))
+        params = context.get("params", {})
+        data_inicial, data_final = resolve_email_date_range(
+            params.get("data_inicial"), params.get("data_final")
+        )
 
         try:
             logging.info("Iniciando coleta de emails para o assunto: %s", EMAIL_SUBJECT)
@@ -78,6 +84,8 @@ with DAG(
                 EMAIL_SUBJECT,
                 COLUMN_MAPPING_NC,
                 skiprows=SKIPROWS,
+                start_date=data_inicial,
+                end_date=data_final,
             )
             
             if not csv_data:

@@ -2,7 +2,6 @@ from typing import Any, Dict, List, Optional
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.models import Variable
-from airflow.models.param import Param
 from datetime import datetime, timedelta
 import csv
 import io
@@ -10,7 +9,8 @@ import json
 import logging
 import cliente_email
 from schedule_loader import get_dynamic_schedule
-from cliente_email import fetch_and_process_email
+from cliente_email import fetch_and_process_email, resolve_email_date_range
+from email_ingest_params import date_range_params
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
 import pandas as pd
@@ -322,17 +322,7 @@ with DAG(
     schedule_interval=get_dynamic_schedule("empenhos_tesouro_emendas_ingest_dag"),
     start_date=datetime(2023, 12, 1),
     catchup=False,
-    params={
-        "data_referencia": Param(
-            default=None,
-            type=["string", "null"],
-            title="Data de Referencia",
-            description=(
-                "Data para filtrar os e-mails recebidos (formato YYYY-MM-DD). "
-                "Se nao informado, usa o dia atual."
-            ),
-        )
-    },
+    params=date_range_params(),
     tags=["MIR", "email", "empenhos", "tesouro", "emendas"],
 ) as dag:
 
@@ -343,24 +333,14 @@ with DAG(
         IMAP_SERVER = creds["imap_server"]
         SENDER_EMAIL = creds["sender_email"]
         params = context.get("params", {})
-        data_referencia = params.get("data_referencia")
-
-        target_date = None
-        if data_referencia:
-            try:
-                target_date = datetime.strptime(data_referencia, "%Y-%m-%d").date()
-            except ValueError as exc:
-                raise ValueError(
-                    "Parametro 'data_referencia' invalido. Use o formato YYYY-MM-DD."
-                ) from exc
+        start_date, end_date = resolve_email_date_range(
+            params.get("data_inicial"), params.get("data_final")
+        )
 
         cliente_email.format_csv = parse_tesouro_emendas_csv
 
         try:
-            logging.info(
-                "Iniciando processamento dos emails para a data: %s",
-                target_date.isoformat() if target_date else "dia atual",
-            )
+            logging.info("Iniciando processamento dos emails de empenhos de emendas.")
             csv_data = fetch_and_process_email(
                 IMAP_SERVER,
                 EMAIL,
@@ -369,7 +349,8 @@ with DAG(
                 EMAIL_SUBJECT,
                 column_mapping={},
                 skiprows=0,
-                target_date=target_date,
+                start_date=start_date,
+                end_date=end_date,
             )
             if not csv_data:
                 logging.warning("Nenhum CSV valido foi extraido dos e-mails.")
