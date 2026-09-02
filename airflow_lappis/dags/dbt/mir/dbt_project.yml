@@ -40,9 +40,6 @@ models:
     ppa_dbt:
       +materialized: table
       +schema: ppa_dbt
-    ppa_tesouro_dbt:
-      +materialized: table
-      +schema: ppa_tesouro_dbt
 
 
 
