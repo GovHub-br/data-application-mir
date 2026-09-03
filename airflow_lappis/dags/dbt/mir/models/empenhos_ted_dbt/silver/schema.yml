@@ -331,6 +331,20 @@ models:
         description: "Data de emissão da NE no SIAFI"
       - name: ne_ccor
         description: "Chave completa da Nota de Empenho no SIAFI"
+      - name: ug_responsavel_codigo
+        description: "Código da Unidade Gestora (UG) responsável pela NE."
+      - name: ug_responsavel_nome
+        description: "Nome da Unidade Gestora (UG) responsável pela NE."
+      - name: plano_orcamentario_codigo_uo
+        description: "Código da Unidade Orçamentária (UO) na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_funcao
+        description: "Código da função de governo na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_subfuncao
+        description: "Código da subfunção de governo na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_programa
+        description: "Código do programa na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_acao
+        description: "Código da ação na classificação do plano orçamentário."
       - name: ne_num_processo
         description: "Número do processo administrativo associado à NE, limpo de pontos, barras e hifens."
       - name: ne_info_complementar

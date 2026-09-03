@@ -1,4 +1,46 @@
 with
+base as (
+  -- Grao de empenho do modelo unico ppa_tesouro (que sucede
+  -- empenhos_tesouro_ted). Exclui as linhas de dotacao (ne_ccor = '-9'),
+  -- que nao possuem NE real e nao se aplicam ao vinculo de TED/NC. Alem
+  -- das colunas historicas, carrega a UG responsavel e a classificacao do
+  -- plano orcamentario para que fiquem disponiveis nas camadas seguintes.
+  select
+    programa_governo,
+    programa_governo_descricao,
+    acao_governo,
+    acao_governo_descricao,
+    emissao_mes,
+    emissao_dia,
+    ne_ccor,
+    ug_responsavel_codigo,
+    ug_responsavel_nome,
+    plano_orcamentario_codigo_uo,
+    plano_orcamentario_codigo_funcao,
+    plano_orcamentario_codigo_subfuncao,
+    plano_orcamentario_codigo_programa,
+    plano_orcamentario_codigo_acao,
+    ne_num_processo,
+    ne_info_complementar,
+    ne_ccor_descricao,
+    doc_observacao,
+    natureza_despesa,
+    natureza_despesa_descricao,
+    ne_ccor_favorecido,
+    ne_ccor_favorecido_descricao,
+    ne_ccor_ano_emissao,
+    ptres,
+    fonte_recursos_detalhada,
+    fonte_recursos_detalhada_descricao,
+    despesas_empenhadas,
+    despesas_liquidadas,
+    despesas_pagas,
+    restos_a_pagar_inscritos,
+    restos_a_pagar_pagos,
+    dt_ingest
+  from {{ ref("ppa_tesouro") }}
+  where ne_ccor <> '-9'
+),
 empenhos_sem_vinculo_ted as(
   select
     *,
@@ -7,7 +49,7 @@ empenhos_sem_vinculo_ted as(
     null as nc,
     null as num_transf,
     'sem vinculo' as metodo
-  from {{ ref("empenhos_tesouro_ted") }}
+  from base
   where
     ne_ccor_descricao ~* '\bTED[[:space:]:/().-]*(S/?[VN]|S/?VINCULO)'
     or ne_ccor_descricao ~* 'SEM[[:space:]]+VINC[[:space:]]*(ULO|/TED)'
@@ -15,8 +57,8 @@ empenhos_sem_vinculo_ted as(
 empenhos_filtrados as(
   select
     *
-  from {{ ref("empenhos_tesouro_ted") }}
-  where 
+  from base
+  where
     ne_ccor_descricao !~* '\bTED[[:space:]:/().-]*(S/?[VN]|S/?VINCULO)'
     and ne_ccor_descricao !~* 'SEM[[:space:]]+VINC[[:space:]]*(ULO|/TED)'
 
@@ -56,6 +98,13 @@ empenhos_orgaos_metodo_2 as (
       emissao_mes,
       emissao_dia,
       ne_ccor,
+      ug_responsavel_codigo,
+      ug_responsavel_nome,
+      plano_orcamentario_codigo_uo,
+      plano_orcamentario_codigo_funcao,
+      plano_orcamentario_codigo_subfuncao,
+      plano_orcamentario_codigo_programa,
+      plano_orcamentario_codigo_acao,
       ne_num_processo,
       ne_info_complementar,
       ne_ccor_descricao,
@@ -103,6 +152,13 @@ empenhos_orgaos_metodo_3 as (
       emissao_mes,
       emissao_dia,
       ne_ccor,
+      ug_responsavel_codigo,
+      ug_responsavel_nome,
+      plano_orcamentario_codigo_uo,
+      plano_orcamentario_codigo_funcao,
+      plano_orcamentario_codigo_subfuncao,
+      plano_orcamentario_codigo_programa,
+      plano_orcamentario_codigo_acao,
       ne_num_processo,
       ne_info_complementar,
       ne_ccor_descricao,
@@ -150,6 +206,13 @@ empenhos_orgaos_metodo_4 as (
       emissao_mes,
       emissao_dia,
       ne_ccor,
+      ug_responsavel_codigo,
+      ug_responsavel_nome,
+      plano_orcamentario_codigo_uo,
+      plano_orcamentario_codigo_funcao,
+      plano_orcamentario_codigo_subfuncao,
+      plano_orcamentario_codigo_programa,
+      plano_orcamentario_codigo_acao,
       ne_num_processo,
       ne_info_complementar,
       ne_ccor_descricao,
@@ -197,6 +260,13 @@ select
       emissao_mes,
       emissao_dia,
       ne_ccor,
+      ug_responsavel_codigo,
+      ug_responsavel_nome,
+      plano_orcamentario_codigo_uo,
+      plano_orcamentario_codigo_funcao,
+      plano_orcamentario_codigo_subfuncao,
+      plano_orcamentario_codigo_programa,
+      plano_orcamentario_codigo_acao,
       ne_num_processo,
       ne_info_complementar,
       ne_ccor_descricao,
@@ -243,6 +313,13 @@ select
       emissao_mes,
       emissao_dia,
       ne_ccor,
+      ug_responsavel_codigo,
+      ug_responsavel_nome,
+      plano_orcamentario_codigo_uo,
+      plano_orcamentario_codigo_funcao,
+      plano_orcamentario_codigo_subfuncao,
+      plano_orcamentario_codigo_programa,
+      plano_orcamentario_codigo_acao,
       ne_num_processo,
       ne_info_complementar,
       ne_ccor_descricao,
@@ -278,6 +355,13 @@ acao_governo_descricao,
 emissao_mes,
 emissao_dia,
 ne_ccor,
+ug_responsavel_codigo,
+ug_responsavel_nome,
+plano_orcamentario_codigo_uo,
+plano_orcamentario_codigo_funcao,
+plano_orcamentario_codigo_subfuncao,
+plano_orcamentario_codigo_programa,
+plano_orcamentario_codigo_acao,
 ne_num_processo,
 ne_info_complementar,
 ne_ccor_descricao,
@@ -333,7 +417,7 @@ ids_agregados_nc_ccor AS (
 
 empenhos_orgaos_metodo_6 AS (
 SELECT
-    ert.emissao_mes,ert.emissao_dia,ert.ne_ccor,ert.ne_num_processo,ert.ne_info_complementar,ert.ne_ccor_descricao,ert.doc_observacao,ert.natureza_despesa,ert.natureza_despesa_descricao,ert.ne_ccor_favorecido,ert.ne_ccor_favorecido_descricao,ert.ne_ccor_ano_emissao,ert.ptres,ert.fonte_recursos_detalhada,ert.fonte_recursos_detalhada_descricao,ert.despesas_empenhadas,ert.despesas_liquidadas,ert.despesas_pagas,ert.restos_a_pagar_inscritos,ert.restos_a_pagar_pagos,ert.dt_ingest, ert.ne,ert.orgao_id,
+    ert.emissao_mes,ert.emissao_dia,ert.ne_ccor,ert.ug_responsavel_codigo,ert.ug_responsavel_nome,ert.plano_orcamentario_codigo_uo,ert.plano_orcamentario_codigo_funcao,ert.plano_orcamentario_codigo_subfuncao,ert.plano_orcamentario_codigo_programa,ert.plano_orcamentario_codigo_acao,ert.ne_num_processo,ert.ne_info_complementar,ert.ne_ccor_descricao,ert.doc_observacao,ert.natureza_despesa,ert.natureza_despesa_descricao,ert.ne_ccor_favorecido,ert.ne_ccor_favorecido_descricao,ert.ne_ccor_ano_emissao,ert.ptres,ert.fonte_recursos_detalhada,ert.fonte_recursos_detalhada_descricao,ert.despesas_empenhadas,ert.despesas_liquidadas,ert.despesas_pagas,ert.restos_a_pagar_inscritos,ert.restos_a_pagar_pagos,ert.dt_ingest, ert.ne,ert.orgao_id,
     COALESCE(ert.nc, r.nc) AS nc,
     COALESCE(ert.num_transf, r.num_transf) AS num_transf,
     -- método calculado dinamicamente
@@ -433,7 +517,7 @@ empenhos_restantes_metodo_7 as(
 base_empenhos_orgaos_metodo_8 as (
 select 
   -- seleciona todas as colunas do órgãos 1, exceto nc e num_transf
-      emissao_mes,emissao_dia,ne_ccor,ne_num_processo,ne_info_complementar,ne_ccor_descricao,doc_observacao,natureza_despesa,natureza_despesa_descricao,ne_ccor_favorecido,ne_ccor_favorecido_descricao,ne_ccor_ano_emissao,ptres,fonte_recursos_detalhada,fonte_recursos_detalhada_descricao,despesas_empenhadas,despesas_liquidadas,despesas_pagas,restos_a_pagar_inscritos,restos_a_pagar_pagos,dt_ingest, ne,orgao_id,nc,num_transf,metodo,
+      emissao_mes,emissao_dia,ne_ccor,ug_responsavel_codigo,ug_responsavel_nome,plano_orcamentario_codigo_uo,plano_orcamentario_codigo_funcao,plano_orcamentario_codigo_subfuncao,plano_orcamentario_codigo_programa,plano_orcamentario_codigo_acao,ne_num_processo,ne_info_complementar,ne_ccor_descricao,doc_observacao,natureza_despesa,natureza_despesa_descricao,ne_ccor_favorecido,ne_ccor_favorecido_descricao,ne_ccor_ano_emissao,ptres,fonte_recursos_detalhada,fonte_recursos_detalhada_descricao,despesas_empenhadas,despesas_liquidadas,despesas_pagas,restos_a_pagar_inscritos,restos_a_pagar_pagos,dt_ingest, ne,orgao_id,nc,num_transf,metodo,
       trim(both ' -' from regexp_replace((regexp_match(
           doc_observacao,
           'TED [[:space:].:NR∫º°-]*(?:([A-Za-zÀ-ÿ/][A-Za-zÀ-ÿ0-9/ \\-]*)[[:space:]\\-]+)?([0-9]{1,5}(?:[./ \\-][0-9]{2,4})?)',
@@ -530,7 +614,7 @@ GROUP BY orgao_id,numero_ted_normalizado
 
 empenhos_orgaos_metodo_9 AS (
 SELECT
-    ert.emissao_mes,ert.emissao_dia,ert.ne_ccor,ert.ne_num_processo,ert.ne_info_complementar,ert.ne_ccor_descricao,ert.doc_observacao,ert.natureza_despesa,ert.natureza_despesa_descricao,ert.ne_ccor_favorecido,ert.ne_ccor_favorecido_descricao,ert.ne_ccor_ano_emissao,ert.ptres,ert.fonte_recursos_detalhada,ert.fonte_recursos_detalhada_descricao,ert.despesas_empenhadas,ert.despesas_liquidadas,ert.despesas_pagas,ert.restos_a_pagar_inscritos,ert.restos_a_pagar_pagos,ert.dt_ingest, ert.ne,ert.orgao_id,
+    ert.emissao_mes,ert.emissao_dia,ert.ne_ccor,ert.ug_responsavel_codigo,ert.ug_responsavel_nome,ert.plano_orcamentario_codigo_uo,ert.plano_orcamentario_codigo_funcao,ert.plano_orcamentario_codigo_subfuncao,ert.plano_orcamentario_codigo_programa,ert.plano_orcamentario_codigo_acao,ert.ne_num_processo,ert.ne_info_complementar,ert.ne_ccor_descricao,ert.doc_observacao,ert.natureza_despesa,ert.natureza_despesa_descricao,ert.ne_ccor_favorecido,ert.ne_ccor_favorecido_descricao,ert.ne_ccor_ano_emissao,ert.ptres,ert.fonte_recursos_detalhada,ert.fonte_recursos_detalhada_descricao,ert.despesas_empenhadas,ert.despesas_liquidadas,ert.despesas_pagas,ert.restos_a_pagar_inscritos,ert.restos_a_pagar_pagos,ert.dt_ingest, ert.ne,ert.orgao_id,
     COALESCE(ert.nc, r.nc) AS nc,
     COALESCE(ert.num_transf, r.num_transf) AS num_transf,
     -- método calculado dinamicamente
