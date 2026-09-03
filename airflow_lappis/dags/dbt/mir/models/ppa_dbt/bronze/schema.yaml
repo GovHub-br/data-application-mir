@@ -1772,6 +1772,10 @@ models:
         description: "Data de emissão da NE."
       - name: ne_ccor
         description: "Código da NE/CCOR no SIAFI."
+      - name: ug_responsavel_codigo
+        description: "Código da Unidade Gestora (UG) responsável pela NE."
+      - name: ug_responsavel_nome
+        description: "Nome da Unidade Gestora (UG) responsável pela NE."
       - name: ne_num_processo
         description: "Número do processo administrativo associado à NE, sem separadores."
       - name: ne_info_complementar
@@ -1796,6 +1800,16 @@ models:
         description: "Código da fonte de recursos detalhada que financia a despesa."
       - name: fonte_recursos_detalhada_descricao
         description: "Descrição da fonte de recursos detalhada (ex.: RECURSOS LIVRES DA UNIAO)."
+      - name: plano_orcamentario_codigo_uo
+        description: "Código da Unidade Orçamentária (UO) na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_funcao
+        description: "Código da função de governo na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_subfuncao
+        description: "Código da subfunção de governo na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_programa
+        description: "Código do programa na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_acao
+        description: "Código da ação na classificação do plano orçamentário."
       - name: plano_orcamentario_codigo_po
         description: "Código do Plano Orçamentário (PO) associado à despesa."
       - name: plano_orcamentario_nome
@@ -1892,6 +1906,16 @@ models:
         description: "Código da fonte de recursos detalhada que financia a dotação."
       - name: fonte_recursos_detalhada_descricao
         description: "Descrição da fonte de recursos detalhada (ex.: RECURSOS LIVRES DA UNIAO)."
+      - name: plano_orcamentario_codigo_uo
+        description: "Código da Unidade Orçamentária (UO) na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_funcao
+        description: "Código da função de governo na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_subfuncao
+        description: "Código da subfunção de governo na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_programa
+        description: "Código do programa na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_acao
+        description: "Código da ação na classificação do plano orçamentário."
       - name: plano_orcamentario_codigo_po
         description: "Código do Plano Orçamentário (PO) associado à dotação."
       - name: plano_orcamentario_nome

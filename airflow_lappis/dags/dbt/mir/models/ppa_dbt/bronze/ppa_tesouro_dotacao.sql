@@ -6,9 +6,10 @@ with
             -- Grao de dotacao orcamentaria: uma linha por classificacao
             -- (programa/acao/natureza/fonte/PTRES/plano orcamentario),
             -- sem empenho associado (ne_ccor = '-9' na tabela raw). Colunas
-            -- especificas de NE (ne_ccor, ne_num_processo, favorecido etc.)
-            -- e os valores de execucao (despesas_*, restos_a_pagar_*) nao
-            -- se aplicam a esse grao e ficam de fora — ver ppa_tesouro.sql.
+            -- especificas de NE (ne_ccor, ne_num_processo, favorecido,
+            -- ug_responsavel etc. — que vem como '-8'/'SEM INFORMACAO' nesse
+            -- grao) e os valores de execucao (despesas_*, restos_a_pagar_*)
+            -- nao se aplicam a esse grao e ficam de fora — ver ppa_tesouro.sql.
             programa_governo::text as programa_governo,
             programa_governo_descricao::text as programa_governo_descricao,
             acao_governo::text as acao_governo,
@@ -21,6 +22,11 @@ with
             ptres::text as ptres,
             fonte_recursos_detalhada::text as fonte_recursos_detalhada,
             fonte_recursos_detalhada_descricao::text as fonte_recursos_detalhada_descricao,
+            plano_orcamentario_codigo_uo::text as plano_orcamentario_codigo_uo,
+            plano_orcamentario_codigo_funcao::text as plano_orcamentario_codigo_funcao,
+            plano_orcamentario_codigo_subfuncao::text as plano_orcamentario_codigo_subfuncao,
+            plano_orcamentario_codigo_programa::text as plano_orcamentario_codigo_programa,
+            plano_orcamentario_codigo_acao::text as plano_orcamentario_codigo_acao,
             plano_orcamentario_codigo_po::text as plano_orcamentario_codigo_po,
             plano_orcamentario_nome::text as plano_orcamentario_nome,
             resultado_eof_codigo::integer as resultado_eof_codigo,
