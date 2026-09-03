@@ -118,27 +118,27 @@ models:
         description: "Maior data/hora (UTC-3) de ingestão entre a fonte de estágios SIAFI e a de contratos."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'mir.contratos_comparativo_mensal'
+          nome_tabela: 'contratos_dbt.contratos_comparativo_mensal'
           nome_coluna: 'mes_referencia'
           tipo_esperado: 'date'
       - verificacao_tipagem:
-          nome_tabela: 'mir.contratos_comparativo_mensal'
+          nome_tabela: 'contratos_dbt.contratos_comparativo_mensal'
           nome_coluna: 'valor_empenhado'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'mir.contratos_comparativo_mensal'
+          nome_tabela: 'contratos_dbt.contratos_comparativo_mensal'
           nome_coluna: 'valor_cronograma'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'mir.contratos_comparativo_mensal'
+          nome_tabela: 'contratos_dbt.contratos_comparativo_mensal'
           nome_coluna: 'saldo_contratual_disponivel'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'mir.contratos_comparativo_mensal'
+          nome_tabela: 'contratos_dbt.contratos_comparativo_mensal'
           nome_coluna: 'vigencia_inicio'
           tipo_esperado: 'date'
       - verificacao_tipagem:
-          nome_tabela: 'mir.contratos_comparativo_mensal'
+          nome_tabela: 'contratos_dbt.contratos_comparativo_mensal'
           nome_coluna: 'dt_ingest'
           tipo_esperado: 'timestamp with time zone'
 
@@ -209,14 +209,14 @@ models:
         description: "Maior data/hora (UTC-3) de ingestão entre os meses de contratos_comparativo_mensal agregados para o contrato."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'mir.contratos_somatorio'
+          nome_tabela: 'contratos_dbt.contratos_somatorio'
           nome_coluna: 'total_cronograma'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'mir.contratos_somatorio'
+          nome_tabela: 'contratos_dbt.contratos_somatorio'
           nome_coluna: 'orcamento_a_executar'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'mir.contratos_somatorio'
+          nome_tabela: 'contratos_dbt.contratos_somatorio'
           nome_coluna: 'dt_ingest'
           tipo_esperado: 'timestamp with time zone'
