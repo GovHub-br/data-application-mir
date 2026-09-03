@@ -5,9 +5,10 @@ with
         select *
         from {{ ref("convenio") }}
     ),
-    empenhos_tesouro_ted as (
+    ppa_tesouro as (
         select *
-        from {{ source("siafi", "ne_tesouro") }}
+        from {{ ref("ppa_tesouro") }}
+        where ne_ccor <> '-9'
     ),
     convenios_ppa as (
         select
@@ -17,7 +18,7 @@ with
             et.acao_governo,
             et.acao_governo_descricao
         from convenio cc
-        right join empenhos_tesouro_ted et
+        right join ppa_tesouro et
             on cc.nr_convenio = et.ne_info_complementar
         where cc.nr_convenio is not null
             and left(et.ne_ccor, 6) = '810008'
