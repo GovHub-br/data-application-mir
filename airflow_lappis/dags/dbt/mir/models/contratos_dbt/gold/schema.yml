@@ -100,6 +100,8 @@ models:
         description: "Nome do fornecedor, propagado de contratos.fornecedor_nome."
       - name: fornecedor_cnpj_cpf_idgener
         description: "CNPJ/CPF do fornecedor, propagado de contratos."
+      - name: fornecedor_tipo
+        description: "Tipo do fornecedor, propagado de contratos."
       - name: orgao_contratante
         description: "Nome do órgão contratante, propagado de contratos."
       - name: unidade_gestora
@@ -137,5 +139,84 @@ models:
           tipo_esperado: 'date'
       - verificacao_tipagem:
           nome_tabela: 'mir.contratos_comparativo_mensal'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
+
+  # ----------------------------------------------------------------------------
+  # Contratos: somatório final (Gold)
+  # ----------------------------------------------------------------------------
+  - name: contratos_somatorio
+    description: >
+      Tabela Gold final do fluxo de contratos: agrega os dados mensais de
+      contratos_comparativo_mensal por contrato, consolidando os totais
+      usados nos indicadores de execução orçamentária e financeira. Encerra
+      o fluxo completo Bronze → Silver → Gold da epic de contratos.
+
+      A agregação é feita por contrato (contrato_id, numero_contrato,
+      fornecedor_cnpj_cpf_idgener, fornecedor_tipo, fornecedor_nome), somando
+      cronograma, faturas (pagas + pendentes), saldo disponível, empenhado,
+      liquidado e pago de todos os meses de contratos_comparativo_mensal.
+
+      O indicador orcamento_a_executar soma o valor de cronograma apenas nos
+      meses em que não houve faturamento (pago ou pendente) para o contrato,
+      representando o orçamento previsto que ainda não foi faturado.
+    meta:
+      tags:
+        - gold
+    columns:
+      - name: contrato_id
+        description: "Identificador do contrato, propagado de contratos_comparativo_mensal."
+        tests:
+          - unique
+          - not_null
+      - name: numero_contrato
+        description: "Número do contrato, propagado de contratos_comparativo_mensal."
+      - name: fornecedor_cnpj_cpf_idgener
+        description: "CNPJ/CPF do fornecedor, propagado de contratos_comparativo_mensal."
+      - name: fornecedor_tipo
+        description: "Tipo do fornecedor, propagado de contratos_comparativo_mensal."
+      - name: fornecedor_nome
+        description: "Nome do fornecedor, propagado de contratos_comparativo_mensal."
+      - name: total_cronograma
+        description: "Soma do valor previsto em cronograma (lado Compras GOV) em todos os meses do contrato."
+        tests:
+          - not_null
+      - name: total_faturas
+        description: "Soma do valor de faturas (pagas + pendentes) emitidas em todos os meses do contrato."
+        tests:
+          - not_null
+      - name: total_saldo_disponivel
+        description: "Soma do saldo contratual disponível (cronograma - faturas pagas - faturas pendentes) em todos os meses do contrato."
+        tests:
+          - not_null
+      - name: total_empenhado
+        description: "Soma do valor empenhado (lado SIAFI) em todos os meses do contrato."
+        tests:
+          - not_null
+      - name: total_liquidado
+        description: "Soma do valor liquidado (lado SIAFI) em todos os meses do contrato."
+        tests:
+          - not_null
+      - name: total_pago
+        description: "Soma do valor pago (lado SIAFI) em todos os meses do contrato."
+        tests:
+          - not_null
+      - name: orcamento_a_executar
+        description: "Soma do valor de cronograma nos meses em que não houve faturamento (pago ou pendente) para o contrato."
+        tests:
+          - not_null
+      - name: dt_ingest
+        description: "Maior data/hora (UTC-3) de ingestão entre os meses de contratos_comparativo_mensal agregados para o contrato."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'mir.contratos_somatorio'
+          nome_coluna: 'total_cronograma'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'mir.contratos_somatorio'
+          nome_coluna: 'orcamento_a_executar'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'mir.contratos_somatorio'
           nome_coluna: 'dt_ingest'
           tipo_esperado: 'timestamp with time zone'
