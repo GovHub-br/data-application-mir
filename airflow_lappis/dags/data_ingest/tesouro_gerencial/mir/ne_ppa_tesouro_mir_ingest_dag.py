@@ -27,11 +27,10 @@ TABLE_SCHEMA = "siafi"
 TABLE_NAME = "ne_tesouro_ppa"
 EMAIL_SUBJECT = "notas_empenho_ppa_mir"
 
-# O relatorio "Notas de empenhos por programa PPA" traz 38 colunas, 7 a mais
-# do que o schema alvo (UG Responsavel Codigo/Nome e Plano Orcamentario
-# UO/Funcao/Subfuncao/Programa/Acao). Mapeamos as 38 por posicao e depois
-# selecionamos so as que interessam (None = descartada) — se mapearmos so
-# as 31 direto, elas entram desalinhadas.
+# O relatorio "Notas de empenhos por programa PPA" traz 38 colunas, todas
+# mapeadas por posicao no schema alvo. Colunas descartadas ficam como None,
+# mas hoje nao ha nenhuma — se mapearmos so as que interessam sem preencher
+# as posicoes intermediarias, elas entram desalinhadas.
 #
 # As posicoes 32-37 sao os valores financeiros ja pivotados em colunas pelo
 # proprio Tesouro (uma coluna por "Item Informacao": 13, 29, 31, 34, 50, 52).
@@ -46,8 +45,8 @@ POSITIONAL_COLUMNS: List[Optional[str]] = [
     "emissao_mes",  # 4
     "emissao_dia",  # 5
     "ne_ccor",  # 6
-    None,  # 7  UG Responsavel Codigo
-    None,  # 8  UG Responsavel Nome
+    "ug_responsavel_codigo",  # 7  UG Responsavel Codigo
+    "ug_responsavel_nome",  # 8  UG Responsavel Nome
     "ne_num_processo",  # 9
     "ne_info_complementar",  # 10
     "ne_ccor_descricao",  # 11
@@ -60,11 +59,11 @@ POSITIONAL_COLUMNS: List[Optional[str]] = [
     "ptres",  # 18
     "fonte_recursos_detalhada",  # 19
     "fonte_recursos_detalhada_descricao",  # 20
-    None,  # 21 Plano Orcamentario Codigo UO
-    None,  # 22 Plano Orcamentario Codigo Funcao
-    None,  # 23 Plano Orcamentario Codigo Subfuncao
-    None,  # 24 Plano Orcamentario Codigo Programa
-    None,  # 25 Plano Orcamentario Codigo Acao
+    "plano_orcamentario_codigo_uo",  # 21 Plano Orcamentario Codigo UO
+    "plano_orcamentario_codigo_funcao",  # 22 Plano Orcamentario Codigo Funcao
+    "plano_orcamentario_codigo_subfuncao",  # 23 Plano Orcamentario Codigo Subfuncao
+    "plano_orcamentario_codigo_programa",  # 24 Plano Orcamentario Codigo Programa
+    "plano_orcamentario_codigo_acao",  # 25 Plano Orcamentario Codigo Acao
     "plano_orcamentario_codigo_po",  # 26
     "plano_orcamentario_nome",  # 27
     "resultado_eof_codigo",  # 28
