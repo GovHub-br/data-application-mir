@@ -1748,3 +1748,204 @@ models:
           nome_tabela: 'ppa_dbt.agenda_medida_institucional_programa'
           nome_coluna: 'ano_ppa'
           tipo_esperado: 'integer'
+
+  - name: ppa_tesouro
+    description: >
+      Execução orçamentária (grão de empenho) do relatório "Notas de
+      empenhos por programa PPA" do Tesouro Gerencial: uma linha por
+      movimentação contábil de uma NE (Nota de Empenho) real, com
+      classificação por programa/ação do PPA, plano orçamentário e
+      resultado EOF. Complementa ppa_tesouro_dotacao (grão de dotação).
+      Origem: tabela siafi.ne_tesouro_ppa, linhas com ne_ccor != '-9'.
+    columns:
+      - name: programa_governo
+        description: "Código do programa de governo (PPA) no orçamento."
+      - name: programa_governo_descricao
+        description: "Descrição do programa de governo."
+      - name: acao_governo
+        description: "Código da ação de governo associada à NE."
+      - name: acao_governo_descricao
+        description: "Descrição da ação de governo."
+      - name: emissao_mes
+        description: "Mês/ano de emissão da NE (MMM/AAAA)."
+      - name: emissao_dia
+        description: "Data de emissão da NE."
+      - name: ne_ccor
+        description: "Código da NE/CCOR no SIAFI."
+      - name: ug_responsavel_codigo
+        description: "Código da Unidade Gestora (UG) responsável pela NE."
+      - name: ug_responsavel_nome
+        description: "Nome da Unidade Gestora (UG) responsável pela NE."
+      - name: ne_num_processo
+        description: "Número do processo administrativo associado à NE, sem separadores."
+      - name: ne_info_complementar
+        description: "Informações complementares cadastradas na NE."
+      - name: ne_ccor_descricao
+        description: "Descrição textual da NE/CCOR."
+      - name: doc_observacao
+        description: "Observações adicionais registradas no documento SIAFI."
+      - name: natureza_despesa
+        description: "Código da natureza de despesa."
+      - name: natureza_despesa_descricao
+        description: "Descrição da natureza de despesa."
+      - name: ne_ccor_favorecido
+        description: "Identificador (CNPJ/CPF) do favorecido na NE/CCOR."
+      - name: ne_ccor_favorecido_descricao
+        description: "Nome/descrição do favorecido na NE/CCOR."
+      - name: ne_ccor_ano_emissao
+        description: "Ano de emissão da NE/CCOR."
+      - name: ptres
+        description: "PTRES (Programa de Trabalho Resumido) associado à despesa."
+      - name: fonte_recursos_detalhada
+        description: "Código da fonte de recursos detalhada que financia a despesa."
+      - name: fonte_recursos_detalhada_descricao
+        description: "Descrição da fonte de recursos detalhada (ex.: RECURSOS LIVRES DA UNIAO)."
+      - name: plano_orcamentario_codigo_uo
+        description: "Código da Unidade Orçamentária (UO) na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_funcao
+        description: "Código da função de governo na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_subfuncao
+        description: "Código da subfunção de governo na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_programa
+        description: "Código do programa na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_acao
+        description: "Código da ação na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_po
+        description: "Código do Plano Orçamentário (PO) associado à despesa."
+      - name: plano_orcamentario_nome
+        description: "Nome do Plano Orçamentário."
+      - name: resultado_eof_codigo
+        description: "Código do resultado primário/EOF (ex.: 2 = primário discricionário)."
+      - name: resultado_eof_nome
+        description: "Descrição do resultado primário/EOF."
+      - name: grupo_despesa
+        description: "Código do grupo de despesa orçamentária."
+      - name: grupo_despesa_desc
+        description: "Descrição do grupo de despesa orçamentária."
+      - name: despesas_empenhadas
+        description: "Valor das despesas empenhadas para a NE."
+      - name: despesas_liquidadas
+        description: "Valor das despesas liquidadas para a NE."
+      - name: despesas_pagas
+        description: "Valor das despesas pagas para a NE."
+      - name: restos_a_pagar_inscritos
+        description: "Valor de restos a pagar inscritos para a NE."
+      - name: restos_a_pagar_pagos
+        description: "Valor de restos a pagar pagos para a NE."
+      - name: dt_ingest
+        description: "Data e hora (UTC-3 Brasília) da ingestão dos dados para a camada bronze."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.ppa_tesouro'
+          nome_coluna: 'ne_ccor_ano_emissao'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.ppa_tesouro'
+          nome_coluna: 'resultado_eof_codigo'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.ppa_tesouro'
+          nome_coluna: 'grupo_despesa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.ppa_tesouro'
+          nome_coluna: 'despesas_empenhadas'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.ppa_tesouro'
+          nome_coluna: 'despesas_liquidadas'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.ppa_tesouro'
+          nome_coluna: 'despesas_pagas'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.ppa_tesouro'
+          nome_coluna: 'restos_a_pagar_inscritos'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.ppa_tesouro'
+          nome_coluna: 'restos_a_pagar_pagos'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.ppa_tesouro'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
+
+  - name: ppa_tesouro_dotacao
+    description: >
+      Dotação orçamentária atualizada do relatório "Notas de empenhos por
+      programa PPA" do Tesouro Gerencial, no grão da classificação
+      orçamentária (programa/ação/natureza/fonte/PTRES/plano orçamentário),
+      sem empenho associado. Complementa ppa_tesouro (grão de empenho):
+      enquanto aquele traz a execução (empenhado/liquidado/pago), este
+      traz o limite orçamentário apropriado. Origem: tabela
+      siafi.ne_tesouro_ppa, linhas com ne_ccor = '-9'.
+    columns:
+      - name: programa_governo
+        description: "Código do programa de governo (PPA) no orçamento."
+      - name: programa_governo_descricao
+        description: "Descrição do programa de governo."
+      - name: acao_governo
+        description: "Código da ação de governo associada à dotação."
+      - name: acao_governo_descricao
+        description: "Descrição da ação de governo."
+      - name: emissao_mes
+        description: "Mês/ano de lançamento do crédito orçamentário."
+      - name: emissao_dia
+        description: "Data de lançamento do crédito orçamentário."
+      - name: doc_observacao
+        description: "Documento/observação do crédito orçamentário (ex.: fita SOF, detalhamento de crédito)."
+      - name: natureza_despesa
+        description: "Código da natureza de despesa."
+      - name: natureza_despesa_descricao
+        description: "Descrição da natureza de despesa."
+      - name: ptres
+        description: "PTRES (Programa de Trabalho Resumido) associado à dotação."
+      - name: fonte_recursos_detalhada
+        description: "Código da fonte de recursos detalhada que financia a dotação."
+      - name: fonte_recursos_detalhada_descricao
+        description: "Descrição da fonte de recursos detalhada (ex.: RECURSOS LIVRES DA UNIAO)."
+      - name: plano_orcamentario_codigo_uo
+        description: "Código da Unidade Orçamentária (UO) na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_funcao
+        description: "Código da função de governo na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_subfuncao
+        description: "Código da subfunção de governo na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_programa
+        description: "Código do programa na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_acao
+        description: "Código da ação na classificação do plano orçamentário."
+      - name: plano_orcamentario_codigo_po
+        description: "Código do Plano Orçamentário (PO) associado à dotação."
+      - name: plano_orcamentario_nome
+        description: "Nome do Plano Orçamentário."
+      - name: resultado_eof_codigo
+        description: "Código do resultado primário/EOF (ex.: 2 = primário discricionário)."
+      - name: resultado_eof_nome
+        description: "Descrição do resultado primário/EOF."
+      - name: grupo_despesa
+        description: "Código do grupo de despesa orçamentária."
+      - name: grupo_despesa_desc
+        description: "Descrição do grupo de despesa orçamentária."
+      - name: dotacao_atualizada
+        description: "Valor da dotação orçamentária atualizada (após créditos adicionais) para a combinação de classificações."
+      - name: dt_ingest
+        description: "Data e hora (UTC-3 Brasília) da ingestão dos dados para a camada bronze."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.ppa_tesouro_dotacao'
+          nome_coluna: 'resultado_eof_codigo'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.ppa_tesouro_dotacao'
+          nome_coluna: 'grupo_despesa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.ppa_tesouro_dotacao'
+          nome_coluna: 'dotacao_atualizada'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'ppa_dbt.ppa_tesouro_dotacao'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
