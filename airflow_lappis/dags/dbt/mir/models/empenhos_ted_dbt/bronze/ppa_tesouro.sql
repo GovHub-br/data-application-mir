@@ -1,5 +1,6 @@
 {{ config(materialized="table") }}
 
+
 with
     ppa_tesouro_raw as (
         select
@@ -35,6 +36,7 @@ with
             resultado_eof_nome::text as resultado_eof_nome,
             grupo_despesa::integer as grupo_despesa,
             grupo_despesa_desc::text as grupo_despesa_desc,
+            {{ parse_financial_value("dotacao_atualizada") }} as dotacao_atualizada,
             {{ parse_financial_value("despesas_empenhadas") }} as despesas_empenhadas,
             {{ parse_financial_value("despesas_liquidadas") }} as despesas_liquidadas,
             {{ parse_financial_value("despesas_pagas") }} as despesas_pagas,
@@ -42,11 +44,18 @@ with
             {{ parse_financial_value("restos_a_pagar_pagos") }} as restos_a_pagar_pagos,
             (dt_ingest || '-03:00')::timestamptz as dt_ingest
         from {{ source("siafi", "ne_tesouro_ppa") }}
-        -- A tabela raw traz dois graos (ver ppa_tesouro_dotacao.sql). Este
-        -- modelo e o grao de empenho: uma linha por movimentacao contabil
-        -- de uma NE real. As linhas de dotacao (ne_ccor = '-9') ficam em
-        -- ppa_tesouro_dotacao.
-        where ne_ccor <> '-9' and ne_ccor_ano_emissao ~ '^[0-9]{4}$'
+        -- Modelo unico de bronze do relatorio "Notas de empenhos por
+        -- programa PPA" do Tesouro Gerencial. Reune os dois graos que
+        -- vem na tabela raw:
+        --   * grao de empenho (ne_ccor <> '-9'): uma linha por movimentacao
+        --     contabil de uma NE real, com despesas_*/restos_a_pagar_*
+        --     preenchidos;
+        --   * grao de dotacao (ne_ccor = '-9'): limite orcamentario
+        --     apropriado por classificacao, com dotacao_atualizada
+        --     preenchido.
+        -- O filtro abaixo garante apenas que o ano seja um inteiro valido
+        -- para o cast (empenhos trazem AAAA; dotacao traz o sentinela -9).
+        where ne_ccor_ano_emissao ~ '^-?[0-9]+$'
     )
 
 select *

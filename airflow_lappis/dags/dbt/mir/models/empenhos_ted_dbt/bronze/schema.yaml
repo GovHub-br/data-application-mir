@@ -1,16 +1,22 @@
 version: 2
 
 models:
-  - name: empenhos_tesouro_ted
+  - name: ppa_tesouro
     description: >
-      Tabela da camada bronze contendo informações detalhadas sobre os empenhos do Tesouro Gerencial 
-      vinculados a emendas parlamentares e TEDs. 
-      A tabela realiza a limpeza do número do processo, padronização de nomes de favorecidos 
-      e conversão de valores financeiros de string para numeric(15,2) via macro.
+      Tabela da camada bronze do relatório "Notas de empenhos por programa
+      PPA" do Tesouro Gerencial (origem: siafi.ne_tesouro_ppa). Modelo único
+      que reúne os dois grãos presentes na tabela raw: o grão de empenho
+      (ne_ccor <> '-9'), com a execução (empenhado/liquidado/pago) de uma NE
+      real, e o grão de dotação (ne_ccor = '-9'), com o limite orçamentário
+      apropriado (dotacao_atualizada). Substitui o antigo empenhos_tesouro_ted,
+      acrescentando a UG responsável, a classificação do plano orçamentário e
+      o resultado EOF. Realiza a limpeza do número do processo, padronização
+      de nomes de favorecidos e conversão de valores financeiros de string
+      para numeric(15,2) via macro.
     columns:
       - name: programa_governo
         description: >
-          Código identificador do programa de governo associado ao empenho.
+          Código identificador do programa de governo (PPA) associado ao registro.
       - name: programa_governo_descricao
         description: >
           Descrição textual do programa de governo.
@@ -29,6 +35,13 @@ models:
       - name: ne_ccor
         description: >
           Número completo da nota de empenho (Chave natural principal).
+          Assume o sentinela '-9' nas linhas do grão de dotação.
+      - name: ug_responsavel_codigo
+        description: >
+          Código da Unidade Gestora (UG) responsável pela NE.
+      - name: ug_responsavel_nome
+        description: >
+          Nome da Unidade Gestora (UG) responsável pela NE.
       - name: ne_num_processo
         description: >
           Número do processo administrativo, limpo de caracteres especiais (pontos, barras, hifens) via regex.
@@ -55,7 +68,8 @@ models:
           Nome ou Razão Social do favorecido.
       - name: ne_ccor_ano_emissao
         description: >
-          Ano de emissão do empenho (YYYY), validado via regex para garantir 4 dígitos numéricos.
+          Ano de emissão do empenho (YYYY). Assume o sentinela -9 nas linhas
+          do grão de dotação.
       - name: ptres
         description: >
           Programa de Trabalho Resumido (PTRES).
@@ -65,6 +79,44 @@ models:
       - name: fonte_recursos_detalhada_descricao
         description: >
           Descrição da fonte de recursos.
+      - name: plano_orcamentario_codigo_uo
+        description: >
+          Código da Unidade Orçamentária (UO) na classificação do plano orçamentário.
+      - name: plano_orcamentario_codigo_funcao
+        description: >
+          Código da função de governo na classificação do plano orçamentário.
+      - name: plano_orcamentario_codigo_subfuncao
+        description: >
+          Código da subfunção de governo na classificação do plano orçamentário.
+      - name: plano_orcamentario_codigo_programa
+        description: >
+          Código do programa na classificação do plano orçamentário.
+      - name: plano_orcamentario_codigo_acao
+        description: >
+          Código da ação na classificação do plano orçamentário.
+      - name: plano_orcamentario_codigo_po
+        description: >
+          Código do Plano Orçamentário (PO) associado à despesa.
+      - name: plano_orcamentario_nome
+        description: >
+          Nome do Plano Orçamentário.
+      - name: resultado_eof_codigo
+        description: >
+          Código do resultado primário/EOF (ex.: 2 = primário discricionário).
+      - name: resultado_eof_nome
+        description: >
+          Descrição do resultado primário/EOF.
+      - name: grupo_despesa
+        description: >
+          Código do grupo de despesa orçamentária.
+      - name: grupo_despesa_desc
+        description: >
+          Descrição do grupo de despesa orçamentária.
+      - name: dotacao_atualizada
+        description: >
+          Valor da dotação orçamentária atualizada (após créditos adicionais),
+          preenchido apenas nas linhas do grão de dotação (ne_ccor = '-9'),
+          convertido para numeric(15,2).
       - name: despesas_empenhadas
         description: >
           Valor total das despesas empenhadas, convertido para numeric(15,2).
@@ -86,17 +138,33 @@ models:
 
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'mir.empenhos_tesouro_parlamentares'
+          nome_tabela: 'siafi_dbt.ppa_tesouro'
           nome_coluna: 'ne_ccor_ano_emissao'
           tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'mir.empenhos_tesouro_parlamentares'
+          nome_tabela: 'siafi_dbt.ppa_tesouro'
+          nome_coluna: 'resultado_eof_codigo'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ppa_tesouro'
+          nome_coluna: 'grupo_despesa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ppa_tesouro'
+          nome_coluna: 'dotacao_atualizada'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ppa_tesouro'
           nome_coluna: 'despesas_empenhadas'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'mir.empenhos_tesouro_parlamentares'
+          nome_tabela: 'siafi_dbt.ppa_tesouro'
           nome_coluna: 'restos_a_pagar_inscritos'
           tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ppa_tesouro'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
 
   - name: nc_tesouro_mir
     description: >
