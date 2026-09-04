@@ -13,6 +13,9 @@ with
     base as (select * from {{ ref("emendas_orcamento_execucao") }})
 
 select
+
+    ug_responsavel_codigo,
+    ug_responsavel_nome,
     autor_emendas_orcamento_nome,
     max(id_autor) as id_autor,
     max(autor) as autor,
@@ -49,4 +52,7 @@ select
     max(dt_ingest) as dt_ingest
 
 from base
-group by autor_emendas_orcamento_nome
+group by 
+autor_emendas_orcamento_nome,
+ug_responsavel_codigo,
+ug_responsavel_nome
