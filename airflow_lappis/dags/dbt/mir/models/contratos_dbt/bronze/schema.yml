@@ -40,27 +40,27 @@ models:
         description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.contratos'
+          nome_tabela: 'contratos_dbt.contratos'
           nome_coluna: 'num_parcelas'
           tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.contratos'
+          nome_tabela: 'contratos_dbt.contratos'
           nome_coluna: 'valor_inicial'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.contratos'
+          nome_tabela: 'contratos_dbt.contratos'
           nome_coluna: 'valor_global'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.contratos'
+          nome_tabela: 'contratos_dbt.contratos'
           nome_coluna: 'data_assinatura'
           tipo_esperado: 'date'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.contratos'
+          nome_tabela: 'contratos_dbt.contratos'
           nome_coluna: 'vigencia_inicio'
           tipo_esperado: 'date'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.contratos'
+          nome_tabela: 'contratos_dbt.contratos'
           nome_coluna: 'vigencia_fim'
           tipo_esperado: 'date'
 
@@ -93,11 +93,11 @@ models:
         description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.contratos_inativos'
+          nome_tabela: 'contratos_dbt.contratos_inativos'
           nome_coluna: 'valor_global'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.contratos_inativos'
+          nome_tabela: 'contratos_dbt.contratos_inativos'
           nome_coluna: 'data_assinatura'
           tipo_esperado: 'date'
 
@@ -131,19 +131,19 @@ models:
         description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.empenhos'
+          nome_tabela: 'contratos_dbt.empenhos'
           nome_coluna: 'empenhado'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.empenhos'
+          nome_tabela: 'contratos_dbt.empenhos'
           nome_coluna: 'liquidado'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.empenhos'
+          nome_tabela: 'contratos_dbt.empenhos'
           nome_coluna: 'pago'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.empenhos'
+          nome_tabela: 'contratos_dbt.empenhos'
           nome_coluna: 'data_emissao'
           tipo_esperado: 'date'
 
@@ -182,23 +182,23 @@ models:
         description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.faturas'
+          nome_tabela: 'contratos_dbt.faturas'
           nome_coluna: 'id'
           tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.faturas'
+          nome_tabela: 'contratos_dbt.faturas'
           nome_coluna: 'valor'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.faturas'
+          nome_tabela: 'contratos_dbt.faturas'
           nome_coluna: 'valorliquido'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.faturas'
+          nome_tabela: 'contratos_dbt.faturas'
           nome_coluna: 'emissao'
           tipo_esperado: 'date'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.faturas'
+          nome_tabela: 'contratos_dbt.faturas'
           nome_coluna: 'data_liquidacao'
           tipo_esperado: 'date'
 
@@ -230,23 +230,23 @@ models:
         description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.cronograma'
+          nome_tabela: 'contratos_dbt.cronograma'
           nome_coluna: 'id'
           tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.cronograma'
+          nome_tabela: 'contratos_dbt.cronograma'
           nome_coluna: 'mesref'
           tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.cronograma'
+          nome_tabela: 'contratos_dbt.cronograma'
           nome_coluna: 'anoref'
           tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.cronograma'
+          nome_tabela: 'contratos_dbt.cronograma'
           nome_coluna: 'valor'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.cronograma'
+          nome_tabela: 'contratos_dbt.cronograma'
           nome_coluna: 'vencimento'
           tipo_esperado: 'date'
 
@@ -287,19 +287,19 @@ models:
         description: "Data e hora (UTC-3) de ingestão do registro na camada raw."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.terceirizados'
+          nome_tabela: 'contratos_dbt.terceirizados'
           nome_coluna: 'id'
           tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.terceirizados'
+          nome_tabela: 'contratos_dbt.terceirizados'
           nome_coluna: 'salario'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.terceirizados'
+          nome_tabela: 'contratos_dbt.terceirizados'
           nome_coluna: 'custo'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.terceirizados'
+          nome_tabela: 'contratos_dbt.terceirizados'
           nome_coluna: 'data_inicio'
           tipo_esperado: 'date'
 
@@ -377,18 +377,18 @@ models:
         description: "Timestamp da ingestão na camada raw, ajustado para UTC-3 (fuso de Brasília)."
     tests:
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.empenhos_tesouro'
+          nome_tabela: 'contratos_dbt.empenhos_tesouro'
           nome_coluna: 'ne_ccor_ano_emissao'
           tipo_esperado: 'integer'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.empenhos_tesouro'
+          nome_tabela: 'contratos_dbt.empenhos_tesouro'
           nome_coluna: 'despesas_empenhadas'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.empenhos_tesouro'
+          nome_tabela: 'contratos_dbt.empenhos_tesouro'
           nome_coluna: 'restos_a_pagar_inscritos'
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
-          nome_tabela: 'compras_gov_dbt.empenhos_tesouro'
+          nome_tabela: 'contratos_dbt.empenhos_tesouro'
           nome_coluna: 'dt_ingest'
           tipo_esperado: 'timestamp with time zone'
