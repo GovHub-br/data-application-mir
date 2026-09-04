@@ -4,7 +4,7 @@ import logging
 import zipfile
 from datetime import datetime, timedelta
 from io import BytesIO
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import chardet
 from airflow import DAG
@@ -27,17 +27,10 @@ TABLE_SCHEMA = "siafi"
 TABLE_NAME = "ne_tesouro_ppa"
 EMAIL_SUBJECT = "notas_empenho_ppa_mir"
 
-# O relatorio "Notas de empenhos por programa PPA" traz 38 colunas, todas
-# mapeadas por posicao no schema alvo. Colunas descartadas ficam como None,
-# mas hoje nao ha nenhuma — se mapearmos so as que interessam sem preencher
-# as posicoes intermediarias, elas entram desalinhadas.
-#
-# As posicoes 32-37 sao os valores financeiros ja pivotados em colunas pelo
-# proprio Tesouro (uma coluna por "Item Informacao": 13, 29, 31, 34, 50, 52).
-# O cabecalho do relatorio tem 3 linhas empilhadas por causa desse pivot; o
-# nome real de cada coluna financeira vem da 2a linha (codigo -> descricao),
-# nao da 1a.
-POSITIONAL_COLUMNS: List[Optional[str]] = [
+# Colunas fixas (posicoes 0-31), sempre presentes, mapeadas por posicao. A
+# posicao 31 e o marcador do pivot ("Item Informacao Codigo") no cabecalho,
+# mas nos dados carrega o "Grupo Despesa Nome".
+FIXED_COLUMNS: List[str] = [
     "programa_governo",  # 0
     "programa_governo_descricao",  # 1
     "acao_governo",  # 2
@@ -70,17 +63,31 @@ POSITIONAL_COLUMNS: List[Optional[str]] = [
     "resultado_eof_nome",  # 29
     "grupo_despesa",  # 30
     "grupo_despesa_desc",  # 31
-    "dotacao_atualizada",  # 32  Item Informacao 13
-    "despesas_empenhadas",  # 33  Item Informacao 29
-    "despesas_liquidadas",  # 34  Item Informacao 31
-    "despesas_pagas",  # 35  Item Informacao 34
-    "restos_a_pagar_inscritos",  # 36  Item Informacao 50
-    "restos_a_pagar_pagos",  # 37  Item Informacao 52
 ]
-EXPECTED_WIDTH = len(POSITIONAL_COLUMNS)
-EXPECTED_ITEM_CODES = {32: "13", 33: "29", 34: "31", 35: "34", 36: "50", 37: "52"}
+FIXED_WIDTH = len(FIXED_COLUMNS)
 
-TARGET_COLUMNS: List[str] = [c for c in POSITIONAL_COLUMNS if c is not None]
+# Colunas financeiras (posicoes 32+), pivotadas pelo Tesouro (uma por "Item
+# Informacao"). Sao mapeadas por CODIGO, nao por posicao: o Tesouro so emite a
+# coluna de um item quando ha valor para ele no periodo, entao qualquer uma
+# pode faltar (ex.: sem "restos a pagar pagos" o cabecalho vem com 37 colunas
+# em vez de 38). A ausente vira None no registro.
+FINANCIAL_COLUMNS_BY_CODE: Dict[str, str] = {
+    "13": "dotacao_atualizada",
+    "29": "despesas_empenhadas",
+    "31": "despesas_liquidadas",
+    "34": "despesas_pagas",
+    "50": "restos_a_pagar_inscritos",
+    "52": "restos_a_pagar_pagos",
+}
+
+# Ancora na ultima posicao fixa (31) para detectar desalinhamento da parte fixa.
+ITEM_INFO_HEADER = "Item Informação Código"
+
+# Schema canonico completo. Todo registro sai com todas essas chaves (None nas
+# financeiras ausentes) para ficar homogeneo: insert_data deriva as colunas do
+# primeiro registro (flattened_data[0].keys()), entao um registro com menos
+# chaves gravaria colunas desalinhadas ou perderia valores.
+TARGET_COLUMNS: List[str] = FIXED_COLUMNS + list(FINANCIAL_COLUMNS_BY_CODE.values())
 
 HEADER_MARKER = '"Programa Governo Código"'
 SUB_HEADER_LINES = 2
@@ -120,14 +127,65 @@ def _decode_csv(raw_data: bytes) -> str:
     return raw_data.decode(encoding, errors="replace")
 
 
+def _build_positional_columns(header_row: List[str]) -> List[str]:
+    """Monta o mapa posicao -> coluna alvo a partir do cabecalho do relatorio.
+
+    As 32 colunas fixas vem por posicao; as financeiras (a partir de
+    FIXED_WIDTH) sao resolvidas pelo codigo "Item Informacao" na propria linha
+    de cabecalho, pois qualquer uma pode faltar quando nao ha dado no periodo.
+    Levanta ValueError se a parte fixa desalinhou ou se surgir um codigo
+    financeiro desconhecido/duplicado.
+    """
+    # Sem a ancora no lugar, mapear por posicao gravaria colunas desalinhadas.
+    anchor = header_row[FIXED_WIDTH - 1] if len(header_row) >= FIXED_WIDTH else None
+    if anchor != ITEM_INFO_HEADER:
+        raise ValueError(
+            f"Layout do relatorio mudou: esperava {FIXED_WIDTH} colunas fixas "
+            f"terminando em '{ITEM_INFO_HEADER}' na posicao {FIXED_WIDTH - 1}, "
+            f"mas o cabecalho tem {len(header_row)} colunas e a posicao "
+            f"{FIXED_WIDTH - 1} e '{anchor}'. Revise FIXED_COLUMNS antes de "
+            "prosseguir."
+        )
+
+    financial_positions: List[str] = []
+    seen_codes: set = set()
+    for offset, code in enumerate(header_row[FIXED_WIDTH:]):
+        target = FINANCIAL_COLUMNS_BY_CODE.get(code)
+        if target is None:
+            raise ValueError(
+                f"Layout do relatorio mudou: coluna financeira desconhecida na "
+                f"posicao {FIXED_WIDTH + offset} com codigo Item Informacao "
+                f"'{code}'. Codigos conhecidos: "
+                f"{sorted(FINANCIAL_COLUMNS_BY_CODE)}."
+            )
+        if code in seen_codes:
+            raise ValueError(
+                f"Layout do relatorio mudou: codigo Item Informacao '{code}' "
+                "aparece duplicado no cabecalho."
+            )
+        seen_codes.add(code)
+        financial_positions.append(target)
+
+    missing = [c for c in FINANCIAL_COLUMNS_BY_CODE if c not in seen_codes]
+    if missing:
+        logging.info(
+            "Parser: colunas financeiras ausentes neste relatorio (sem dado no "
+            "periodo): %s.",
+            ", ".join(f"{c}->{FINANCIAL_COLUMNS_BY_CODE[c]}" for c in missing),
+        )
+
+    return FIXED_COLUMNS + financial_positions
+
+
 def parse_ppa_csv(csv_data: str) -> List[Dict[str, Any]]:
     """Parser do relatorio "Notas de empenhos por programa PPA" do Tesouro.
 
     Le sempre como texto (sem passar por pandas.read_csv, que inferiria
     tipos numericos e comeria os zeros a esquerda de codigos como
-    programa_governo "0032"). Mapeia as 38 colunas por posicao, descarta
-    as 7 que nao fazem parte do schema alvo, ignora a linha final "Total"
-    e linhas cuja largura nao bate com o cabecalho.
+    programa_governo "0032"). Mapeia as 32 colunas fixas por posicao e as
+    financeiras por codigo "Item Informacao" (qualquer uma pode faltar no
+    relatorio), ignora a linha final "Total" e linhas cuja largura nao bate
+    com o cabecalho.
     """
     lines = csv_data.splitlines()
     header_idx = next(
@@ -141,25 +199,8 @@ def parse_ppa_csv(csv_data: str) -> List[Dict[str, Any]]:
         )
 
     header_row = next(csv.reader([lines[header_idx]]))
-    if len(header_row) != EXPECTED_WIDTH:
-        raise ValueError(
-            f"Layout do relatorio mudou: cabecalho tem {len(header_row)} "
-            f"colunas, esperava {EXPECTED_WIDTH}. Revise POSITIONAL_COLUMNS "
-            "antes de prosseguir — mapear posicoes erradas grava colunas "
-            "desalinhadas em silencio."
-        )
-
-    # Os codigos "Item Informacao" (13/29/31/34/50/52) ficam na propria
-    # linha de cabecalho, nao na sub-linha seguinte (que traz os nomes
-    # descritivos, ex.: "DOTACAO ATUALIZADA").
-    for pos, expected_code in EXPECTED_ITEM_CODES.items():
-        actual = header_row[pos] if pos < len(header_row) else None
-        if actual != expected_code:
-            raise ValueError(
-                f"Layout do relatorio mudou: coluna financeira na posicao "
-                f"{pos} tem codigo Item Informacao '{actual}', esperava "
-                f"'{expected_code}' ({POSITIONAL_COLUMNS[pos]})."
-            )
+    positional_columns = _build_positional_columns(header_row)
+    expected_width = len(positional_columns)
 
     data_start = header_idx + 1 + SUB_HEADER_LINES
     records: List[Dict[str, Any]] = []
@@ -174,15 +215,15 @@ def parse_ppa_csv(csv_data: str) -> List[Dict[str, Any]]:
             continue
         if row and row[0] == "Total":
             continue
-        if len(row) != EXPECTED_WIDTH:
+        if len(row) != expected_width:
             skipped += 1
             continue
 
-        record = {
-            name: (row[pos].strip() or None)
-            for pos, name in enumerate(POSITIONAL_COLUMNS)
-            if name is not None
-        }
+        # Comeca com o schema canonico completo: financeiras ausentes ficam
+        # None, mantendo todos os registros com as mesmas chaves.
+        record: Dict[str, Any] = {name: None for name in TARGET_COLUMNS}
+        for pos, name in enumerate(positional_columns):
+            record[name] = row[pos].strip() or None
         records.append(record)
 
     if skipped:
