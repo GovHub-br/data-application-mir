@@ -82,5 +82,5 @@ select
     coalesce(conv.vl_global_conv, ted.valor_firmado) as valor_firmado
 
 from emendas e
-left join conv on e.numero_transferencia = conv.nr_convenio
+left join conv on e.numero_transferencia::text = conv.nr_convenio
 left join ted on e.numero_transferencia::text = ted.num_transf

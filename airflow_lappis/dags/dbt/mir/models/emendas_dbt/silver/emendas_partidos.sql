@@ -10,6 +10,16 @@ parlamentares_hist AS (
 	FROM {{ ref('parlamentares_historico') }}
 ),
 
+ug_por_ne_ccor AS (
+    SELECT
+        ne_ccor,
+        ug_responsavel_codigo,
+        ug_responsavel_nome
+    FROM {{ ref('ppa_tesouro') }}
+    WHERE ne_ccor <> '-9'
+    GROUP BY ne_ccor, ug_responsavel_codigo, ug_responsavel_nome
+),
+
 -- Dotacao agregada no grao da classificacao orcamentaria. Anexada a cada
 -- empenho como referencia da linha orcamentaria; o MESMO valor se repete
 -- entre empenhos da mesma classificacao, entao NAO deve ser somado por
@@ -90,6 +100,9 @@ cruzamento_bruto AS (
 
 		e.emenda_id,
 
+        ug.ug_responsavel_codigo,
+        ug.ug_responsavel_nome,
+
 		p.id_parlamentar as id_autor,
 		p.cargo_parlamentar as cargo_autor,
 		p.nome_parlamentar as autor,
@@ -122,6 +135,8 @@ cruzamento_bruto AS (
 	FROM tg_emendas_tratado e
 	LEFT JOIN parlamentares_hist p
 		ON e.chave_join_nome = p.chave_join_nome
+	LEFT JOIN ug_por_ne_ccor ug
+        ON e.ne_ccor = ug.ne_ccor
 	LEFT JOIN dotacao_por_classificacao dot
 		ON e.programa_governo = dot.programa_governo
 		AND e.acao_governo = dot.acao_governo
@@ -189,6 +204,9 @@ SELECT
 	restos_a_pagar_pagos,
 
 	autor_emendas_orcamento,
+
+	ug_responsavel_codigo,
+    ug_responsavel_nome,
 
 	id_autor,
 	cargo_autor,

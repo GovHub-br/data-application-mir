@@ -57,28 +57,32 @@ with
 
     execucao as (
         select
-            programa_governo,
-            acao_governo,
+            codigo_programa as programa_governo,
+            codigo_acao_ajustada as acao_governo,
             localizador_gasto,
             natureza_despesa,
-            modalidade_aplicacao,
+            codigo_modalidade as modalidade_aplicacao,
             fonte_recursos_detalhada,
             ptres,
+            ug_responsavel_codigo,
+            ug_responsavel_nome,
             sum(despesas_empenhadas) as despesas_empenhadas,
             sum(despesas_liquidadas) as despesas_liquidadas,
             sum(despesas_pagas) as despesas_pagas,
             sum(restos_a_pagar_inscritos) as restos_a_pagar_inscritos,
             sum(restos_a_pagar_pagos) as restos_a_pagar_pagos,
             max(dt_ingest) as dt_ingest
-        from {{ ref("tg_emendas") }}
+        from {{ ref("emendas_partidos") }}
         group by
-            programa_governo,
-            acao_governo,
+            codigo_programa,
+            codigo_acao_ajustada,
             localizador_gasto,
             natureza_despesa,
-            modalidade_aplicacao,
+            codigo_modalidade,
             fonte_recursos_detalhada,
-            ptres
+            ptres,
+            ug_responsavel_codigo,
+            ug_responsavel_nome
     ),
 
     -- Um registro por parlamentar (filiacao mais recente), para atribuir a
@@ -120,6 +124,10 @@ select
     d.ptres,
     d.fonte_recursos_detalhada,
     d.fonte_recursos_detalhada_descricao,
+
+    -- Unidade Gestora Executora
+    e.ug_responsavel_codigo,
+    e.ug_responsavel_nome,
 
     -- Autor da emenda
     d.autor_emendas_orcamento,

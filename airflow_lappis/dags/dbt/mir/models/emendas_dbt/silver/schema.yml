@@ -183,6 +183,10 @@ models:
         description: Código indexado da ação ajustada governamental.
       - name: acao_ajustada
         description: Descrição da ação de governo orçamentária que recebe o numerário.
+      - name: codigo_ug
+        description: "Código da Unidade Gestora (UG) responsável pela execução do recurso."
+      - name: nome_ug
+        description: "Nome/descrição da Unidade Gestora (UG) executora."
       - name: autor_emendas_orcamento
         description: Identificador do autor da emenda no orçamento, conforme SIAFI.  
       - name: autor_emendas_orcamento_descricao
@@ -360,6 +364,10 @@ models:
         description: Código da ação ajustada governamental.
       - name: acao_ajustada
         description: Descrição da ação de governo que recebe o recurso.
+      - name: codigo_ug
+        description: "Código da Unidade Gestora (UG) responsável pela execução do recurso."
+      - name: nome_ug
+        description: "Nome/descrição da Unidade Gestora (UG) executora."
       - name: autor_emendas_orcamento_descricao
         description: Descrição completa do autor da emenda conforme o SIAFI.
       - name: autor_emendas_orcamento_nome
@@ -584,6 +592,10 @@ models:
         description: "Código da ação de governo associada à emenda."
       - name: acao
         description: "Descrição da ação de governo associada à emenda."
+      - name: codigo_ug
+        description: "Código da Unidade Gestora (UG) responsável pela execução do recurso."
+      - name: nome_ug
+        description: "Nome/descrição da Unidade Gestora (UG) executora."
       - name: localizador_gasto
         description: "Código do localizador de gasto da programação orçamentária."
       - name: localizador_gasto_descricao
