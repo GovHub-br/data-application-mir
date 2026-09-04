@@ -86,6 +86,10 @@ models:
         description: "Código da ação orçamentária ajustada vinculada à emenda."
       - name: acao_ajustada
         description: "Descrição da ação orçamentária ajustada."
+      - name: codigo_ug
+        description: "Código da Unidade Gestora (UG) responsável pela execução do recurso."
+      - name: nome_ug
+        description: "Nome/descrição da Unidade Gestora (UG) executora."
       - name: autor_emendas_orcamento_descricao
         description: "Descrição textual associada ao código orçamentário da emenda."
       - name: autor_emendas_orcamento_nome
