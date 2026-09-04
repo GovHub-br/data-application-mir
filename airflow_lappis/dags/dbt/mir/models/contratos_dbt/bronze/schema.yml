@@ -10,6 +10,9 @@ models:
       schema compras_gov do postgres_mir. Contém contratos cuja situacao é distinta
       de 'Inativo'. Realiza conversão de tipos, normalização de valores monetários
       (formato brasileiro), validação de datas e limpeza de CPF/CNPJ e processo.
+    meta:
+      tags:
+        - bronze
     columns:
       - name: id
         description: "Identificador único do contrato."
