@@ -110,6 +110,7 @@ with
             ct.situacao as situacao_contrato,
             ct.fornecedor_nome,
             ct.fornecedor_cnpj_cpf_idgener,
+            ct.fornecedor_tipo,
             ct.contratante__orgao__nome as orgao_contratante,
             ct.contratante__orgao__unidade_gestora__nome as unidade_gestora,
             ct.objeto as objeto_contrato,
