@@ -94,6 +94,11 @@ models:
         description: >
           Descrição do programa de governo conforme classificação orçamentária SIAFI,
           proveniente de nc_plano_acao.
+      - name: ug_responsavel_codigo
+        description: "Código da Unidade Gestora (UG) responsável pela execução do empenho."
+
+      - name: ug_responsavel_nome
+        description: "Nome da Unidade Gestora (UG) responsável pela execução do empenho."
       - name: origem
         description: "Indica a origem do recurso: 'Emenda' se vinculado a uma emenda parlamentar, 'Recurso Próprio' caso contrário."
     tests:

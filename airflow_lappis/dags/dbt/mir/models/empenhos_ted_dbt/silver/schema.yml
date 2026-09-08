@@ -414,6 +414,11 @@ models:
         description: "Identificador do Plano de Ação no TransfereGov (integer), obtido via ponte num_transf_n_plano_acao a partir do num_transf. Nulo para NEs sem correspondência."
       - name: num_transf_pa
         description: "num_transf conforme registrado na ponte num_transf_n_plano_acao — usado para conferência cruzada com o num_transf extraído da NE."
+      - name: ug_responsavel_codigo
+        description: "Código da Unidade Gestora (UG) responsável pela execução do empenho."
+
+      - name: ug_responsavel_nome
+        description: "Nome da Unidade Gestora (UG) responsável pela execução do empenho."
     tests:
       - verificacao_tipagem:
           nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'

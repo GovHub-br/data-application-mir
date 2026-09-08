@@ -13,7 +13,7 @@
     'ne_ccor_favorecido', 'ne_ccor_favorecido_descricao', 'ne_ccor_ano_emissao', 'ptres',
     'fonte_recursos_detalhada', 'fonte_recursos_detalhada_descricao', 'despesas_empenhadas',
     'despesas_liquidadas', 'despesas_pagas', 'restos_a_pagar_inscritos', 'restos_a_pagar_pagos',
-    'dt_ingest'
+    'ug_responsavel_codigo', 'ug_responsavel_nome', 'dt_ingest'
 ] %}
 {% set passthrough_columns = bronze_columns + ['ne', 'orgao_id'] %}
 {#
@@ -130,7 +130,7 @@ empenhos_sem_vinculo_ted as(
 empenhos_filtrados as(
   select
     *
-  from {{ ref("empenhos_tesouro_ted") }}
+  from base
   where
     ne_ccor_descricao !~* '\bTED[[:space:]:/().-]*(S/?[VN]|S/?VINCULO)'
     and ne_ccor_descricao !~* 'SEM[[:space:]]+VINC[[:space:]]*(ULO|/TED)'
