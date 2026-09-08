@@ -141,6 +141,8 @@ with
 select
     -- Identificação
     b.nr_convenio,
+    b.ug_responsavel_codigo,
+    b.ug_responsavel_nome,
     b.modalidade as modalidade_instrumento,
     b.uf_proponente as uf_execucao,
     b.munic_proponente as municipio_execucao,

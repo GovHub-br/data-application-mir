@@ -24,6 +24,8 @@ select
     c.ind_opera_obtv,
     c.nr_processo,
     c.ug_emitente,
+    c.ug_responsavel_codigo,
+    c.ug_responsavel_nome,
     c.dia_publ_conv,
     c.dia_inic_vigenc_conv,
     c.dia_fim_vigenc_conv,

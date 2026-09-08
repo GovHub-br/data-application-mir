@@ -282,6 +282,10 @@ models:
         description: "Valor do saldo em conta."
       - name: valor_global_original_conv
         description: "Valor global original do convênio."
+      - name: ug_responsavel_codigo
+        description: "Código da Unidade Gestora (UG) responsável pela gestão orçamentária do instrumento no SIAFI/Tesouro."
+      - name: ug_responsavel_nome
+        description: "Nome/sigla da Unidade Gestora (UG) responsável pela gestão orçamentária do instrumento no SIAFI/Tesouro."
     tests:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.convenios_consolidados'
@@ -819,3 +823,156 @@ models:
           nome_tabela: 'siconv_dbt.convenio_proposta_pagamento'
           nome_coluna: 'vl_global_conv'
           tipo_esperado: 'numeric'
+  - name: termo_fomento_consolidado
+    description: "Tabela consolidada na camada Silver contendo dados de instrumentos do tipo Termo de Fomento, combinando informações de convênios/instrumentos com os dados detalhados das propostas associadas."
+    columns:
+      - name: nr_convenio
+        description: "Número de identificação do instrumento (convênio/termo) no Transferegov."
+        tests:
+          - not_null
+      - name: id_proposta
+        description: "Identificador único da proposta vinculada ao instrumento."
+        tests:
+          - not_null
+      - name: dia_conv
+        description: "Dia do registro/assinatura do instrumento."
+      - name: mes_conv
+        description: "Mês do registro/assinatura do instrumento."
+      - name: ano_conv
+        description: "Ano do registro/assinatura do instrumento."
+      - name: dia_assin_conv
+        description: "Data de assinatura do termo de fomento."
+      - name: sit_convenio
+        description: "Situação atual do instrumento (ex: Em execução, Prestação de Contas Concluída)."
+      - name: subsituacao_conv
+        description: "Subsituação detalhada do instrumento."
+      - name: situacao_publicacao
+        description: "Status da publicação do instrumento no Diário Oficial."
+      - name: instrumento_ativo
+        description: "Indica se o instrumento está ativo no sistema."
+      - name: ind_opera_obtv
+        description: "Indica se o instrumento opera via Ordens Bancárias de Transferência Voluntária (OBTV)."
+      - name: nr_processo
+        description: "Número do processo administrativo associado."
+      - name: ug_emitente
+        description: "Código da Unidade Gestora emitente no SIAFI."
+      - name: ug_responsavel_codigo
+        description: "Código da Unidade Gestora (UG) responsável pela gestão orçamentária do instrumento no SIAFI/Tesouro."
+      - name: ug_responsavel_nome
+        description: "Nome/sigla da Unidade Gestora (UG) responsável pela gestão orçamentária do instrumento no SIAFI/Tesouro."
+      - name: dia_publ_conv
+        description: "Data de publicação do termo."
+      - name: dia_inic_vigenc_conv
+        description: "Data de início da vigência do termo de fomento."
+      - name: dia_fim_vigenc_conv
+        description: "Data de término da vigência atual do termo de fomento."
+      - name: dia_fim_vigenc_original_conv
+        description: "Data de término da vigência original prevista antes de aditivos/prorrogações."
+      - name: dias_prest_contas
+        description: "Prazo em dias para a prestação de contas."
+      - name: dia_limite_prest_contas
+        description: "Data limite para envio da prestação de contas."
+      - name: data_suspensiva
+        description: "Data em que foi aplicada condição suspensiva."
+      - name: data_retirada_suspensiva
+        description: "Data de retirada da condição suspensiva."
+      - name: dias_clausula_suspensiva
+        description: "Quantidade de dias em cláusula suspensiva."
+      - name: situacao_contratacao
+        description: "Situação da contratação associada ao termo."
+      - name: ind_assinado
+        description: "Indicador se o termo já foi formalmente assinado."
+      - name: motivo_suspensao
+        description: "Motivo de eventual suspensão do instrumento."
+      - name: ind_foto
+        description: "Indicador de registro de imagem/foto do projeto."
+      - name: qtde_convenios
+        description: "Contagem de instrumentos vinculados."
+      - name: qtd_ta
+        description: "Quantidade de termos aditivos celebrados."
+      - name: qtd_prorroga
+        description: "Quantidade de prorrogações de ofício concedidas."
+      - name: vl_global_conv
+        description: "Valor global atualizado do termo de fomento."
+      - name: vl_repasse_conv
+        description: "Valor total de repasse federal previsto."
+      - name: vl_contrapartida_conv
+        description: "Valor da contrapartida pactuada."
+      - name: vl_empenhado_conv
+        description: "Valor total empenhado para o termo."
+      - name: vl_desembolsado_conv
+        description: "Valor acumulado já desembolsado/liberado."
+      - name: vl_saldo_reman_tesouro
+        description: "Saldo remanescente a ser devolvido ao Tesouro Nacional."
+      - name: vl_saldo_reman_convenente
+        description: "Saldo remanescente sob guarda da organização proponente."
+      - name: vl_rendimento_aplicacao
+        description: "Rendimentos auferidos de aplicações financeiras dos recursos."
+      - name: vl_ingresso_contrapartida
+        description: "Valor efetivamente depositado referente à contrapartida."
+      - name: vl_saldo_conta
+        description: "Saldo financeiro disponível na conta bancária específica do termo."
+      - name: valor_global_original_conv
+        description: "Valor global original firmado no início do termo."
+
+      # Dados da Proposta
+      - name: uf_proponente
+        description: "UF da organização da sociedade civil ou proponente."
+      - name: munic_proponente
+        description: "Município do proponente."
+      - name: cod_munic_ibge
+        description: "Código IBGE do município do proponente."
+      - name: cod_orgao_sup
+        description: "Código do órgão superior concedente."
+      - name: desc_orgao_sup
+        description: "Nome do órgão superior concedente."
+      - name: natureza_juridica
+        description: "Natureza jurídica da entidade proponente (ex: Organização da Sociedade Civil)."
+      - name: nr_proposta
+        description: "Número da proposta no Transferegov."
+      - name: dia_proposta
+        description: "Data de apresentação da proposta."
+      - name: cod_orgao
+        description: "Código do órgão concedente."
+      - name: desc_orgao
+        description: "Nome do órgão concedente."
+      - name: modalidade
+        description: "Modalidade da transferência (fixado em 'TERMO DE FOMENTO')."
+      - name: identif_proponente
+        description: "CNPJ/CPF do proponente."
+      - name: nm_proponente
+        description: "Razão social ou nome da entidade proponente."
+      - name: cep_proponente
+        description: "CEP da entidade proponente."
+      - name: endereco_proponente
+        description: "Endereço da entidade proponente."
+      - name: bairro_proponente
+        description: "Bairro do proponente."
+      - name: nm_banco
+        description: "Nome da instituição financeira onde a conta específica foi aberta."
+      - name: situacao_conta
+        description: "Situação da conta bancária vinculada."
+      - name: situacao_projeto_basico
+        description: "Situação do projeto básico/termo de referência."
+      - name: sit_proposta
+        description: "Situação da proposta (ex: Aprovada)."
+      - name: dia_inic_vigencia_proposta
+        description: "Início de vigência previsto na proposta."
+      - name: dia_fim_vigencia_proposta
+        description: "Fim de vigência previsto na proposta."
+      - name: objeto_proposta
+        description: "Descrição sucinta do objeto do termo de fomento."
+      - name: item_investimento
+        description: "Itens ou categorias de investimento previstos."
+      - name: enviada_mandataria
+        description: "Indicador de envio para instituição mandatária."
+      - name: nome_subtipo_proposta
+        description: "Nome do subtipo da proposta."
+      - name: descricao_subtipo_proposta
+        description: "Descrição detalhada do subtipo da proposta."
+      - name: vl_global_prop
+        description: "Valor global previsto na proposta."
+      - name: vl_repasse_prop
+        description: "Valor de repasse previsto na proposta."
+      - name: vl_contrapartida_prop
+        description: "Valor de contrapartida previsto na proposta."

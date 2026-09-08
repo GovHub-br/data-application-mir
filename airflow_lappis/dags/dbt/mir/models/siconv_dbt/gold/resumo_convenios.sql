@@ -158,7 +158,8 @@ select
     p.nm_proponente as nome_convenente,
     p.natureza_juridica as categoria_convenente,
     p.objeto_proposta as objeto,
-
+    b.ug_responsavel_codigo,
+    b.ug_responsavel_nome,
     -- Valores
     b.vl_global_conv as valor_firmado_atualizado,
     b.valor_global_original_conv as valor_firmado_inicial,
