@@ -13,6 +13,8 @@ with
     convenios_ppa as (
         select
             cc.*,
+            et.ug_responsavel_codigo,
+            et.ug_responsavel_nome,
             et.programa_governo,
             et.programa_governo_descricao,
             et.acao_governo,
@@ -27,7 +29,9 @@ with
         select
             *,
             round((vl_desembolsado_conv / nullif(vl_global_conv, 0) * 100)::numeric, 1) as percentual_executado,
-            round(((vl_global_conv - vl_desembolsado_conv) / nullif(vl_global_conv, 0) * 100)::numeric, 1) as percentual_faltante
+            round(((vl_global_conv - vl_desembolsado_conv) / nullif(vl_global_conv, 0) * 100)::numeric, 1) as percentual_faltante,
+            cast(null as text) as ug_responsavel_codigo,
+            cast(null as text) as ug_responsavel_nome
         from convenio
         where ug_emitente = 810008
         union distinct
@@ -73,7 +77,9 @@ with
             vl_saldo_conta,
             valor_global_original_conv,
             round((vl_desembolsado_conv / nullif(vl_global_conv, 0) * 100)::numeric, 1) as percentual_executado,
-            round(((vl_global_conv - vl_desembolsado_conv) / nullif(vl_global_conv, 0) * 100)::numeric, 1) as percentual_faltante
+            round(((vl_global_conv - vl_desembolsado_conv) / nullif(vl_global_conv, 0) * 100)::numeric, 1) as percentual_faltante,
+            ug_responsavel_codigo,
+            ug_responsavel_nome
         from convenios_ppa
     )
 

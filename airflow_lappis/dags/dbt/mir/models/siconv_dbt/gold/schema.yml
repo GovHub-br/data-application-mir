@@ -6,6 +6,10 @@ models:
     execução financeira, metas físicas, licitações, pagamentos, aditivos e
     emendas parlamentares associadas.
   columns:
+    - name: ug_responsavel_codigo
+      description: "Código da Unidade Gestora (UG) responsável pela gestão orçamentária do instrumento no SIAFI/Tesouro."
+    - name: ug_responsavel_nome
+      description: "Nome/sigla da Unidade Gestora (UG) responsável pela gestão orçamentária do instrumento no SIAFI/Tesouro."
     - name: nr_convenio
       description: "Número único do convênio — chave principal."
     - name: modalidade_instrumento
@@ -247,4 +251,7 @@ models:
       description: "UFs dos parlamentares que direcionaram emendas. NULL se não há emenda associada."
     - name: origem
       description: "Indica a origem do recurso: 'Emenda' se vinculado a uma emenda parlamentar, 'Recurso Próprio' caso contrário."
-
+    - name: ug_responsavel_codigo
+      description: "Código da Unidade Gestora (UG) responsável pela gestão orçamentária do instrumento no SIAFI/Tesouro."
+    - name: ug_responsavel_nome
+      description: "Nome/sigla da Unidade Gestora (UG) responsável pela gestão orçamentária do instrumento no SIAFI/Tesouro."
