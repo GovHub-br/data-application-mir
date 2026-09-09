@@ -56,8 +56,20 @@ TABELAS_SICONV = [
     {
         "nome_tabela": "desbloqueio",
         "nome_csv": "siconv_desbloqueio_cr.csv",
-        "conflict_fields": [],
-        "primary_key": [],
+        "conflict_fields": [
+            "nr_convenio",
+            "nr_ob",
+            "data_cadastro",
+            "data_envio",
+            "tipo_recurso_desbloqueio",
+        ],
+        "primary_key": [
+            "nr_convenio",
+            "nr_ob",
+            "data_cadastro",
+            "data_envio",
+            "tipo_recurso_desbloqueio",
+        ],
         "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
@@ -107,8 +119,22 @@ TABELAS_SICONV = [
     {
         "nome_tabela": "prorroga_oficio",
         "nome_csv": "siconv_prorroga_oficio.csv",
-        "conflict_fields": [],
-        "primary_key": [],
+        "conflict_fields": [
+            "nr_convenio",
+            "nr_prorroga",
+            "dt_inicio_prorroga",
+            "dt_fim_prorroga",
+            "dt_assinatura_prorroga",
+            "sit_prorroga",
+        ],
+        "primary_key": [
+            "nr_convenio",
+            "nr_prorroga",
+            "dt_inicio_prorroga",
+            "dt_fim_prorroga",
+            "dt_assinatura_prorroga",
+            "sit_prorroga",
+        ],
         "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
@@ -170,8 +196,8 @@ TABELAS_SICONV = [
     {
         "nome_tabela": "empenho",
         "nome_csv": "siconv_empenho.csv",
-        "conflict_fields": [],
-        "primary_key": [],
+        "conflict_fields": ["id_empenho", "nr_empenho", "tipo_nota"],
+        "primary_key": ["id_empenho", "nr_empenho", "tipo_nota"],
         "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
@@ -185,8 +211,22 @@ TABELAS_SICONV = [
     {
         "nome_tabela": "historico_situacao",
         "nome_csv": "siconv_historico_situacao.csv",
-        "conflict_fields": [],
-        "primary_key": [],
+        "conflict_fields": [
+            "id_proposta",
+            "nr_convenio",
+            "dia_historico_sit",
+            "historico_sit",
+            "dias_historico_sit",
+            "cod_historico_sit",
+        ],
+        "primary_key": [
+            "id_proposta",
+            "nr_convenio",
+            "dia_historico_sit",
+            "historico_sit",
+            "dias_historico_sit",
+            "cod_historico_sit",
+        ],
         "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
