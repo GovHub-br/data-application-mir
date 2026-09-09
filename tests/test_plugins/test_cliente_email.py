@@ -300,3 +300,49 @@ def test_csv_range_criteria_and_ordering(monkeypatch) -> None:
     )
     assert result == [b"A", b"B"]
     assert captured["criteria"]["date_gte"] == date(2026, 8, 1)
+
+
+# ---------------------------------------------------------------------------
+# open_mailbox / reuso de sessao (mailbox=...) — evita um login por busca,
+# que na pratica foi o suficiente para estourar o [OVERQUOTA] do provedor.
+# ---------------------------------------------------------------------------
+def test_open_mailbox_yields_logged_in_session(monkeypatch) -> None:
+    _, mailbox = _install_mailbox(monkeypatch, [])
+    with c.open_mailbox("srv", "e", "p") as mb:
+        assert mb is mailbox
+
+
+def test_fetch_with_provided_mailbox_skips_new_login(monkeypatch) -> None:
+    _install_mailbox(monkeypatch, [])
+    fake_mailbox = MagicMock()
+    fake_mailbox.fetch.return_value = iter(
+        [FakeMsg("assunto", _dt(2026, 8, 1), [FakeAttachment("a.zip", b"A")])]
+    )
+
+    result = c.fetch_email_with_zip(
+        "srv", "e", "p", "from", "assunto", mailbox=fake_mailbox
+    )
+
+    assert result == [b"A"]
+    # Nao deve ter aberto uma sessao nova quando `mailbox` ja foi informado.
+    c.MailBox.assert_not_called()
+
+
+def test_two_fetches_share_one_login_via_open_mailbox(monkeypatch) -> None:
+    msgs = [
+        FakeMsg("zip_subj", _dt(2026, 8, 1), [FakeAttachment("a.zip", b"A")]),
+    ]
+    _, mailbox = _install_mailbox(monkeypatch, msgs)
+
+    with c.open_mailbox("srv", "e", "p") as mb:
+        zip_result = c.fetch_email_with_zip(
+            "srv", "e", "p", "from", "zip_subj", mailbox=mb
+        )
+        csv_result = c.fetch_email_with_csv(
+            "srv", "e", "p", "from", "zip_subj", mailbox=mb
+        )
+
+    assert zip_result == [b"A"]
+    assert csv_result == []
+    # MailBox(...) so foi instanciado uma vez (um login), apesar de duas buscas.
+    c.MailBox.assert_called_once()
