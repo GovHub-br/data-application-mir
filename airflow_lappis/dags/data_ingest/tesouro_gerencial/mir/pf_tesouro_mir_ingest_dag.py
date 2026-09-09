@@ -1,14 +1,16 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.models import Variable
 from datetime import datetime, timedelta
 import logging
 import json
-import pandas as pd
-import io
 from schedule_loader import get_dynamic_schedule
-from cliente_email import fetch_and_process_email, resolve_email_date_range
+from cliente_email import (
+    fetch_email_with_zip,
+    extract_csv_from_zip,
+    resolve_email_date_range,
+)
 from email_ingest_params import date_range_params
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
@@ -50,17 +52,17 @@ with DAG(
     dag_id="email_programacoes_financeiras_mir_ingest",
     default_args=default_args,
     description="Processa anexo consolidado de PFs por email e insere no db",
-    schedule_interval=get_dynamic_schedule("pf_tesouro_mir_ingest_dag"),
+    schedule_interval=get_dynamic_schedule(
+        "pf_tesouro_mir_ingest_dag", default="25 0 * * *"
+    ),
     start_date=datetime(2023, 12, 1),
     catchup=False,
     params=date_range_params(),
     tags=["email", "pfs", "tesouro", "MIR"],
 ) as dag:
 
-    def process_email_data(**context: Dict[str, Any]) -> str:
-        """
-        Função para processar o email com programações financeiras.
-        """
+    def fetch_and_ingest(**context: Dict[str, Any]) -> Dict[str, int]:
+        """Processa cada anexo e ingere imediatamente, evitando acúmulo em memória."""
         creds = json.loads(Variable.get("email_credentials"))
 
         EMAIL = creds["email"]
@@ -72,60 +74,44 @@ with DAG(
             params.get("data_inicial"), params.get("data_final")
         )
 
-        try:
-            logging.info("Iniciando o processamento do email de programações financeiras")
-            csv_data = fetch_and_process_email(
-                IMAP_SERVER,
-                EMAIL,
-                PASSWORD,
-                SENDER_EMAIL,
-                EMAIL_SUBJECT,
-                column_mapping=COLUMN_MAPPING,
-                skiprows=SKIPROWS,
-                start_date=data_inicial,
-                end_date=data_final,
-            )
-            if not csv_data:
-                logging.warning("Nenhum e-mail encontrado com o assunto configurado")
-                return ""
+        logging.info("Iniciando o processamento do email de programações financeiras")
+        zip_payloads: List[bytes] = fetch_email_with_zip(
+            IMAP_SERVER,
+            EMAIL,
+            PASSWORD,
+            SENDER_EMAIL,
+            EMAIL_SUBJECT,
+            start_date=data_inicial,
+            end_date=data_final,
+        )
 
-            logging.info("CSV de PFs processado com sucesso.")
-            return csv_data
-        except Exception as e:
-            logging.error(
-                "Erro no processamento do email de programações financeiras: %s",
-                str(e),
-            )
-            raise
+        if not zip_payloads:
+            logging.warning("Nenhum e-mail encontrado com o assunto configurado")
+            return {"attachments": 0, "records": 0}
 
-    def insert_data_to_db(**context: Dict[str, Any]) -> None:
-        """
-        Função para inserir os dados no banco de dados.
-        Os dados processados são recuperados do XCom.
-        """
-        try:
-            task_instance: Any = context["ti"]
-            processed_data = task_instance.xcom_pull(task_ids="process_email")
+        logging.info("Total de anexos ZIP encontrados: %s", len(zip_payloads))
 
-            if not processed_data:
-                logging.warning("Nenhum dado para inserir no banco.")
-                return
+        postgres_conn_str = get_postgres_conn("postgres_mir")
+        db = ClientPostgresDB(postgres_conn_str)
+        total_records = 0
 
-            df = pd.read_csv(io.StringIO(processed_data))
+        for idx, payload in enumerate(zip_payloads, 1):
+            df = extract_csv_from_zip(payload, COLUMN_MAPPING, SKIPROWS)
+            if df is None or df.empty:
+                logging.warning("Anexo %s ignorado (CSV inválido/vazio).", idx)
+                continue
+
             data = df.to_dict(orient="records")
-
-            # Adicionar dt_ingest a cada registro
             for record in data:
                 record["dt_ingest"] = datetime.now().isoformat()
 
-            postgres_conn_str = get_postgres_conn("postgres_mir")
-            db = ClientPostgresDB(postgres_conn_str)
-
             db.insert_data(data, "pf_tesouro", schema="siafi")
-            logging.info("Dados inseridos com sucesso no banco de dados.")
-        except Exception as e:
-            logging.error("Erro ao inserir dados no banco: %s", str(e))
-            raise
+            total_records += len(data)
+            logging.info("Anexo %s: %s registros inseridos", idx, len(data))
+            del df, data
+
+        logging.info("Total: %s anexos, %s registros", len(zip_payloads), total_records)
+        return {"attachments": len(zip_payloads), "records": total_records}
 
     def clean_duplicates(**context: Dict[str, Any]) -> None:
         """
@@ -140,21 +126,13 @@ with DAG(
             logging.error(f"Erro ao executar a limpeza de duplicados: {str(e)}")
             raise
 
-    # Tarefa 1: Processar o email com os dados consolidados
-    process_email_task = PythonOperator(
-        task_id="process_email",
-        python_callable=process_email_data,
-        provide_context=True,
+    # Tarefa 1: Buscar os anexos e inserir no db, anexo a anexo
+    fetch_and_ingest_task = PythonOperator(
+        task_id="fetch_and_ingest",
+        python_callable=fetch_and_ingest,
     )
 
-    # Tarefa 2: Inserir os dados no db
-    insert_to_db_task = PythonOperator(
-        task_id="insert_to_db",
-        python_callable=insert_data_to_db,
-        provide_context=True,
-    )
-
-    # Tarefa 3: Limpar duplicados no banco de dados
+    # Tarefa 2: Limpar duplicados no banco de dados
     clean_duplicates_task = PythonOperator(
         task_id="clean_duplicates",
         python_callable=clean_duplicates,
@@ -162,4 +140,4 @@ with DAG(
     )
 
     # Fluxo da DAG
-    process_email_task >> insert_to_db_task >> clean_duplicates_task
+    fetch_and_ingest_task >> clean_duplicates_task
