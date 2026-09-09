@@ -13,7 +13,10 @@
     'ne_ccor_favorecido', 'ne_ccor_favorecido_descricao', 'ne_ccor_ano_emissao', 'ptres',
     'fonte_recursos_detalhada', 'fonte_recursos_detalhada_descricao', 'despesas_empenhadas',
     'despesas_liquidadas', 'despesas_pagas', 'restos_a_pagar_inscritos', 'restos_a_pagar_pagos',
-    'ug_responsavel_codigo', 'ug_responsavel_nome', 'dt_ingest'
+    'ug_responsavel_codigo', 'ug_responsavel_nome',
+    'plano_orcamentario_codigo_uo', 'plano_orcamentario_codigo_funcao',
+    'plano_orcamentario_codigo_subfuncao', 'plano_orcamentario_codigo_programa',
+    'plano_orcamentario_codigo_acao', 'dt_ingest'
 ] %}
 {% set passthrough_columns = bronze_columns + ['ne', 'orgao_id'] %}
 {#
