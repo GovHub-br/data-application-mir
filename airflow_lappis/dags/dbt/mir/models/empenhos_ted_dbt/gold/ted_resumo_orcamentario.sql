@@ -117,8 +117,21 @@ with
     ),
 
     emendas as (
-        select *
+        -- numero_transferencia vem no grao NE x mes x movimento (varias linhas por
+        -- transferencia). Agregamos ao grao de transferencia canonica para nao
+        -- introduzir fan-out no join final: o resumo so precisa saber se ha emenda
+        -- e quais autores, entao consolidamos preservando os autores sem multiplicar
+        -- linhas.
+        select
+            ltrim(trim(cast(numero_transferencia as text)), '0') as numero_transferencia,
+            bool_or(id_autor is not null) as tem_autor,
+            string_agg(
+                distinct autor_emendas_orcamento::text, ', '
+                order by autor_emendas_orcamento::text
+            ) filter (where id_autor is not null) as autor_emendas_orcamento
         from {{ ref("numero_transferencia") }}
+        where numero_transferencia is not null
+        group by ltrim(trim(cast(numero_transferencia as text)), '0')
     ),
 
     join_parcial as (
@@ -154,10 +167,10 @@ select
     prog.tx_objetivo_programa,
     jp.programa_governo,
     jp.programa_governo_descricao,
-    case when e.id_autor is not null then 'Emenda - ' || e.autor_emendas_orcamento::text else 'Recurso Próprio' end as origem
+    case when e.tem_autor then 'Emenda - ' || e.autor_emendas_orcamento else 'Recurso Próprio' end as origem
 from valor_firmado_tb vf
 full join join_parcial jp using (plano_acao, num_transf)
 left join programas_tb prog on plano_acao = prog.id_plano_acao
 left join emendas e
-    on trim(cast(coalesce(vf.num_transf, jp.num_transf) as text)) = trim(cast(e.numero_transferencia as text))
+    on ltrim(trim(cast(coalesce(vf.num_transf, jp.num_transf) as text)), '0') = e.numero_transferencia
 where (plano_acao is not null) or (num_transf is not null)
