@@ -1,4 +1,4 @@
-from typing import Dict, Any, cast
+from typing import Dict, Any, List
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.models import Variable
@@ -6,9 +6,13 @@ from datetime import datetime, timedelta
 import logging
 import json
 import pandas as pd
-import io
 from schedule_loader import get_dynamic_schedule
-from cliente_email import fetch_and_process_email, resolve_email_date_range
+from cliente_email import (
+    fetch_email_with_zip,
+    extract_csv_from_zip,
+    open_mailbox,
+    resolve_email_date_range,
+)
 from email_ingest_params import date_range_params
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
@@ -64,130 +68,102 @@ expected_columns = list(COLUMN_MAPPING.values())
 with DAG(
     dag_id="email_notas_credito_ingest_mir_ate_2025",
     default_args=default_args,
-    schedule_interval=get_dynamic_schedule("email_notas_credito_ingest_mir_ate_2025"),
+    schedule_interval=get_dynamic_schedule(
+        "email_notas_credito_ingest_mir_ate_2025", default="15 0 * * *"
+    ),
     start_date=datetime(2023, 12, 1),
     catchup=False,
     params=date_range_params(),
     tags=["MIR", "SIAFI", "notas_credito"],
 ) as dag:
 
-    def process_email_data(email_type: str, **context: Dict[str, Any]) -> pd.DataFrame:
+    def fetch_and_ingest(**context: Dict[str, Any]) -> Dict[str, int]:
         """
-        Função genérica para processar emails de notas de crédito.
+        Busca as NCs (enviadas e recebidas) e insere cada anexo imediatamente
+        no banco, sem acumular todos os e-mails do intervalo em memória.
+
+        As duas buscas reusam a MESMA sessão IMAP (open_mailbox) em vez de
+        logar duas vezes — dois logins em sequência já foram o suficiente
+        para estourar o [OVERQUOTA] do provedor.
         """
-        config = EMAIL_CONFIGS[email_type]
-        creds_data = json.loads(Variable.get("email_credentials"))
-        creds = cast(Dict[str, str], creds_data)
-        config = cast(Dict[str, Any], config)
+        creds = json.loads(Variable.get("email_credentials"))
         params = context.get("params", {})
         data_inicial, data_final = resolve_email_date_range(
             params.get("data_inicial"), params.get("data_final")
         )
 
-        try:
-            logging.info(f"Iniciando o processamento das NCs {email_type}")
-            csv_data = fetch_and_process_email(
-                creds["imap_server"],
-                creds["email"],
-                creds["password"],
-                creds["sender_email"],
-                config["subject"],
-                config["column_mapping"],
-                skiprows=config["skiprows"],
-                start_date=data_inicial,
-                end_date=data_final,
-            )
+        postgres_conn_str = get_postgres_conn("postgres_mir")
+        db = ClientPostgresDB(postgres_conn_str)
+        total_attachments = 0
+        total_records = 0
 
-            if not csv_data:
-                logging.warning(f"Nenhum e-mail encontrado para NCs {email_type}")
-                return pd.DataFrame()
+        with open_mailbox(
+            creds["imap_server"], creds["email"], creds["password"]
+        ) as mailbox:
+            for email_type, config in EMAIL_CONFIGS.items():
+                logging.info(f"Iniciando o processamento das NCs {email_type}")
+                zip_payloads: List[bytes] = fetch_email_with_zip(
+                    creds["imap_server"],
+                    creds["email"],
+                    creds["password"],
+                    creds["sender_email"],
+                    config["subject"],
+                    start_date=data_inicial,
+                    end_date=data_final,
+                    mailbox=mailbox,
+                )
 
-            df = pd.read_csv(io.StringIO(csv_data))
+                if not zip_payloads:
+                    logging.warning(f"Nenhum e-mail encontrado para NCs {email_type}")
+                    continue
 
-            # Se não tem mapeamento de colunas (recebidas), aplicar o mapeamento padrão
-            if config["column_mapping"] is None and not df.empty:
-                expected_columns = list(COLUMN_MAPPING.values())
-                if len(df.columns) == len(expected_columns):
-                    df.columns = pd.Index(expected_columns)
-                else:
-                    logging.warning(
-                        f"N coluna incompatível:{len(expected_columns)},{len(df.columns)}"
+                logging.info(
+                    "NCs %s: %s anexos encontrados", email_type, len(zip_payloads)
+                )
+
+                for idx, payload in enumerate(zip_payloads, 1):
+                    df = extract_csv_from_zip(
+                        payload, config["column_mapping"], config["skiprows"]
                     )
+                    if df is None or df.empty:
+                        logging.warning(
+                            "NCs %s anexo %s ignorado (CSV inválido/vazio).",
+                            email_type,
+                            idx,
+                        )
+                        continue
 
-            logging.info(
-                f"CSV de NCs {email_type} processado com sucesso: {len(df)} registros"
-            )
-            return df
+                    # Se não tem mapeamento de colunas (recebidas), aplicar o
+                    # mapeamento padrão.
+                    if config["column_mapping"] is None:
+                        if len(df.columns) == len(expected_columns):
+                            df.columns = pd.Index(expected_columns)
+                        else:
+                            logging.warning(
+                                "NCs %s anexo %s: N coluna incompatível:%s,%s",
+                                email_type,
+                                idx,
+                                len(expected_columns),
+                                len(df.columns),
+                            )
 
-        except Exception as e:
-            logging.error(
-                f"Erro no processamento dos emails de NCs {email_type}: {str(e)}"
-            )
-            raise
+                    data = df.to_dict(orient="records")
+                    for record in data:
+                        record["dt_ingest"] = datetime.now().isoformat()
 
-    def process_email_data_enviadas(**context: Dict[str, Any]) -> pd.DataFrame:
-        """Wrapper para processar emails enviadas."""
-        return process_email_data("enviadas", **context)
+                    db.insert_data(data, "nc_tesouro_pre_2026", schema="siafi")
+                    total_attachments += 1
+                    total_records += len(data)
+                    logging.info(
+                        "NCs %s anexo %s: %s registros inseridos",
+                        email_type,
+                        idx,
+                        len(data),
+                    )
+                    del df, data
 
-    def process_email_data_recebidas(**context: Dict[str, Any]) -> pd.DataFrame:
-        """Wrapper para processar emails recebidas."""
-        return process_email_data("recebidas", **context)
-
-    def combine_data(**context: Dict[str, Any]) -> pd.DataFrame:
-        """
-        Função para combinar os dados dos dois emails.
-        """
-        try:
-            task_instance: Any = context["ti"]
-            df_enviadas = cast(
-                pd.DataFrame, task_instance.xcom_pull(task_ids="process_emails_enviadas")
-            )
-            df_recebidas = cast(
-                pd.DataFrame, task_instance.xcom_pull(task_ids="process_emails_recebidas")
-            )
-
-            dfs = [
-                df
-                for df in [df_enviadas, df_recebidas]
-                if df is not None and not df.empty
-            ]
-
-            if not dfs:
-                logging.warning("Nenhum dado foi encontrado para combinar.")
-                return pd.DataFrame()
-
-            combined_df = pd.concat(dfs, ignore_index=True)
-            combined_df["dt_ingest"] = datetime.now().isoformat()
-
-            logging.info(f"Dados combinados: {len(combined_df)} registros no total.")
-            return combined_df
-
-        except Exception as e:
-            logging.error(f"Erro ao combinar os dados: {str(e)}")
-            raise
-
-    def insert_data_to_db(**context: Dict[str, Any]) -> None:
-        """
-        Função para inserir os dados no banco de dados.
-        """
-        try:
-            task_instance: Any = context["ti"]
-            combined_df = task_instance.xcom_pull(task_ids="combine_data")
-
-            if combined_df is None or combined_df.empty:
-                logging.warning("Nenhum dado para inserir no banco.")
-                return
-
-            data = combined_df.to_dict(orient="records")
-
-            postgres_conn_str = get_postgres_conn('postgres_mir')
-            db = ClientPostgresDB(postgres_conn_str)
-
-            db.insert_data(data, "nc_tesouro_pre_2026", schema="siafi")
-            logging.info("Dados inseridos com sucesso no banco de dados.")
-        except Exception as e:
-            logging.error("Erro ao inserir dados no banco: %s", str(e))
-            raise
+        logging.info("Total: %s anexos, %s registros", total_attachments, total_records)
+        return {"attachments": total_attachments, "records": total_records}
 
     def clean_duplicates(**context: Dict[str, Any]) -> None:
         """
@@ -202,27 +178,9 @@ with DAG(
             logging.error(f"Erro ao executar a limpeza de duplicados: {str(e)}")
             raise
 
-    process_emails_enviadas_task = PythonOperator(
-        task_id="process_emails_enviadas",
-        python_callable=process_email_data_enviadas,
-        provide_context=True,
-    )
-
-    process_emails_recebidas_task = PythonOperator(
-        task_id="process_emails_recebidas",
-        python_callable=process_email_data_recebidas,
-        provide_context=True,
-    )
-
-    combine_data_task = PythonOperator(
-        task_id="combine_data",
-        python_callable=combine_data,
-        provide_context=True,
-    )
-
-    insert_to_db_task = PythonOperator(
-        task_id="insert_to_db",
-        python_callable=insert_data_to_db,
+    fetch_and_ingest_task = PythonOperator(
+        task_id="fetch_and_ingest",
+        python_callable=fetch_and_ingest,
         provide_context=True,
     )
 
@@ -232,9 +190,4 @@ with DAG(
         provide_context=True,
     )
 
-    (
-        [process_emails_enviadas_task, process_emails_recebidas_task]
-        >> combine_data_task
-        >> insert_to_db_task
-        >> clean_duplicates_task
-    )
+    fetch_and_ingest_task >> clean_duplicates_task
