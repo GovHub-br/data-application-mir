@@ -181,7 +181,7 @@ models:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.convenio'
           nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.convenio'
           nome_coluna: 'vl_global_conv'
@@ -255,7 +255,7 @@ models:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.desbloqueio'
           nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.desbloqueio'
           nome_coluna: 'vl_total_desbloqueio'
@@ -321,7 +321,7 @@ models:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.termo_aditivo'
           nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.termo_aditivo'
           nome_coluna: 'vl_global_ta'
@@ -385,7 +385,7 @@ models:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.prorroga_oficio'
           nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.prorroga_oficio'
           nome_coluna: 'dt_inicio_prorroga'
@@ -405,7 +405,7 @@ models:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.pagamento_tributo'
           nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.pagamento_tributo'
           nome_coluna: 'vl_pag_tributos'
@@ -523,7 +523,7 @@ models:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.ingresso_contrapartida'
           nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.ingresso_contrapartida'
           nome_coluna: 'vl_ingresso_contrapartida'
@@ -607,7 +607,7 @@ models:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.historico_situacao'
           nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.historico_situacao'
           nome_coluna: 'dia_historico_sit'
@@ -635,7 +635,7 @@ models:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.cronograma_desembolso'
           nome_coluna: 'nr_convenio'
-          tipo_esperado: 'integer'
+          tipo_esperado: 'text'
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.cronograma_desembolso'
           nome_coluna: 'valor_parcela_crono_desembolso'
