@@ -4,21 +4,30 @@ models:
 
   - name: ted_resumo_orcamentario
     description: >
-      Tabela gold de consolidação orçamentária e financeira por Plano de Ação TED do MIR.
-      Agrega em uma única linha por (plano_acao, num_transf) os valores provenientes de
-      quatro fontes distintas: o valor total pactuado no plano (TransfereGov), os créditos
-      orçamentários descentralizados via Notas de Crédito (SIAFI), os empenhos registrados
-      nas Notas de Empenho (SIAFI) e os recursos financeiros liberados via Programações
-      Financeiras (SIAFI + TransfereGov). As quatro dimensões são combinadas via FULL JOIN
-      para garantir que nenhum registro seja perdido mesmo que exista em apenas uma fonte.
+      Tabela gold de consolidação orçamentária e financeira por transferência TED do MIR.
+      O grão é (num_transf, ug_responsavel_codigo, ug_responsavel_nome): a transferência
+      canônica (num_transf_canon) é a única chave de junção dos quatro blocos — o valor
+      total pactuado no plano (TransfereGov), os créditos orçamentários via Notas de
+      Crédito (SIAFI), os empenhos das Notas de Empenho (SIAFI) e os recursos das
+      Programações Financeiras (SIAFI + TransfereGov) — combinados via FULL JOIN para não
+      perder registro que exista em apenas uma fonte. O plano_acao NÃO faz parte da chave:
+      é resolvido como atributo da transferência pela ponte canônica num_transf_n_plano_acao
+      (1:1 por transferência). A dimensão ug_responsavel provém apenas dos empenhos; para
+      transferências com múltiplas UGs responsáveis os valores dos demais blocos se repetem
+      entre as linhas de UG (atributos não somáveis nesse eixo).
     columns:
       - name: plano_acao
         description: >
-          Identificador único do Plano de Ação no TransfereGov. Chave primária junto com num_transf.
+          Identificador do Plano de Ação no TransfereGov, resolvido como atributo da
+          transferência via a ponte num_transf_n_plano_acao (1:1). Nulo quando a
+          transferência não possui plano correspondente cadastrado. NÃO é chave do grão.
       - name: num_transf
         description: >
-          Número da transferência TED — o elo entre os sistemas SIAFI e TransfereGov.
-          É o campo que conecta NCs, NEs e PFs do SIAFI ao Plano de Ação correspondente.
+          Número canônico da transferência TED (num_transf_canon, normalizado por
+          ltrim/trim de zeros à esquerda) — o elo entre SIAFI e TransfereGov e a chave
+          de consolidação dos quatro blocos. Junto com ug_responsavel forma o grão.
+        tests:
+          - not_null
       - name: sigla_unidade_descentralizada
         description: >
           Sigla da unidade receptora dos recursos, conforme cadastrado no Plano de Ação do TransfereGov.
