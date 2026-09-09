@@ -71,7 +71,11 @@ def _clean_existing_historico(
         return
 
     ids = tuple(
-        set(item["parlamentar_id"] for item in records if "parlamentar_id" in item)
+        set(
+            str(item["parlamentar_id"])
+            for item in records
+            if "parlamentar_id" in item
+        )
     )
     if not ids:
         return
