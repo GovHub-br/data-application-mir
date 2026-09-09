@@ -4,12 +4,15 @@ from airflow.operators.python import PythonOperator
 from airflow.models import Variable
 from datetime import datetime, timedelta
 import csv
-import io
 import json
 import logging
 import cliente_email
 from schedule_loader import get_dynamic_schedule
-from cliente_email import fetch_and_process_email, resolve_email_date_range
+from cliente_email import (
+    fetch_email_with_zip,
+    extract_csv_from_zip,
+    resolve_email_date_range,
+)
 from email_ingest_params import date_range_params
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
@@ -319,14 +322,17 @@ with DAG(
     dag_id="email_tesouro_emendas_ingest",
     default_args=default_args,
     description="Processa anexos dos empenhos vindo do email, formata e insere no db",
-    schedule_interval=get_dynamic_schedule("empenhos_tesouro_emendas_ingest_dag"),
+    schedule_interval=get_dynamic_schedule(
+        "empenhos_tesouro_emendas_ingest_dag", default="10 0 * * *"
+    ),
     start_date=datetime(2023, 12, 1),
     catchup=False,
     params=date_range_params(),
     tags=["MIR", "email", "empenhos", "tesouro", "emendas"],
 ) as dag:
 
-    def process_email_data(**context: Dict[str, Any]) -> Optional[Any]:
+    def fetch_and_ingest(**context: Dict[str, Any]) -> Dict[str, int]:
+        """Processa cada anexo e ingere imediatamente, evitando acúmulo em memória."""
         creds = json.loads(Variable.get("email_credentials"))
         EMAIL = creds["email"]
         PASSWORD = creds["password"]
@@ -339,60 +345,61 @@ with DAG(
 
         cliente_email.format_csv = parse_tesouro_emendas_csv
 
-        try:
-            logging.info("Iniciando processamento dos emails de empenhos de emendas.")
-            csv_data = fetch_and_process_email(
-                IMAP_SERVER,
-                EMAIL,
-                PASSWORD,
-                SENDER_EMAIL,
-                EMAIL_SUBJECT,
-                column_mapping={},
-                skiprows=0,
-                start_date=start_date,
-                end_date=end_date,
-            )
-            if not csv_data:
-                logging.warning("Nenhum CSV valido foi extraido dos e-mails.")
-                return None
+        logging.info("Iniciando processamento dos emails de empenhos de emendas.")
+        zip_payloads: List[bytes] = fetch_email_with_zip(
+            IMAP_SERVER,
+            EMAIL,
+            PASSWORD,
+            SENDER_EMAIL,
+            EMAIL_SUBJECT,
+            start_date=start_date,
+            end_date=end_date,
+        )
 
-            logging.info("CSV processado: %s caracteres.", len(csv_data))
-            return csv_data
-        except Exception as e:
-            logging.error("Erro no processamento dos emails: %s", str(e))
-            raise
+        if not zip_payloads:
+            logging.warning("Nenhum anexo ZIP encontrado.")
+            return {"attachments": 0, "records": 0}
 
-    def insert_data_to_db(**context: Dict[str, Any]) -> None:
-        try:
-            task_instance: Any = context["ti"]
-            csv_data: Any = task_instance.xcom_pull(task_ids="process_emails")
+        logging.info("Total de anexos ZIP encontrados: %s", len(zip_payloads))
 
-            if not csv_data:
-                logging.warning("Nenhum dado para inserir no banco.")
-                return
+        postgres_conn_str = get_postgres_conn("postgres_mir")
+        db = ClientPostgresDB(postgres_conn_str)
+        reset_done = False
+        total_records = 0
 
-            df = pd.read_csv(io.StringIO(csv_data), dtype=str, keep_default_na=False)
-            df = df.replace({"": None})
+        for idx, payload in enumerate(zip_payloads, 1):
+            # column_mapping/skiprows sao ignorados por parse_tesouro_emendas_csv
+            # (monkey-patch de cliente_email.format_csv acima).
+            df = extract_csv_from_zip(payload, {}, 0)
+            if df is None:
+                logging.warning("Anexo %s ignorado (CSV invalido).", idx)
+                continue
+
+            if not reset_done:
+                reset_table_if_legacy_schema(db)
+                reset_table_if_pk_mismatch(db)
+                reset_done = True
+
             # Mantem dois graos: empenhos (ne_ccor_ano_emissao com o ano) e
             # linhas de dotacao (itens 9/13, sem empenho). O filtro antigo
             # (so ano) descartava toda a dotacao.
-            is_empenho = df["ne_ccor_ano_emissao"].fillna("").str.startswith("20")
+            is_empenho = (
+                df["ne_ccor_ano_emissao"].fillna("").astype(str).str.startswith("20")
+            )
             has_dotacao = df["dotacao_inicial"].notna() | df["dotacao_atualizada"].notna()
             df = df[is_empenho | has_dotacao]
 
             # Protege o ON CONFLICT (execute_values) contra chaves repetidas no
-            # mesmo lote, que fariam o INSERT inteiro falhar.
+            # mesmo lote (dentro do proprio anexo), que fariam o INSERT falhar.
             df = df.drop_duplicates(subset=UNIQUE_KEY, keep="last")
 
             data = df.where(pd.notnull(df), None).to_dict(orient="records")
+            if not data:
+                logging.warning("Anexo %s sem registros validos apos filtros.", idx)
+                continue
+
             for record in data:
                 record["dt_ingest"] = datetime.now().isoformat()
-
-            postgres_conn_str = get_postgres_conn("postgres_mir")
-            db = ClientPostgresDB(postgres_conn_str)
-
-            reset_table_if_legacy_schema(db)
-            reset_table_if_pk_mismatch(db)
 
             db.insert_data(
                 data,
@@ -401,26 +408,21 @@ with DAG(
                 primary_key=UNIQUE_KEY,
                 schema=TABLE_SCHEMA,
             )
-            logging.info(
-                "Inseridos %s registros em %s.%s.",
-                len(data),
-                TABLE_SCHEMA,
-                TABLE_NAME,
-            )
-        except Exception as e:
-            logging.error("Erro ao inserir dados no banco: %s", str(e))
-            raise
+            total_records += len(data)
+            logging.info("Anexo %s: %s registros inseridos", idx, len(data))
+            del df, data
 
-    process_emails_task = PythonOperator(
-        task_id="process_emails",
-        python_callable=process_email_data,
+        logging.info(
+            "Total: %s anexos, %s registros em %s.%s.",
+            len(zip_payloads),
+            total_records,
+            TABLE_SCHEMA,
+            TABLE_NAME,
+        )
+        return {"attachments": len(zip_payloads), "records": total_records}
+
+    PythonOperator(
+        task_id="fetch_and_ingest",
+        python_callable=fetch_and_ingest,
         provide_context=True,
     )
-
-    insert_to_db_task = PythonOperator(
-        task_id="insert_to_db",
-        python_callable=insert_data_to_db,
-        provide_context=True,
-    )
-
-    process_emails_task >> insert_to_db_task

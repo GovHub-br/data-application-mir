@@ -1,7 +1,8 @@
 import logging
 import io
 import zipfile
-from typing import Optional, Tuple, cast, List, Dict
+from contextlib import contextmanager
+from typing import Any, Iterator, Optional, Tuple, cast, List, Dict
 import pandas as pd
 from pandas.errors import EmptyDataError
 from imap_tools import MailBox, AND
@@ -128,6 +129,22 @@ def _message_sort_key(msg: MailMessage) -> datetime:
     return dt
 
 
+@contextmanager
+def open_mailbox(imap_server: str, email: str, password: str) -> Iterator[MailBox]:
+    """Abre uma unica sessao IMAP reutilizavel por multiplas buscas.
+
+    Cada login novo (comando LOGIN + SELECT) conta contra o limite de
+    comandos/banda do provedor. DAGs que precisam buscar mais de um
+    assunto/config no mesmo run (ex.: notas de credito enviadas +
+    recebidas) devem abrir UMA sessao aqui e passar `mailbox=` para as
+    funcoes de fetch abaixo, em vez de deixar cada busca abrir a sua —
+    dois logins em sequencia foram o suficiente para estourar o
+    [OVERQUOTA] do provedor em producao.
+    """
+    with MailBox(imap_server).login(email, password) as mailbox:
+        yield mailbox
+
+
 def _fetch_sorted_attachments(
     imap_server: str,
     email: str,
@@ -140,6 +157,7 @@ def _fetch_sorted_attachments(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     tz: str = DEFAULT_TIMEZONE,
+    mailbox: Optional[Any] = None,
 ) -> List[bytes]:
     """Busca anexos de uma extensao, filtrando por data/remetente/assunto.
 
@@ -151,6 +169,10 @@ def _fetch_sorted_attachments(
     Mantem bulk=True (um unico FETCH para todas as mensagens) para evitar
     overquota; a ordenacao guarda apenas (data, payload) — mesmo footprint
     de memoria do codigo anterior, que ja materializava os payloads.
+
+    Se `mailbox` for informado, reusa essa sessao ja aberta (ver
+    `open_mailbox`) em vez de logar de novo — reduz o numero de conexoes
+    quando o chamador precisa buscar varios assuntos no mesmo run.
     """
     if not subject and not subject_suffix:
         raise ValueError("subject ou subject_suffix precisa ser informado.")
@@ -178,11 +200,11 @@ def _fetch_sorted_attachments(
     if subject and not subject_suffix:
         and_kwargs["subject"] = subject
 
-    collected: List[Tuple[datetime, bytes]] = []
-    matched_messages = 0
-    with MailBox(imap_server).login(email, password) as mailbox:
+    def _collect(mb: Any) -> List[Tuple[datetime, bytes]]:
+        collected: List[Tuple[datetime, bytes]] = []
+        matched_messages = 0
         # bulk=True: single IMAP FETCH command for all messages (avoids overquota)
-        for msg in mailbox.fetch(AND(**and_kwargs), bulk=True):
+        for msg in mb.fetch(AND(**and_kwargs), bulk=True):
             if subject_suffix and not (msg.subject or "").endswith(subject_suffix):
                 continue
             matched_messages += 1
@@ -190,14 +212,21 @@ def _fetch_sorted_attachments(
             for attachment in msg.attachments:
                 if (attachment.filename or "").lower().endswith(extension):
                     collected.append((sort_key, cast(bytes, attachment.payload)))
+        logging.info(
+            "Mensagens correspondentes: %s | anexos %s encontrados: %s",
+            matched_messages,
+            extension,
+            len(collected),
+        )
+        return collected
+
+    if mailbox is not None:
+        collected = _collect(mailbox)
+    else:
+        with MailBox(imap_server).login(email, password) as mb:
+            collected = _collect(mb)
 
     collected.sort(key=lambda item: item[0])
-    logging.info(
-        "Mensagens correspondentes: %s | anexos %s encontrados: %s",
-        matched_messages,
-        extension,
-        len(collected),
-    )
     return [payload for _, payload in collected]
 
 
@@ -257,12 +286,17 @@ def fetch_email_with_zip(
     *,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    mailbox: Optional[Any] = None,
 ) -> List[bytes]:
     """Busca e-mails (data unica, intervalo ou dia atual) e retorna os ZIPs.
 
     Os anexos vem ordenados cronologicamente, do mais antigo para o mais
     recente. Sem start_date/end_date/target_date, mantem o comportamento
     legado de buscar apenas o dia atual.
+
+    Passe `mailbox` (de `open_mailbox`) para reusar uma sessao IMAP ja
+    aberta em vez de logar de novo — use quando a mesma DAG busca mais de
+    um assunto no mesmo run.
     """
     return _fetch_sorted_attachments(
         imap_server,
@@ -275,6 +309,7 @@ def fetch_email_with_zip(
         target_date=target_date,
         start_date=start_date,
         end_date=end_date,
+        mailbox=mailbox,
     )
 
 
@@ -288,12 +323,16 @@ def fetch_email_with_csv(
     *,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    mailbox: Optional[Any] = None,
 ) -> List[bytes]:
     """Busca e-mails (data unica, intervalo ou dia atual) e retorna os CSVs.
 
     Os anexos vem ordenados cronologicamente, do mais antigo para o mais
     recente. Sem start_date/end_date/target_date, mantem o comportamento
     legado de buscar apenas o dia atual.
+
+    Passe `mailbox` (de `open_mailbox`) para reusar uma sessao IMAP ja
+    aberta em vez de logar de novo.
     """
     return _fetch_sorted_attachments(
         imap_server,
@@ -305,6 +344,7 @@ def fetch_email_with_csv(
         target_date=target_date,
         start_date=start_date,
         end_date=end_date,
+        mailbox=mailbox,
     )
 
 
