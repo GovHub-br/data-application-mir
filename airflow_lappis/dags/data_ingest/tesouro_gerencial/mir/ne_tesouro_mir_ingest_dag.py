@@ -73,7 +73,9 @@ with DAG(
     dag_id="email_tesouro_teds_notas_empenhadas_ingest_dag",
     default_args=default_args,
     description="Processa anexos dos empenhos vindo do email, formata e insere no db",
-    schedule_interval=get_dynamic_schedule("empenhos_tesouro_parlamentares_ingest_dag"),
+    schedule_interval=get_dynamic_schedule(
+        "empenhos_tesouro_parlamentares_ingest_dag", default="0 0 * * *"
+    ),
     start_date=datetime(2023, 12, 1),
     catchup=False,
     params=date_range_params(),
