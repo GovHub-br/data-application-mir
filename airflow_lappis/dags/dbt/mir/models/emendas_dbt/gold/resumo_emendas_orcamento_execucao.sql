@@ -10,13 +10,34 @@
 -- do parlamentar sao carregados via max() (nulos quando nao houve match).
 
 with
-    base as (select * from {{ ref("emendas_orcamento_execucao") }})
+    base as (select * from {{ ref("emendas_orcamento_execucao") }}),
+
+    -- UGs executoras por parlamentar, consolidadas (string_agg) a partir do
+    -- grao de execucao (emendas_partidos). Aqui a UG e atributo do resumo; o
+    -- detalhe de quanto cada UG executou vive em emendas_execucao_por_ug.
+    ugs_por_autor as (
+        select
+            autor_emendas_orcamento_nome,
+            string_agg(
+                distinct cast(ug_responsavel_codigo as text),
+                ', '
+                order by cast(ug_responsavel_codigo as text)
+            ) as ug_responsavel_codigo,
+            string_agg(
+                distinct ug_responsavel_nome, ', ' order by ug_responsavel_nome
+            ) as ug_responsavel_nome,
+            count(distinct ug_responsavel_codigo) as qtd_ugs_responsaveis
+        from {{ ref("emendas_partidos") }}
+        where ug_responsavel_codigo is not null
+        group by autor_emendas_orcamento_nome
+    )
 
 select
 
-    ug_responsavel_codigo,
-    ug_responsavel_nome,
     autor_emendas_orcamento_nome,
+    u.ug_responsavel_codigo,
+    u.ug_responsavel_nome,
+    coalesce(u.qtd_ugs_responsaveis, 0) as qtd_ugs_responsaveis,
     max(id_autor) as id_autor,
     max(autor) as autor,
     max(cargo_autor) as cargo_autor,
@@ -52,7 +73,9 @@ select
     max(dt_ingest) as dt_ingest
 
 from base
-group by 
-autor_emendas_orcamento_nome,
-ug_responsavel_codigo,
-ug_responsavel_nome
+left join ugs_por_autor u using (autor_emendas_orcamento_nome)
+group by
+    autor_emendas_orcamento_nome,
+    u.ug_responsavel_codigo,
+    u.ug_responsavel_nome,
+    u.qtd_ugs_responsaveis
