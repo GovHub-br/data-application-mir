@@ -5,25 +5,38 @@ with
         select *
         from {{ ref("convenio") }}
     ),
-    ppa_tesouro as (
-        select *
+    -- UGs responsaveis consolidadas em UM registro por convenio. ppa_tesouro
+    -- esta no grao do empenho: um mesmo convenio pode ter empenhos em varias
+    -- UGs. Concatenamos as UGs (string_agg) em vez de deixa-las na chave para
+    -- nao multiplicar a linha do convenio no join abaixo — cada UG a mais
+    -- repetiria todos os valores do convenio e inflaria as somas no resumo.
+    ugs_por_convenio as (
+        select
+            ne_info_complementar as nr_convenio,
+            string_agg(
+                distinct cast(ug_responsavel_codigo as text),
+                ', '
+                order by cast(ug_responsavel_codigo as text)
+            ) as ug_responsavel_codigo,
+            string_agg(
+                distinct ug_responsavel_nome, ', ' order by ug_responsavel_nome
+            ) as ug_responsavel_nome,
+            count(distinct ug_responsavel_codigo) as qtd_ugs_responsaveis
         from {{ ref("ppa_tesouro") }}
         where ne_ccor <> '-9'
+            and left(ne_ccor, 6) = '810008'
+            and ne_info_complementar is not null
+        group by ne_info_complementar
     ),
     convenios_ppa as (
         select
             cc.*,
-            et.ug_responsavel_codigo,
-            et.ug_responsavel_nome,
-            et.programa_governo,
-            et.programa_governo_descricao,
-            et.acao_governo,
-            et.acao_governo_descricao
+            u.ug_responsavel_codigo,
+            u.ug_responsavel_nome,
+            u.qtd_ugs_responsaveis
         from convenio cc
-        right join ppa_tesouro et
-            on cc.nr_convenio = et.ne_info_complementar
-        where cc.nr_convenio is not null
-            and left(et.ne_ccor, 6) = '810008'
+        inner join ugs_por_convenio u
+            on cc.nr_convenio = u.nr_convenio
     ),
     convenios_consolidado as (
         select
@@ -31,9 +44,11 @@ with
             round((vl_desembolsado_conv / nullif(vl_global_conv, 0) * 100)::numeric, 1) as percentual_executado,
             round(((vl_global_conv - vl_desembolsado_conv) / nullif(vl_global_conv, 0) * 100)::numeric, 1) as percentual_faltante,
             cast(null as text) as ug_responsavel_codigo,
-            cast(null as text) as ug_responsavel_nome
+            cast(null as text) as ug_responsavel_nome,
+            0 as qtd_ugs_responsaveis
         from convenio
         where ug_emitente = 810008
+            and nr_convenio not in (select nr_convenio from convenios_ppa)
         union distinct
         select
             nr_convenio,
@@ -79,7 +94,8 @@ with
             round((vl_desembolsado_conv / nullif(vl_global_conv, 0) * 100)::numeric, 1) as percentual_executado,
             round(((vl_global_conv - vl_desembolsado_conv) / nullif(vl_global_conv, 0) * 100)::numeric, 1) as percentual_faltante,
             ug_responsavel_codigo,
-            ug_responsavel_nome
+            ug_responsavel_nome,
+            qtd_ugs_responsaveis
         from convenios_ppa
     )
 

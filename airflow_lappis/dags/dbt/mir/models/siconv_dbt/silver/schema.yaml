@@ -190,8 +190,11 @@ models:
       UG 810008. Inclui (a) todos os convênios cuja `ug_emitente` é 810008 na
       tabela bronze `convenio` e (b) convênios adicionais identificados a partir
       dos empenhos do Tesouro (`siafi.ne_tesouro`) cujo `ne_ccor` começa com
-      '810008' e cujo `ne_info_complementar` corresponde ao `nr_convenio`. O
-      `UNION DISTINCT` garante que não há duplicidade entre as duas fontes.
+      '810008' e cujo `ne_info_complementar` corresponde ao `nr_convenio`. As
+      UGs responsáveis são consolidadas em atributo (`string_agg`) por convênio,
+      garantindo exatamente uma linha por `nr_convenio` — um mesmo convênio pode
+      ter empenhos em várias UGs, e mantê-las na chave duplicaria a linha (com
+      todos os valores) e inflaria as somas no resumo.
       Esta tabela substitui a tabela `convenio` como base para todos os
       cruzamentos da camada silver (proposta, desembolso, cronograma de
       desembolso, desbloqueio, empenho, licitação, pagamento, pagamento de
@@ -204,6 +207,8 @@ models:
     columns:
       - name: nr_convenio
         description: "Número do convênio."
+        tests:
+          - unique
       - name: id_proposta
         description: "Identificador único da proposta que originou o convênio."
       - name: dia
@@ -283,9 +288,11 @@ models:
       - name: valor_global_original_conv
         description: "Valor global original do convênio."
       - name: ug_responsavel_codigo
-        description: "Código da Unidade Gestora (UG) responsável pela gestão orçamentária do instrumento no SIAFI/Tesouro."
+        description: "Código(s) da(s) Unidade(s) Gestora(s) (UG) responsável(is) pela gestão orçamentária do instrumento no SIAFI/Tesouro. Quando o convênio tem empenhos em mais de uma UG, os códigos são concatenados (separados por vírgula)."
       - name: ug_responsavel_nome
-        description: "Nome/sigla da Unidade Gestora (UG) responsável pela gestão orçamentária do instrumento no SIAFI/Tesouro."
+        description: "Nome(s)/sigla(s) da(s) Unidade(s) Gestora(s) (UG) responsável(is) pela gestão orçamentária do instrumento no SIAFI/Tesouro. Quando o convênio tem empenhos em mais de uma UG, os nomes são concatenados (separados por vírgula)."
+      - name: qtd_ugs_responsaveis
+        description: "Quantidade de UGs responsáveis distintas associadas ao convênio via empenhos do Tesouro. 0 quando não há empenho correspondente."
     tests:
       - verificacao_tipagem:
           nome_tabela: 'siconv_dbt.convenios_consolidados'
