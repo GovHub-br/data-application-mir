@@ -5,16 +5,19 @@ models:
   - name: ted_resumo_orcamentario
     description: >
       Tabela gold de consolidação orçamentária e financeira por transferência TED do MIR.
-      O grão é (num_transf, ug_responsavel_codigo, ug_responsavel_nome): a transferência
-      canônica (num_transf_canon) é a única chave de junção dos quatro blocos — o valor
-      total pactuado no plano (TransfereGov), os créditos orçamentários via Notas de
-      Crédito (SIAFI), os empenhos das Notas de Empenho (SIAFI) e os recursos das
-      Programações Financeiras (SIAFI + TransfereGov) — combinados via FULL JOIN para não
-      perder registro que exista em apenas uma fonte. O plano_acao NÃO faz parte da chave:
-      é resolvido como atributo da transferência pela ponte canônica num_transf_n_plano_acao
-      (1:1 por transferência). A dimensão ug_responsavel provém apenas dos empenhos; para
-      transferências com múltiplas UGs responsáveis os valores dos demais blocos se repetem
-      entre as linhas de UG (atributos não somáveis nesse eixo).
+      O grão é num_transf: uma linha por transferência canônica (num_transf_canon), que é
+      a única chave de junção dos quatro blocos — o valor total pactuado no plano
+      (TransfereGov), os créditos orçamentários via Notas de Crédito (SIAFI), os empenhos
+      das Notas de Empenho (SIAFI) e os recursos das Programações Financeiras
+      (SIAFI + TransfereGov) — combinados via FULL JOIN para não perder registro que exista
+      em apenas uma fonte. Como os quatro blocos estão no mesmo grão, o join é 1:1 e TODAS
+      as métricas são somáveis. O plano_acao NÃO faz parte da chave: é resolvido como
+      atributo da transferência pela ponte canônica num_transf_n_plano_acao (1:1 por
+      transferência). A UG responsável provém apenas dos empenhos e é exposta consolidada
+      (ugs_responsaveis_codigos/nomes + qtd_ugs_responsaveis); quando a UG esteve no grão,
+      transferências com múltiplas UGs repetiam os valores dos demais blocos em cada linha
+      e inflavam qualquer soma. Para o detalhe por UG use ted_empenhos_plano_acao, que tem
+      grão de Nota de Empenho.
     columns:
       - name: plano_acao
         description: >
@@ -103,11 +106,20 @@ models:
         description: >
           Descrição do programa de governo conforme classificação orçamentária SIAFI,
           proveniente de nc_plano_acao.
-      - name: ug_responsavel_codigo
-        description: "Código da Unidade Gestora (UG) responsável pela execução do empenho."
-
-      - name: ug_responsavel_nome
-        description: "Nome da Unidade Gestora (UG) responsável pela execução do empenho."
+      - name: ugs_responsaveis_codigos
+        description: >
+          Códigos das Unidades Gestoras (UG) responsáveis pelos empenhos da transferência,
+          consolidados em lista separada por vírgula. Substitui ug_responsavel_codigo, que
+          colocava a UG no grão e duplicava as métricas de transferência.
+      - name: ugs_responsaveis_nomes
+        description: >
+          Nomes das Unidades Gestoras (UG) responsáveis pelos empenhos da transferência,
+          consolidados em lista separada por vírgula.
+      - name: qtd_ugs_responsaveis
+        description: >
+          Quantidade de UGs distintas que empenharam na transferência. Vale 1 na maioria
+          dos casos; acima de 1 indica execução compartilhada entre unidades — use
+          ted_empenhos_plano_acao para abrir o detalhe.
       - name: origem
         description: "Indica a origem do recurso: 'Emenda' se vinculado a uma emenda parlamentar, 'Recurso Próprio' caso contrário."
     tests:
