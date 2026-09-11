@@ -1,6 +1,7 @@
 import logging
 import re
 from contextlib import contextmanager
+from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 import psycopg2
 import psycopg2.extras
@@ -369,7 +370,18 @@ class ClientPostgresDB:
             f"[cliente_postgres.py] Exportadas {len(rows)} linhas de "
             f"{schema}.{table_name}"
         )
-        return pd.DataFrame(rows, columns=columns).to_csv(index=False, sep=",")
+        df = pd.DataFrame(rows, columns=columns)
+        # Colunas NUMERIC/DECIMAL do Postgres chegam via psycopg2 como
+        # decimal.Decimal (dtype "object"), que o parametro decimal="," do
+        # pandas ignora - ele so formata colunas float64. Convertemos essas
+        # colunas manualmente para string com virgula, sem passar por float,
+        # pra nao perder precisao em valores monetarios.
+        for col in df.columns:
+            if df[col].map(lambda v: isinstance(v, Decimal)).any():
+                df[col] = df[col].map(
+                    lambda v: str(v).replace(".", ",") if v is not None else v
+                )
+        return df.to_csv(index=False, sep=",", decimal=",")
 
     def get_codigo_unidade(self) -> list[dict]:
         query = """
