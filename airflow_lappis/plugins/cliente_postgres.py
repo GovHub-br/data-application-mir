@@ -413,14 +413,36 @@ class ClientPostgresDB:
 
         index_name = self._unique_index_name(table_name, columns)
         cols_sql = ", ".join(columns)
+        # NULLS NOT DISTINCT (Postgres 15+) e obrigatorio aqui: no indice unico
+        # padrao NULL nao e igual a NULL, entao o ON CONFLICT nunca dispara para
+        # uma linha com qualquer coluna nula na chave e cada reexecucao insere
+        # uma copia. As chaves destas ingestoes incluem colunas financeiras que
+        # em geral vem nulas (o Tesouro so preenche uma por linha), ou seja, o
+        # indice padrao nao protegia praticamente nenhuma linha.
         query = (
             f"CREATE UNIQUE INDEX IF NOT EXISTS {index_name} "
-            f"ON {schema}.{table_name} ({cols_sql});"
+            f"ON {schema}.{table_name} ({cols_sql}) NULLS NOT DISTINCT;"
+        )
+        # IF NOT EXISTS nao recria um indice que ja existe: tabelas criadas antes
+        # desta correcao mantem o indice antigo (NULLS DISTINCT) e continuariam
+        # duplicando. Removemos o legado para que o CREATE acima o recrie.
+        drop_legacy_query = (
+            "DO $$ BEGIN "
+            "IF EXISTS ("
+            "SELECT 1 FROM pg_index i "
+            "JOIN pg_class c ON c.oid = i.indexrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            f"WHERE n.nspname = '{schema}' AND c.relname = '{index_name}' "
+            "AND NOT i.indnullsnotdistinct"
+            ") THEN "
+            f"DROP INDEX {schema}.{index_name}; "
+            "END IF; END $$;"
         )
 
         def _execute(connection):
             with connection.cursor() as cursor:
                 try:
+                    cursor.execute(drop_legacy_query)
                     cursor.execute(query)
                     logging.info(
                         "[cliente_postgres.py] Unique index %s on %s.%s (%s)",
