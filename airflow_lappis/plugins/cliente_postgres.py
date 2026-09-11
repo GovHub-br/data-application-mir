@@ -369,7 +369,7 @@ class ClientPostgresDB:
             f"[cliente_postgres.py] Exportadas {len(rows)} linhas de "
             f"{schema}.{table_name}"
         )
-        return pd.DataFrame(rows, columns=columns).to_csv(index=False, sep=";")
+        return pd.DataFrame(rows, columns=columns).to_csv(index=False, sep=",")
 
     def get_codigo_unidade(self) -> list[dict]:
         query = """

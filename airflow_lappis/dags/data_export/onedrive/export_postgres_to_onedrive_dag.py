@@ -59,7 +59,7 @@ def export_postgres_to_onedrive_dag() -> None:
                 user_id=onedrive_user_id,
                 folder_path=onedrive_folder,
                 file_name=file_name,
-                content=csv_content.encode("utf-8-sig"),
+                content=csv_content.encode("cp1252", errors="replace"),
             )
             logging.info(f"{file_name} enviado com sucesso para o OneDrive")
 
