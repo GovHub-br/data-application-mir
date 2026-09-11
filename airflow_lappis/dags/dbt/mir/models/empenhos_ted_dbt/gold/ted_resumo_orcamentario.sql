@@ -88,11 +88,24 @@ with
         group by ltrim(trim(cast(nc_transferencia as text)), '0')
     ),
 
+    -- Agregado no grao da transferencia canonica, igual aos demais blocos. A UG
+    -- responsavel NAO entra no group by: quando estava na chave, a transferencia
+    -- com N UGs virava N linhas e os blocos de valor firmado, orcamento e
+    -- financeiro — que so existem no grao da transferencia — eram repetidos em
+    -- cada linha, inflando qualquer soma (ate +18% nos totais). As UGs viram
+    -- atributo consolidado; o detalhe por UG vive em ted_empenhos_plano_acao.
     valores_empenhados_tb as (
         select
             ltrim(trim(cast(num_transf as text)), '0') as num_transf_canon,
-            ug_responsavel_codigo,
-            ug_responsavel_nome,
+            string_agg(
+                distinct cast(ug_responsavel_codigo as text),
+                ', '
+                order by cast(ug_responsavel_codigo as text)
+            ) as ugs_responsaveis_codigos,
+            string_agg(
+                distinct ug_responsavel_nome, ', ' order by ug_responsavel_nome
+            ) as ugs_responsaveis_nomes,
+            count(distinct ug_responsavel_codigo) as qtd_ugs_responsaveis,
             sum(
                 case when despesas_empenhadas > 0 then despesas_empenhadas else 0 end
             ) as empenhado,
@@ -107,10 +120,7 @@ with
         from {{ ref("empenhos_por_plano_acao") }}
         where num_transf is not null
             and ltrim(trim(cast(num_transf as text)), '0') <> ''
-        group by
-            ltrim(trim(cast(num_transf as text)), '0'),
-            ug_responsavel_codigo,
-            ug_responsavel_nome
+        group by ltrim(trim(cast(num_transf as text)), '0')
     ),
 
     valores_financeiro_tb as (
@@ -165,15 +175,14 @@ with
     -- Consolidacao dos quatro blocos por num_transf_canon (a transferencia e a
     -- unica chave de juncao). plano_acao NAO entra na chave: era a causa do join
     -- estrutural quebrado (NULL nao casa com NULL) e e resolvido depois via a
-    -- ponte plano_por_transf. A dimensao ug_responsavel vem apenas dos empenhos,
-    -- entao os demais blocos (orcamento/financeiro/valor firmado) se repetem
-    -- entre as linhas de ug de uma mesma transferencia — comportamento herdado
-    -- da granularidade ug adicionada em modelos anteriores, preservado aqui.
+    -- ponte plano_por_transf. Os quatro blocos estao todos no grao da
+    -- transferencia, entao o join e 1:1 e nenhuma metrica e duplicada.
     join_parcial as (
         select
             num_transf_canon,
-            ve.ug_responsavel_codigo,
-            ve.ug_responsavel_nome,
+            ve.ugs_responsaveis_codigos,
+            ve.ugs_responsaveis_nomes,
+            ve.qtd_ugs_responsaveis,
             vf.valor_firmado,
             vf.sigla_unidade_descentralizada,
             vo.orcamento_recebido,
@@ -201,8 +210,9 @@ with
 select
     ppt.plano_acao,
     jp.num_transf_canon as num_transf,
-    jp.ug_responsavel_codigo,
-    jp.ug_responsavel_nome,
+    jp.ugs_responsaveis_codigos,
+    jp.ugs_responsaveis_nomes,
+    jp.qtd_ugs_responsaveis,
     jp.sigla_unidade_descentralizada,
     jp.valor_firmado,
     jp.orcamento_recebido,
