@@ -7,10 +7,20 @@ models:
       (empenhado/liquidado/pago) das emendas parlamentares. Agrega a silver
       emendas_orcamento_execucao por autor. Como dotação e execução já chegam
       no mesmo grão (classificação orçamentária), as somas por parlamentar não
-      têm dupla contagem.
+      têm dupla contagem. Há exatamente uma linha por parlamentar; as UGs
+      executoras aparecem consolidadas (string_agg) como atributo, e o detalhe
+      de quanto cada UG executou está em emendas_execucao_por_ug.
     columns:
       - name: autor_emendas_orcamento_nome
         description: "Nome do autor da emenda (chave de agregação, sempre presente)."
+        tests:
+          - unique
+      - name: ug_responsavel_codigo
+        description: "Código(s) da(s) UG(s) executora(s) das emendas do autor, concatenados (vírgula) quando há mais de uma. NULL quando não houve execução atribuída a uma UG."
+      - name: ug_responsavel_nome
+        description: "Nome(s) da(s) UG(s) executora(s) das emendas do autor, concatenados (vírgula) quando há mais de uma."
+      - name: qtd_ugs_responsaveis
+        description: "Quantidade de UGs executoras distintas das emendas do autor. 0 quando não houve execução atribuída a uma UG."
       - name: id_autor
         description: "Identificador do parlamentar na base unificada (nulo se sem match)."
       - name: autor
@@ -190,6 +200,59 @@ models:
           Tipo do instrumento de execução vinculado à emenda (CONVENIO, TED,
           TERMO DE FOMENTO, TERMO DE COLABORACAO, TERMO DE PARCERIA,
           CONTRATO DE REPASSE, etc.), obtido via convenios_consolidados,
-          termo_fomento_consolidado, ted_resumo_orcamentario ou inferido via 
-          textos descritivos. Pode ser NULL para despesas diretas/contratuais 
+          termo_fomento_consolidado, ted_resumo_orcamentario ou inferido via
+          textos descritivos. Pode ser NULL para despesas diretas/contratuais
           sem instrumento de repasse vinculado.
+
+  - name: emendas_execucao_por_ug
+    description: >
+      Execução (empenhado/liquidado/pago) das emendas parlamentares detalhada
+      por Unidade Gestora executora. Complementa resumo_emendas_orcamento_execucao
+      (que é por parlamentar): aqui a mesma execução aparece quebrada por UG,
+      para responder "quanto cada UG executou das emendas do autor". Grão:
+      parlamentar × UG. NÃO traz dotação de propósito — a dotação é definida no
+      grão da classificação orçamentária (sem UG) e somaria em dobro se repetida
+      por UG; para orçamento (dotado × executado) use
+      resumo_emendas_orcamento_execucao.
+    columns:
+      - name: autor_emendas_orcamento_nome
+        description: "Nome do autor da emenda (parte da chave de agregação)."
+      - name: ug_responsavel_codigo
+        description: "Código da UG executora (parte da chave). NULL quando o empenho não teve ne_ccor correspondente para atribuir a UG."
+      - name: ug_responsavel_nome
+        description: "Nome/descrição da UG executora."
+      - name: id_autor
+        description: "Identificador do parlamentar na base unificada (nulo se sem match)."
+      - name: autor
+        description: "Nome do parlamentar na base de parlamentares."
+      - name: cargo_autor
+        description: "Cargo do parlamentar (Deputado ou Senador)."
+      - name: partido
+        description: "Sigla do partido do parlamentar (filiação mais recente)."
+      - name: uf_autor
+        description: "UF representada pelo parlamentar."
+      - name: url_foto_autor
+        description: "URL da foto oficial do parlamentar."
+      - name: url_foto_partido
+        description: "URL do logotipo do partido."
+      - name: quantidade_empenhos
+        description: "Número de linhas de empenho da emenda do autor executadas por essa UG."
+      - name: quantidade_localizadores
+        description: "Número de localizadores de gasto distintos executados por essa UG."
+      - name: despesas_empenhadas
+        description: "Soma do empenhado pela UG nas emendas do autor."
+      - name: despesas_liquidadas
+        description: "Soma do liquidado pela UG nas emendas do autor."
+      - name: despesas_pagas
+        description: "Soma do pago pela UG nas emendas do autor."
+      - name: restos_a_pagar_inscritos
+        description: "Soma dos restos a pagar inscritos pela UG nas emendas do autor."
+      - name: restos_a_pagar_pagos
+        description: "Soma dos restos a pagar pagos pela UG nas emendas do autor."
+      - name: dt_ingest
+        description: "Data e hora (UTC-3) mais recente de ingestão das fontes."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'emendas.emendas_execucao_por_ug'
+          nome_coluna: 'despesas_empenhadas'
+          tipo_esperado: 'numeric'

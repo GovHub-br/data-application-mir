@@ -592,10 +592,6 @@ models:
         description: "Código da ação de governo associada à emenda."
       - name: acao
         description: "Descrição da ação de governo associada à emenda."
-      - name: codigo_ug
-        description: "Código da Unidade Gestora (UG) responsável pela execução do recurso."
-      - name: nome_ug
-        description: "Nome/descrição da Unidade Gestora (UG) executora."
       - name: localizador_gasto
         description: "Código do localizador de gasto da programação orçamentária."
       - name: localizador_gasto_descricao
@@ -626,6 +622,12 @@ models:
         description: "Código da fonte de recursos detalhada que financia a despesa."
       - name: fonte_recursos_detalhada_descricao
         description: "Descrição da fonte de recursos detalhada."
+      - name: ug_responsavel_codigo
+        description: "Código(s) da(s) UG(s) executora(s) da classificação, concatenados (vírgula) quando há mais de uma. NULL quando dotado mas ainda não empenhado."
+      - name: ug_responsavel_nome
+        description: "Nome(s) da(s) UG(s) executora(s) da classificação, concatenados (vírgula) quando há mais de uma."
+      - name: qtd_ugs_responsaveis
+        description: "Quantidade de UGs executoras distintas da classificação. 0 quando dotado mas ainda não empenhado."
       - name: autor_emendas_orcamento
         description: "Identificador do autor da emenda no orçamento."
       - name: autor_emendas_orcamento_descricao

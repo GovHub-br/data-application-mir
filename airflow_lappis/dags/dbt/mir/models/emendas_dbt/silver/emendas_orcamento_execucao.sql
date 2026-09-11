@@ -64,8 +64,18 @@ with
             codigo_modalidade as modalidade_aplicacao,
             fonte_recursos_detalhada,
             ptres,
-            ug_responsavel_codigo,
-            ug_responsavel_nome,
+            -- UGs executoras da classificacao concatenadas (atributo): a UG NAO
+            -- entra no grao para nao repetir a dotacao por UG. O detalhe de
+            -- quanto cada UG executou vive em emendas_execucao_por_ug.
+            string_agg(
+                distinct cast(ug_responsavel_codigo as text),
+                ', '
+                order by cast(ug_responsavel_codigo as text)
+            ) as ug_responsavel_codigo,
+            string_agg(
+                distinct ug_responsavel_nome, ', ' order by ug_responsavel_nome
+            ) as ug_responsavel_nome,
+            count(distinct ug_responsavel_codigo) as qtd_ugs_responsaveis,
             sum(despesas_empenhadas) as despesas_empenhadas,
             sum(despesas_liquidadas) as despesas_liquidadas,
             sum(despesas_pagas) as despesas_pagas,
@@ -80,9 +90,7 @@ with
             natureza_despesa,
             codigo_modalidade,
             fonte_recursos_detalhada,
-            ptres,
-            ug_responsavel_codigo,
-            ug_responsavel_nome
+            ptres
     ),
 
     -- Um registro por parlamentar (filiacao mais recente), para atribuir a
@@ -125,9 +133,10 @@ select
     d.fonte_recursos_detalhada,
     d.fonte_recursos_detalhada_descricao,
 
-    -- Unidade Gestora Executora
+    -- Unidade(s) Gestora(s) executora(s) da classificacao (concatenadas)
     e.ug_responsavel_codigo,
     e.ug_responsavel_nome,
+    coalesce(e.qtd_ugs_responsaveis, 0) as qtd_ugs_responsaveis,
 
     -- Autor da emenda
     d.autor_emendas_orcamento,
