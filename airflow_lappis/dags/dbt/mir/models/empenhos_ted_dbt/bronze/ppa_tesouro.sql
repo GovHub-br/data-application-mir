@@ -1,4 +1,10 @@
-{{ config(materialized="table") }}
+{{
+    config(
+        materialized="incremental",
+        unique_key="id_hash",
+        incremental_strategy="merge",
+    )
+}}
 
 
 with
@@ -58,5 +64,44 @@ with
         where ne_ccor_ano_emissao ~ '^-?[0-9]+$'
     )
 
-select *
+select
+    *,
+    -- Chave surrogada estavel para o merge incremental. Cobre todas as
+    -- colunas de negocio (exclui dt_ingest para tornar a reingestao do
+    -- mesmo dado idempotente). Necessaria porque nenhum subconjunto de
+    -- colunas identifica sozinho o grao de dotacao (ne_ccor = '-9'): essas
+    -- linhas so se distinguem por ptres/plano_orcamentario/dotacao, etc.
+    md5(
+        concat_ws(
+            '|',
+            programa_governo,
+            acao_governo,
+            emissao_mes,
+            emissao_dia,
+            ne_ccor,
+            ug_responsavel_codigo,
+            ne_num_processo,
+            ne_info_complementar,
+            doc_observacao,
+            natureza_despesa,
+            ne_ccor_favorecido,
+            ne_ccor_ano_emissao,
+            ptres,
+            fonte_recursos_detalhada,
+            plano_orcamentario_codigo_uo,
+            plano_orcamentario_codigo_funcao,
+            plano_orcamentario_codigo_subfuncao,
+            plano_orcamentario_codigo_programa,
+            plano_orcamentario_codigo_acao,
+            plano_orcamentario_codigo_po,
+            resultado_eof_codigo,
+            grupo_despesa,
+            dotacao_atualizada,
+            despesas_empenhadas,
+            despesas_liquidadas,
+            despesas_pagas,
+            restos_a_pagar_inscritos,
+            restos_a_pagar_pagos
+        )
+    ) as id_hash
 from ppa_tesouro_raw
