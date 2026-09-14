@@ -1,0 +1,117 @@
+﻿id_plano_acao,sq_instrumento,instrumento,origem,ano,situacao,sigla_executor,nome_executor,programa_governo,etapa_cadeia,forma_execucao_2n,vl_firmado,empenhado_bruto,empenho_anulado,empenhado_liquido,liquidado,pago,n_linhas_resumo
+2532,955606,TED,orcamento_regular,2024,APROVADO,Enap,Fundação Escola Nacional de Administração Pública,5804,S3_ate_NC,descentralizada,239652.27,0.0,0.0,0.0,0.0,0.0,1
+1496,950552,TED,orcamento_regular,2023,APROVADO,UNB,Fundação Universidade de Brasília,5804,S4_cadeia_plena,descentralizada,3732681.39,4424704.59,0.0,4424704.59,178281.44,2612876.97,2
+1486,946707,TED,orcamento_regular,2023,APROVADO,IFB,"Instituto Federal de Educação, Ciência e Tecnologia de Brasília",5804,S4_cadeia_plena,particulares; descentralizada,2385402.11,1981752.64,0.0,1981752.64,1385402.11,1385402.11,1
+2563,955872,TED,orcamento_regular,2024,APROVADO,UFMA,Fundação Universidade Federal do Maranhão,5804,S3_ate_NC,descentralizada,4510737.64,0.0,0.0,0.0,0.0,0.0,1
+1375,946960,TED,orcamento_regular,2023,APROVADO,UFPB,Universidade Federal da Paraíba,5804,S3_ate_NC,direta,1494872.98,0.0,0.0,0.0,0.0,0.0,1
+1376,945512,TED,orcamento_regular,2023,APROVADO,IPEA,Instituto de Pesquisa Econômica Aplicada,5804,S4_cadeia_plena,direta; descentralizada,1285773.68,198853.68,12101.83,186751.85,66801.85,176751.85,1
+1535,947867,TED,orcamento_regular,2023,APROVADO,IFMA,"Instituto Federal de Educação, Ciência e Tecnologia do Maranhão",5802,S3_ate_NC,direta; descentralizada,5000000.0,0.0,0.0,0.0,0.0,0.0,1
+214,929835,TED,orcamento_regular,2022,APROVADO,IFBA,"Instituto Federal de Educação, Ciência e Tecnologia da Bahia",,S2_ate_PF,descentralizada,450000.0,0.0,0.0,0.0,0.0,0.0,1
+1295,945691,TED,orcamento_regular,2023,APROVADO,Enap,Fundação Escola Nacional de Administração Pública,5034,S3_ate_NC,direta; particulares,291656.35,0.0,0.0,0.0,0.0,0.0,1
+1860,949162,TED,orcamento_regular,2023,APROVADO,UFBA,Universidade Federal da Bahia,5034,S3_ate_NC,descentralizada,500000.0,0.0,0.0,0.0,0.0,0.0,1
+2604,956865,TED,orcamento_regular,2024,APROVADO,CNPq,Conselho Nacional de Desenvolvimento Científico e Tecnológico,5804,S4_cadeia_plena,direta,7560000.0,5040000.0,2520000.0,2520000.0,749000.0,1631000.0,2
+2524,955604,TED,orcamento_regular,2024,ANALISE_APROVADA,Enap,Fundação Escola Nacional de Administração Pública,,S1_so_plano,descentralizada,239652.27,0.0,0.0,0.0,0.0,0.0,1
+1624,948053,TED,orcamento_regular,2023,APROVADO,SENAD,Secretaria Nacional de Políticas sobre Drogas e Gestão de Ativos,5034,S3_ate_NC,descentralizada,3000000.0,0.0,0.0,0.0,0.0,0.0,1
+1890,949197,TED,orcamento_regular,2023,APROVADO,UFF,Universidade Federal Fluminense,5804,S3_ate_NC,direta; descentralizada,2500000.0,0.0,0.0,0.0,0.0,0.0,1
+1382,946668,TED,orcamento_regular,2023,APROVADO,UFSC,Universidade Federal de Santa Catarina,5804,S3_ate_NC,descentralizada,369992.03,0.0,0.0,0.0,0.0,0.0,1
+2919,972287,TED,orcamento_regular,2024,APROVADO,UFRGS,Universidade Federal do Rio Grande do Sul,5804,S3_ate_NC,descentralizada,300000.0,0.0,0.0,0.0,0.0,0.0,1
+5642,,TED,orcamento_regular,2026,EM_COMPLEMENTACAO,CODEVASF,Companhia de Desenvolvimento dos Vales do São Francisco e do Parnaíba,,,direta; particulares,522500.0,0.0,0.0,0.0,0.0,0.0,1
+1392,945799,TED,orcamento_regular,2023,APROVADO,Enap,Fundação Escola Nacional de Administração Pública,5034,S3_ate_NC,descentralizada,250000.0,0.0,0.0,0.0,0.0,0.0,1
+1714,948966,TED,orcamento_regular,2023,APROVADO,IFRJ,"Instituto Federal de Educação, Ciência e Tecnologia do Rio de Janeiro",5034,S4_cadeia_plena,descentralizada,350000.0,350000.0,0.0,350000.0,0.0,350000.0,1
+2662,972366,TED,emenda,2025,APROVADO,UFG,Universidade Federal de Goiás,5804,S4_cadeia_plena,direta; particulares; descentralizada,650000.0,650000.0,0.0,650000.0,0.0,0.0,1
+4502,978667,TED,orcamento_regular,2025,APROVADO,IFB,"Instituto Federal de Educação, Ciência e Tecnologia de Brasília",,S2_ate_PF,particulares; descentralizada,568386.83,0.0,0.0,0.0,0.0,0.0,1
+1337,946497,TED,orcamento_regular,2023,APROVADO,UFRB,Universidade Federal do Recôncavo da Bahia,5804,S3_ate_NC,descentralizada,3803800.0,0.0,0.0,0.0,0.0,0.0,1
+1548,947942,TED,orcamento_regular,2023,APROVADO,FIOCRUZ,Fundação Oswaldo Cruz,5034,S3_ate_NC,descentralizada,4700000.0,0.0,0.0,0.0,0.0,0.0,1
+2932,967658,TED,orcamento_regular,2024,APROVADO,UFRB,Universidade Federal do Recôncavo da Bahia,5802,S4_cadeia_plena,particulares; descentralizada,1795681.39,235048.61,55836.88,179211.73,44019.33,43158.04,1
+4491,978843,TED,orcamento_regular,2025,APROVADO,IPEA,Instituto de Pesquisa Econômica Aplicada,5804,S4_cadeia_plena,direta; particulares; descentralizada,1494580.0,532400.0,0.0,532400.0,7984.95,7984.95,1
+1454,946735,TED,orcamento_regular,2023,APROVADO,AGU,Advocacia-Geral da União,5804,S3_ate_NC,descentralizada,1500000.0,0.0,0.0,0.0,0.0,0.0,1
+6173,,TED,orcamento_regular,2026,EM_ELABORACAO,IFBA,"Instituto Federal de Educação, Ciência e Tecnologia da Bahia",,S1_so_plano,descentralizada,2103457.86,0.0,0.0,0.0,0.0,0.0,1
+6175,,TED,orcamento_regular,2026,EM_ELABORACAO,IFBA,"Instituto Federal de Educação, Ciência e Tecnologia da Bahia",,S1_so_plano,descentralizada,175129.14,0.0,0.0,0.0,0.0,0.0,1
+6180,,TED,orcamento_regular,2026,EM_ELABORACAO,IFBA,"Instituto Federal de Educação, Ciência e Tecnologia da Bahia",,S1_so_plano,descentralizada,0.0,0.0,0.0,0.0,0.0,0.0,1
+1254,945101,TED,orcamento_regular,2023,APROVADO,IBGE,Fundação Instituto Brasileiro de Geografia e Estatística,5804,S3_ate_NC,direta,1087254.74,0.0,0.0,0.0,0.0,0.0,2
+1878,949551,TED,orcamento_regular,2023,APROVADO,UFMA,Fundação Universidade Federal do Maranhão,5804,S3_ate_NC,descentralizada,4153496.1,0.0,0.0,0.0,0.0,0.0,1
+2666,972101,TED,orcamento_regular,2025,APROVADO,UFU,Universidade Federal de Uberlândia,5804,S3_ate_NC,descentralizada,300000.0,0.0,0.0,0.0,0.0,0.0,1
+4369,977688,TED,orcamento_regular,2025,APROVADO,FIOCRUZ,Fundação Oswaldo Cruz,5802,S4_cadeia_plena,descentralizada,2074800.0,1779212.0,889600.0,889612.0,800012.0,800012.0,1
+4839,984218,TED,orcamento_regular,2025,APROVADO,FIOCRUZ,Fundação Oswaldo Cruz,5804,S4_cadeia_plena,descentralizada,8824971.29,0.0,0.0,0.0,0.0,3971237.08,1
+2700,958784,TED,orcamento_regular,2024,APROVADO,UFRB,Universidade Federal do Recôncavo da Bahia,5802,S3_ate_NC,descentralizada,4246905.07,0.0,0.0,0.0,0.0,0.0,1
+1628,,TED,orcamento_regular,2023,EM_ELABORACAO,CNPq,Conselho Nacional de Desenvolvimento Científico e Tecnológico,,S1_so_plano,descentralizada,0.0,0.0,0.0,0.0,0.0,0.0,1
+4035,974892,TED,orcamento_regular,2025,APROVADO,UFF,Universidade Federal Fluminense,5802,S3_ate_NC,direta; descentralizada,629282.0,0.0,0.0,0.0,0.0,0.0,1
+4489,978261,TED,orcamento_regular,2025,APROVADO,UFSM,Universidade Federal de Santa Maria,,S2_ate_PF,descentralizada,2000000.0,0.0,0.0,0.0,0.0,0.0,1
+5858,996744,TED,orcamento_regular,2026,APROVADO,IFG,"Instituto Federal de Educação, Ciência e Tecnologia de Goiás",5804,S4_cadeia_plena,direta; particulares; descentralizada,4920792.0,6633399.01,1864751.02,4768647.99,4763188.64,4763188.64,1
+1918,949807,TED,orcamento_regular,2023,APROVADO,MinC,Ministério da Cultura,5034,S3_ate_NC,direta; descentralizada,400000.0,0.0,0.0,0.0,0.0,0.0,1
+3156,968047,TED,orcamento_regular,2024,APROVADO,UNB,Fundação Universidade de Brasília,5804,S4_cadeia_plena,descentralizada,2292480.0,962845.6,45849.6,916996.0,916989.0,1879760.6,1
+2823,965657,TED,orcamento_regular,2024,APROVADO,IFMA,"Instituto Federal de Educação, Ciência e Tecnologia do Maranhão",5802,S4_cadeia_plena,direta; descentralizada,13958703.78,13696701.11,0.0,13696701.11,13673256.9,13673256.9,1
+2905,966942,TED,orcamento_regular,2024,APROVADO,FCP,Fundação Cultural Palmares,5802,S3_ate_NC,direta,2000000.0,0.0,0.0,0.0,0.0,0.0,1
+4118,975111,TED,orcamento_regular,2025,APROVADO,UFABC,Fundação Universidade Federal do ABC,,S2_ate_PF,direta; particulares; descentralizada,668911.63,0.0,0.0,0.0,0.0,11148.52,1
+4556,978466,TED,orcamento_regular,2025,APROVADO,UFG,Universidade Federal de Goiás,,S2_ate_PF,direta; particulares; descentralizada,700000.0,0.0,0.0,0.0,0.0,0.0,1
+4598,979720,TED,orcamento_regular,2025,APROVADO,UFRB,Universidade Federal do Recôncavo da Bahia,5804,S3_ate_NC,descentralizada,9800000.0,0.0,0.0,0.0,0.0,0.0,1
+5721,996694,TED,orcamento_regular,2026,APROVADO,UFG,Universidade Federal de Goiás,5802,S4_cadeia_plena,direta; particulares; descentralizada,5011700.0,5011700.0,0.0,5011700.0,4793800.0,4793800.0,1
+1289,946290,TED,orcamento_regular,2023,APROVADO,UFJ,Universidade Federal de Jataí,5034,S3_ate_NC,descentralizada,1855000.0,0.0,0.0,0.0,0.0,0.0,1
+1384,946358,TED,orcamento_regular,2023,APROVADO,CNPq,Conselho Nacional de Desenvolvimento Científico e Tecnológico,5804,S4_cadeia_plena,direta,2000000.0,1926375.21,1000000.0,926375.21,-820724.79,-402847.72,2
+1429,946357,TED,orcamento_regular,2023,APROVADO,CNPq,Conselho Nacional de Desenvolvimento Científico e Tecnológico,5034,S4_cadeia_plena,direta,1994300.0,1994300.0,0.0,1994300.0,0.0,1813700.0,2
+3098,967346,TED,orcamento_regular,2024,APROVADO,UFOPA,Universidade Federal do Oeste do Pará,5804,S4_cadeia_plena,descentralizada,695310.0,15000.0,3600.0,11400.0,36600.0,24000.0,1
+4735,984044,TED,orcamento_regular,2025,APROVADO,CPAR,Campus Paracambi,5804,S3_ate_NC,direta; descentralizada,700000.0,0.0,0.0,0.0,0.0,0.0,1
+4694,982264,TED,orcamento_regular,2025,APROVADO,UFC,Universidade Federal do Ceará,,S2_ate_PF,descentralizada,1500000.0,0.0,0.0,0.0,0.0,0.0,1
+255,930522,TED,orcamento_regular,2022,APROVADO,UFFS,Universidade Federal da Fronteira Sul,,,direta,200000.0,0.0,0.0,0.0,0.0,0.0,1
+2913,966855,TED,orcamento_regular,2024,APROVADO,UFRJ,Universidade Federal do Rio de Janeiro,5802,S3_ate_NC,descentralizada,1300000.0,0.0,0.0,0.0,0.0,0.0,1
+3683,972712,TED,emenda,2025,APROVADO,FIOCRUZ,Fundação Oswaldo Cruz,5804,S4_cadeia_plena,descentralizada,600000.0,600000.0,0.0,600000.0,0.0,140000.0,1
+4406,987518,TED,orcamento_regular,2025,APROVADO,IFG,"Instituto Federal de Educação, Ciência e Tecnologia de Goiás",5802,S3_NC_sem_PF,direta; descentralizada,2000000.0,0.0,0.0,0.0,0.0,0.0,1
+4592,982270,TED,orcamento_regular,2025,APROVADO,FIOCRUZ,Fundação Oswaldo Cruz,,S2_ate_PF,descentralizada,500000.0,0.0,0.0,0.0,0.0,0.0,1
+5939,,TED,orcamento_regular,2026,EM_ANALISE,UFMA,Fundação Universidade Federal do Maranhão,,S1_so_plano,descentralizada,586703.0,0.0,0.0,0.0,0.0,0.0,1
+2541,955619,TED,orcamento_regular,2024,APROVADO,MinC,Ministério da Cultura,5804,S3_ate_NC,direta; particulares; descentralizada,100000.0,0.0,0.0,0.0,0.0,0.0,1
+2560,955662,TED,orcamento_regular,2024,APROVADO,UFPA,Universidade Federal do Pará,5804,S4_cadeia_plena,direta,300000.0,300000.0,0.0,300000.0,300000.0,300000.0,1
+2813,972623,TED,orcamento_regular,2024,APROVADO,,UNIVERSIDADE FEDERAL DO PARANA,5804,S3_ate_NC,descentralizada,500000.0,0.0,0.0,0.0,0.0,0.0,1
+2821,972575,TED,orcamento_regular,2025,APROVADO,,UNIVERSIDADE FEDERAL DO PARANA,5803,S3_ate_NC,descentralizada,500000.0,0.0,0.0,0.0,0.0,0.0,1
+2876,966020,TED,orcamento_regular,2024,APROVADO,UFSB,Universidade Federal do Sul da Bahia,5804,S3_ate_NC,particulares; descentralizada,2369115.0,0.0,0.0,0.0,0.0,0.0,1
+308,931295,TED,orcamento_regular,2022,APROVADO,UFBA,Universidade Federal da Bahia,,S1_so_plano,descentralizada,300000.0,0.0,0.0,0.0,0.0,0.0,1
+4778,985013,TED,orcamento_regular,2025,APROVADO,UFF,Universidade Federal Fluminense,,S2_ate_PF,direta; descentralizada,500000.0,0.0,0.0,0.0,0.0,0.0,1
+4907,984450,TED,orcamento_regular,2025,APROVADO,CNPq,Conselho Nacional de Desenvolvimento Científico e Tecnológico,,S2_ate_PF,descentralizada,480000.0,0.0,0.0,0.0,0.0,330000.0,1
+1172,,TED,orcamento_regular,2023,EM_ELABORACAO,UNB,Fundação Universidade de Brasília,,,direta; particulares,0.0,0.0,0.0,0.0,0.0,0.0,1
+2148,951425,TED,orcamento_regular,2023,APROVADO,CGU,Controladoria-Geral da União,5034,S3_ate_NC,direta; particulares; descentralizada,500000.0,0.0,0.0,0.0,0.0,0.0,1
+2531,,TED,orcamento_regular,2024,EM_ELABORACAO,Enap,Fundação Escola Nacional de Administração Pública,,S1_so_plano,descentralizada,239652.27,0.0,0.0,0.0,0.0,0.0,1
+2540,955650,TED,orcamento_regular,2024,APROVADO,UFSC,Universidade Federal de Santa Catarina,5804,S3_ate_NC,descentralizada,295776.0,0.0,0.0,0.0,0.0,0.0,3
+3032,966900,TED,orcamento_regular,2024,APROVADO,UFG,Universidade Federal de Goiás,5802,S4_cadeia_plena,particulares; descentralizada,900000.0,300000.0,0.0,300000.0,300000.0,300000.0,1
+2795,962268,TED,orcamento_regular,2024,APROVADO,SENATP,"Secretaria Nacional de Articulação Institucional, Ações Temáticas e Participação Política",5804,S3_ate_NC,direta; particulares; descentralizada,1000000.0,0.0,0.0,0.0,0.0,0.0,1
+5743,999629,TED,orcamento_regular,2026,APROVADO,UNIVASF,Fundação Universidade Federal do Vale do São Francisco,5802,S3_NC_sem_PF,direta; descentralizada,1373472.0,0.0,0.0,0.0,0.0,0.0,1
+2593,955763,TED,orcamento_regular,2024,APROVADO,UFF,Universidade Federal Fluminense,5804,S3_ate_NC,direta; particulares; descentralizada,12880000.0,0.0,0.0,0.0,0.0,0.0,1
+2644,958214,TED,orcamento_regular,2024,APROVADO,CNPq,Conselho Nacional de Desenvolvimento Científico e Tecnológico,5804,S4_cadeia_plena,particulares; descentralizada,3250000.0,3835498.2,0.0,3835498.2,811200.0,330860.0,3
+1161,946708,TED,orcamento_regular,2023,APROVADO,UNB,Fundação Universidade de Brasília,5802,S4_cadeia_plena,direta; particulares,352800.0,680400.0,0.0,680400.0,136500.0,594300.0,1
+3061,967623,TED,orcamento_regular,2024,APROVADO,UFF,Universidade Federal Fluminense,5802,S4_cadeia_plena,direta; descentralizada,3000000.0,1000000.0,1000000.0,0.0,0.0,0.0,1
+4823,985228,TED,orcamento_regular,2025,APROVADO,UFG,Universidade Federal de Goiás,,S2_ate_PF,particulares; descentralizada,1290000.0,0.0,0.0,0.0,0.0,0.0,1
+1278,946526,TED,orcamento_regular,2023,APROVADO,UFRB,Universidade Federal do Recôncavo da Bahia,5802,S3_ate_NC,descentralizada,903500.0,0.0,0.0,0.0,0.0,0.0,1
+192,930164,TED,orcamento_regular,2022,APROVADO,UFAL,Universidade Federal de Alagoas,,S2_ate_PF,descentralizada,1201720.0,0.0,0.0,0.0,0.0,0.0,1
+3920,972628,TED,orcamento_regular,2025,APROVADO,UNIRIO,Universidade Federal do Estado do Rio de Janeiro,5804,S3_ate_NC,descentralizada,300000.0,0.0,0.0,0.0,0.0,0.0,1
+4700,983955,TED,orcamento_regular,2025,APROVADO,UFRB,Universidade Federal do Recôncavo da Bahia,5804,S3_ate_NC,descentralizada,288066.0,0.0,0.0,0.0,0.0,0.0,1
+5319,988072,TED,orcamento_regular,2025,APROVADO,IFSP,"Instituto Federal de Educação, Ciência e Tecnologia de São Paulo",5804,S3_ate_NC,direta; particulares; descentralizada,4320000.0,0.0,0.0,0.0,0.0,0.0,1
+3339,968637,TED,orcamento_regular,2024,APROVADO,UFRB,Universidade Federal do Recôncavo da Bahia,5804,S4_cadeia_plena,descentralizada,700000.0,700000.0,0.0,700000.0,699050.31,696884.64,1
+3689,969636,TED,orcamento_regular,2024,APROVADO,UFCG,Universidade Federal de Campina Grande,5804,S4_cadeia_plena,direta; descentralizada,150000.0,131750.0,0.0,131750.0,0.0,0.0,1
+4166,977314,TED,orcamento_regular,2025,APROVADO,CODEVASF,Companhia de Desenvolvimento dos Vales do São Francisco e do Parnaíba,5802,S3_ate_NC,direta; particulares,1062475.74,0.0,0.0,0.0,0.0,0.0,1
+4861,984056,TED,orcamento_regular,2025,APROVADO,UFRB,Universidade Federal do Recôncavo da Bahia,5804,S4_cadeia_plena,descentralizada,1930000.0,500000.0,500000.0,0.0,0.0,0.0,1
+1626,949750,TED,orcamento_regular,2023,APROVADO,CNPq,Conselho Nacional de Desenvolvimento Científico e Tecnológico,5804,S4_cadeia_plena,descentralizada,120000.0,420000.0,0.0,420000.0,300000.0,390000.0,1
+3675,969965,TED,orcamento_regular,2024,APROVADO,CAPES,Fundação Coordenação de Aperfeiçoamento de Pessoal de Nível Superior,5804,S3_NC_sem_PF,direta; descentralizada,1152000.0,0.0,0.0,0.0,0.0,0.0,1
+4165,975381,TED,orcamento_regular,2025,APROVADO,Enap,Fundação Escola Nacional de Administração Pública,5804,S3_ate_NC,particulares; descentralizada,309360.61,0.0,0.0,0.0,0.0,0.0,1
+337,930707,TED,orcamento_regular,2022,APROVADO,UFGD,Fundação Universidade Federal da Grande Dourados,,S1_so_plano,descentralizada,100000.0,0.0,0.0,0.0,0.0,0.0,1
+4468,,TED,orcamento_regular,2025,ANALISE_APROVADA,UNIFEI,Universidade Federal de Itajubá,,S1_so_plano,descentralizada,200000.0,0.0,0.0,0.0,0.0,0.0,1
+4473,978641,TED,orcamento_regular,2025,APROVADO,UFRGS,Universidade Federal do Rio Grande do Sul,5802,S3_ate_NC,descentralizada,3241942.0,0.0,0.0,0.0,0.0,0.0,1
+4886,984446,TED,orcamento_regular,2025,APROVADO,IFG,"Instituto Federal de Educação, Ciência e Tecnologia de Goiás",5804,S3_ate_NC,direta; particulares; descentralizada,5479811.0,0.0,0.0,0.0,0.0,0.0,1
+5621,,TED,orcamento_regular,2026,EM_ELABORACAO,UFSB,Universidade Federal do Sul da Bahia,,S1_so_plano,particulares; descentralizada,4000000.0,0.0,0.0,0.0,0.0,0.0,1
+215,,TED,orcamento_regular,2022,EM_ELABORACAO,IFBA,"Instituto Federal de Educação, Ciência e Tecnologia da Bahia",,S1_so_plano,descentralizada,0.0,0.0,0.0,0.0,0.0,0.0,1
+4102,977697,TED,orcamento_regular,2025,APROVADO,IFMA,"Instituto Federal de Educação, Ciência e Tecnologia do Maranhão",5802,S3_ate_NC,direta; descentralizada,9347997.33,0.0,0.0,0.0,0.0,0.0,2
+4466,978280,TED,orcamento_regular,2025,APROVADO,UFMA,Fundação Universidade Federal do Maranhão,5804,S3_ate_NC,descentralizada,2000000.0,0.0,0.0,0.0,0.0,0.0,1
+5825,,TED,orcamento_regular,2026,ENVIADO_ANALISE,FIOCRUZ,Fundação Oswaldo Cruz,,S1_so_plano,descentralizada,1500000.0,0.0,0.0,0.0,0.0,0.0,1
+4373,977838,TED,orcamento_regular,2025,APROVADO,FIOCRUZ,Fundação Oswaldo Cruz,5802,S3_ate_NC,descentralizada,5056750.0,0.0,0.0,0.0,0.0,0.0,1
+4407,978244,TED,orcamento_regular,2025,APROVADO,UFSM,Universidade Federal de Santa Maria,,S2_ate_PF,descentralizada,200000.0,0.0,0.0,0.0,0.0,0.0,1
+4579,978429,TED,orcamento_regular,2025,APROVADO,MEC,Ministério da Educação,,S2_ate_PF,descentralizada,4641658.27,0.0,0.0,0.0,0.0,0.0,2
+4939,986437,TED,orcamento_regular,2025,APROVADO,UFF,Universidade Federal Fluminense,,S2_ate_PF,direta; descentralizada,600000.0,0.0,0.0,0.0,0.0,0.0,1
+6211,,TED,orcamento_regular,2026,EM_ELABORACAO,UFSM,Universidade Federal de Santa Maria,,,direta; particulares,0.0,0.0,0.0,0.0,0.0,0.0,1
+5810,,TED,orcamento_regular,2026,ENVIADO_ANALISE,UTFPR,Universidade Tecnológica Federal do Paraná,,,direta,200000.0,0.0,0.0,0.0,0.0,0.0,1
+5808,998427,TED,orcamento_regular,2026,APROVADO,UFSCar,Fundação Universidade Federal de São Carlos,5804,S3_NC_sem_PF,direta; particulares; descentralizada,200000.0,0.0,0.0,0.0,0.0,0.0,1
+5734,996362,TED,orcamento_regular,2026,APROVADO,IFRN,"Instituto Federal de Educação, Ciência e Tecnologia do Rio Grande do Norte",5802,S3_ate_NC,descentralizada,2890000.0,0.0,0.0,0.0,0.0,0.0,1
+6049,,TED,orcamento_regular,2026,ENVIADO_ANALISE,UNIVASF,Fundação Universidade Federal do Vale do São Francisco,,S1_so_plano,descentralizada,600320.0,0.0,0.0,0.0,0.0,0.0,1
+6025,,TED,orcamento_regular,2026,ENVIADO_ANALISE,UFCSPA,Fundação Universidade Federal de Ciências da Saúde de Porto Alegre,,,particulares,300000.0,0.0,0.0,0.0,0.0,0.0,1
+5944,,TED,orcamento_regular,2026,ENVIADO_ANALISE,UFF,Universidade Federal Fluminense,,S1_so_plano,direta; descentralizada,4488935.0,0.0,0.0,0.0,0.0,0.0,1
+5989,999593,TED,orcamento_regular,2026,APROVADO,UFF,Universidade Federal Fluminense,5804,S3_NC_sem_PF,direta; descentralizada,3200000.0,3200000.0,3200000.0,0.0,0.0,0.0,1
+6150,,TED,orcamento_regular,2026,EM_ANALISE,CNPq,Conselho Nacional de Desenvolvimento Científico e Tecnológico,,,direta,1000000.0,0.0,0.0,0.0,0.0,0.0,1
+6100,,TED,orcamento_regular,2026,ENVIADO_ANALISE,FIOCRUZ,Fundação Oswaldo Cruz,,S1_so_plano,descentralizada,1850000.0,0.0,0.0,0.0,0.0,0.0,1
+6163,,TED,orcamento_regular,2026,ANALISE_APROVADA,FIOCRUZ,Fundação Oswaldo Cruz,,S1_so_plano,descentralizada,1780000.0,0.0,0.0,0.0,0.0,0.0,1
+6231,,TED,orcamento_regular,2026,ENVIADO_ANALISE,UFRJ,Universidade Federal do Rio de Janeiro,,S1_so_plano,descentralizada,1521150.01,0.0,0.0,0.0,0.0,0.0,1

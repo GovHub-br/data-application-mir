@@ -1,0 +1,52 @@
+﻿sigla_executor,nome_executor,n_teds,n_sem_empenho,vl_firmado,empenhado_liquido,pago,share_pct
+IFMA,"Instituto Federal de Educação, Ciência e Tecnologia do Maranhão",3,2,28306701.11,13696701.11,13673256.9,29.77
+CNPq,Conselho Nacional de Desenvolvimento Científico e Tecnológico,8,3,16404300.0,9696173.41,4092712.28,21.07
+UNB,Fundação Universidade de Brasília,4,1,6377961.39,6022100.59,5086937.57,13.09
+UFG,Universidade Federal de Goiás,5,2,8551700.0,5961700.0,5093800.0,12.96
+IFG,"Instituto Federal de Educação, Ciência e Tecnologia de Goiás",3,2,12400603.0,4768647.99,4763188.64,10.36
+IFB,"Instituto Federal de Educação, Ciência e Tecnologia de Brasília",2,1,2953788.94,1981752.64,1385402.11,4.31
+FIOCRUZ,Fundação Oswaldo Cruz,9,7,26886521.29,1489612.0,4911249.08,3.24
+UFRB,Universidade Federal do Recôncavo da Bahia,8,6,23467952.46,879211.73,740042.68,1.91
+IPEA,Instituto de Pesquisa Econômica Aplicada,2,0,2780353.68,719151.85,184736.8,1.56
+IFRJ,"Instituto Federal de Educação, Ciência e Tecnologia do Rio de Janeiro",1,0,350000.0,350000.0,350000.0,0.76
+UFPA,Universidade Federal do Pará,1,0,300000.0,300000.0,300000.0,0.65
+UFCG,Universidade Federal de Campina Grande,1,0,150000.0,131750.0,0.0,0.29
+UFOPA,Universidade Federal do Oeste do Pará,1,0,695310.0,11400.0,24000.0,0.02
+Enap,Fundação Escola Nacional de Administração Pública,6,6,1569973.77,0.0,0.0,0.0
+UFMA,Fundação Universidade Federal do Maranhão,4,4,11250936.74,0.0,0.0,0.0
+UFPB,Universidade Federal da Paraíba,1,1,1494872.98,0.0,0.0,0.0
+IFBA,"Instituto Federal de Educação, Ciência e Tecnologia da Bahia",5,5,2728587.0,0.0,0.0,0.0
+UFBA,Universidade Federal da Bahia,2,2,800000.0,0.0,0.0,0.0
+SENAD,Secretaria Nacional de Políticas sobre Drogas e Gestão de Ativos,1,1,3000000.0,0.0,0.0,0.0
+UFF,Universidade Federal Fluminense,8,8,27798217.0,0.0,0.0,0.0
+UFSC,Universidade Federal de Santa Catarina,2,2,665768.03,0.0,0.0,0.0
+UFRGS,Universidade Federal do Rio Grande do Sul,2,2,3541942.0,0.0,0.0,0.0
+CODEVASF,Companhia de Desenvolvimento dos Vales do São Francisco e do Parnaíba,2,2,1584975.74,0.0,0.0,0.0
+AGU,Advocacia-Geral da União,1,1,1500000.0,0.0,0.0,0.0
+IBGE,Fundação Instituto Brasileiro de Geografia e Estatística,1,1,1087254.74,0.0,0.0,0.0
+UFU,Universidade Federal de Uberlândia,1,1,300000.0,0.0,0.0,0.0
+UFSM,Universidade Federal de Santa Maria,3,3,2200000.0,0.0,0.0,0.0
+MinC,Ministério da Cultura,2,2,500000.0,0.0,0.0,0.0
+FCP,Fundação Cultural Palmares,1,1,2000000.0,0.0,0.0,0.0
+UFABC,Fundação Universidade Federal do ABC,1,1,668911.63,0.0,11148.52,0.0
+UFJ,Universidade Federal de Jataí,1,1,1855000.0,0.0,0.0,0.0
+CPAR,Campus Paracambi,1,1,700000.0,0.0,0.0,0.0
+UFC,Universidade Federal do Ceará,1,1,1500000.0,0.0,0.0,0.0
+UFFS,Universidade Federal da Fronteira Sul,1,1,200000.0,0.0,0.0,0.0
+UFRJ,Universidade Federal do Rio de Janeiro,2,2,2821150.01,0.0,0.0,0.0
+,UNIVERSIDADE FEDERAL DO PARANA,2,2,1000000.0,0.0,0.0,0.0
+UFSB,Universidade Federal do Sul da Bahia,2,2,6369115.0,0.0,0.0,0.0
+CGU,Controladoria-Geral da União,1,1,500000.0,0.0,0.0,0.0
+SENATP,"Secretaria Nacional de Articulação Institucional, Ações Temáticas e Participação Política",1,1,1000000.0,0.0,0.0,0.0
+UNIVASF,Fundação Universidade Federal do Vale do São Francisco,2,2,1973792.0,0.0,0.0,0.0
+UFAL,Universidade Federal de Alagoas,1,1,1201720.0,0.0,0.0,0.0
+UNIRIO,Universidade Federal do Estado do Rio de Janeiro,1,1,300000.0,0.0,0.0,0.0
+IFSP,"Instituto Federal de Educação, Ciência e Tecnologia de São Paulo",1,1,4320000.0,0.0,0.0,0.0
+CAPES,Fundação Coordenação de Aperfeiçoamento de Pessoal de Nível Superior,1,1,1152000.0,0.0,0.0,0.0
+UFGD,Fundação Universidade Federal da Grande Dourados,1,1,100000.0,0.0,0.0,0.0
+UNIFEI,Universidade Federal de Itajubá,1,1,200000.0,0.0,0.0,0.0
+MEC,Ministério da Educação,1,1,4641658.27,0.0,0.0,0.0
+UTFPR,Universidade Tecnológica Federal do Paraná,1,1,200000.0,0.0,0.0,0.0
+UFSCar,Fundação Universidade Federal de São Carlos,1,1,200000.0,0.0,0.0,0.0
+IFRN,"Instituto Federal de Educação, Ciência e Tecnologia do Rio Grande do Norte",1,1,2890000.0,0.0,0.0,0.0
+UFCSPA,Fundação Universidade Federal de Ciências da Saúde de Porto Alegre,1,1,300000.0,0.0,0.0,0.0
