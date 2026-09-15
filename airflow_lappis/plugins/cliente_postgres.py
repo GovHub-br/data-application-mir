@@ -353,11 +353,31 @@ class ClientPostgresDB:
             if conn:
                 conn.close()
 
-    def export_table_to_csv(self, schema: str, table_name: str) -> str:
-        """Exporta o conteúdo de uma tabela como CSV (string), colunas incluídas."""
+    @staticmethod
+    def _validate_identifiers(schema: str, table_name: str) -> None:
         for identifier, label in ((schema, "schema"), (table_name, "table_name")):
             if not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", identifier):
                 raise ValueError(f"{label} inválido: {identifier!r}")
+
+    def fetch_table(self, schema: str, table_name: str) -> List[Dict[str, Any]]:
+        """Lê uma tabela inteira como lista de dicts (coluna -> valor)."""
+        self._validate_identifiers(schema, table_name)
+
+        query = f"SELECT * FROM {schema}.{table_name}"
+        with self._connect() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query)
+                columns = [desc[0] for desc in cursor.description]
+                rows = cursor.fetchall()
+
+        logging.info(
+            f"[cliente_postgres.py] Lidas {len(rows)} linhas de {schema}.{table_name}"
+        )
+        return [dict(zip(columns, row)) for row in rows]
+
+    def export_table_to_csv(self, schema: str, table_name: str) -> str:
+        """Exporta o conteúdo de uma tabela como CSV (string), colunas incluídas."""
+        self._validate_identifiers(schema, table_name)
 
         query = f"SELECT * FROM {schema}.{table_name}"
         with self._connect() as conn:
