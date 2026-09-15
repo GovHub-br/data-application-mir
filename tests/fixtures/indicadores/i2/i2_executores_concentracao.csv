@@ -1,0 +1,52 @@
+﻿sigla_executor,nome_executor,uf_sede,tipo_institucional,n_teds,vl_firmado,share_pct,share_pct_ao_quadrado
+IFMA,"Instituto Federal de Educação, Ciência e Tecnologia do Maranhão",MA,Instituto Federal,3,28306701.11,12.54,157.24
+UFF,Universidade Federal Fluminense,RJ,Universidade Federal,8,27798217.0,12.31,151.64
+FIOCRUZ,Fundação Oswaldo Cruz,RJ,Outro,9,26886521.29,11.91,141.86
+UFRB,Universidade Federal do Recôncavo da Bahia,BA,Universidade Federal,8,23467952.46,10.4,108.08
+CNPq,Conselho Nacional de Desenvolvimento Científico e Tecnológico,DF,Outro,8,16404300.0,7.27,52.81
+IFG,"Instituto Federal de Educação, Ciência e Tecnologia de Goiás",GO,Instituto Federal,3,12400603.0,5.49,30.18
+UFMA,Fundação Universidade Federal do Maranhão,MA,Universidade Federal,4,11250936.74,4.98,24.84
+UFG,Universidade Federal de Goiás,GO,Universidade Federal,5,8551700.0,3.79,14.35
+UNB,Fundação Universidade de Brasília,DF,Universidade Federal,4,6377961.39,2.83,7.98
+UFSB,Universidade Federal do Sul da Bahia,BA,Universidade Federal,2,6369115.0,2.82,7.96
+MEC,Ministério da Educação,DF,Outro,1,4641658.27,2.06,4.23
+IFSP,"Instituto Federal de Educação, Ciência e Tecnologia de São Paulo",SP,Instituto Federal,1,4320000.0,1.91,3.66
+UFRGS,Universidade Federal do Rio Grande do Sul,RS,Universidade Federal,2,3541942.0,1.57,2.46
+SENAD,Secretaria Nacional de Políticas sobre Drogas e Gestão de Ativos,DF,Outro,1,3000000.0,1.33,1.77
+IFB,"Instituto Federal de Educação, Ciência e Tecnologia de Brasília",DF,Instituto Federal,2,2953788.94,1.31,1.71
+IFRN,"Instituto Federal de Educação, Ciência e Tecnologia do Rio Grande do Norte",RN,Instituto Federal,1,2890000.0,1.28,1.64
+UFRJ,Universidade Federal do Rio de Janeiro,RJ,Universidade Federal,2,2821150.01,1.25,1.56
+IPEA,Instituto de Pesquisa Econômica Aplicada,DF,Outro,2,2780353.68,1.23,1.52
+IFBA,"Instituto Federal de Educação, Ciência e Tecnologia da Bahia",BA,Instituto Federal,5,2728587.0,1.21,1.46
+UFSM,Universidade Federal de Santa Maria,RS,Universidade Federal,3,2200000.0,0.97,0.95
+FCP,Fundação Cultural Palmares,DF,Outro,1,2000000.0,0.89,0.78
+UNIVASF,Fundação Universidade Federal do Vale do São Francisco,PE,Universidade Federal,2,1973792.0,0.87,0.76
+UFJ,Universidade Federal de Jataí,GO,Universidade Federal,1,1855000.0,0.82,0.68
+CODEVASF,Companhia de Desenvolvimento dos Vales do São Francisco e do Parnaíba,DF,Outro,2,1584975.74,0.7,0.49
+Enap,Fundação Escola Nacional de Administração Pública,DF,Outro,6,1569973.77,0.7,0.48
+AGU,Advocacia-Geral da União,DF,Outro,1,1500000.0,0.66,0.44
+UFC,Universidade Federal do Ceará,CE,Universidade Federal,1,1500000.0,0.66,0.44
+UFPB,Universidade Federal da Paraíba,PB,Universidade Federal,1,1494872.98,0.66,0.44
+UFAL,Universidade Federal de Alagoas,AL,Universidade Federal,1,1201720.0,0.53,0.28
+CAPES,Fundação Coordenação de Aperfeiçoamento de Pessoal de Nível Superior,DF,Outro,1,1152000.0,0.51,0.26
+IBGE,Fundação Instituto Brasileiro de Geografia e Estatística,RJ,Outro,1,1087254.74,0.48,0.23
+UFPR,UNIVERSIDADE FEDERAL DO PARANA,PR,Universidade Federal,2,1000000.0,0.44,0.2
+SENATP,"Secretaria Nacional de Articulação Institucional, Ações Temáticas e Participação Política",DF,Outro,1,1000000.0,0.44,0.2
+UFBA,Universidade Federal da Bahia,BA,Universidade Federal,2,800000.0,0.35,0.13
+CPAR,Campus Paracambi,RJ,Instituto Federal,1,700000.0,0.31,0.1
+UFOPA,Universidade Federal do Oeste do Pará,PA,Universidade Federal,1,695310.0,0.31,0.09
+UFABC,Fundação Universidade Federal do ABC,SP,Universidade Federal,1,668911.63,0.3,0.09
+UFSC,Universidade Federal de Santa Catarina,SC,Universidade Federal,2,665768.03,0.29,0.09
+MinC,Ministério da Cultura,DF,Outro,2,500000.0,0.22,0.05
+CGU,Controladoria-Geral da União,DF,Outro,1,500000.0,0.22,0.05
+IFRJ,"Instituto Federal de Educação, Ciência e Tecnologia do Rio de Janeiro",RJ,Instituto Federal,1,350000.0,0.16,0.02
+UFU,Universidade Federal de Uberlândia,MG,Universidade Federal,1,300000.0,0.13,0.02
+UFPA,Universidade Federal do Pará,PA,Universidade Federal,1,300000.0,0.13,0.02
+UNIRIO,Universidade Federal do Estado do Rio de Janeiro,RJ,Universidade Federal,1,300000.0,0.13,0.02
+UFCSPA,Fundação Universidade Federal de Ciências da Saúde de Porto Alegre,RS,Universidade Federal,1,300000.0,0.13,0.02
+UFFS,Universidade Federal da Fronteira Sul,SC,Universidade Federal,1,200000.0,0.09,0.01
+UNIFEI,Universidade Federal de Itajubá,MG,Universidade Federal,1,200000.0,0.09,0.01
+UTFPR,Universidade Tecnológica Federal do Paraná,PR,Universidade Federal,1,200000.0,0.09,0.01
+UFSCar,Fundação Universidade Federal de São Carlos,SP,Universidade Federal,1,200000.0,0.09,0.01
+UFCG,Universidade Federal de Campina Grande,PB,Universidade Federal,1,150000.0,0.07,0.0
+UFGD,Fundação Universidade Federal da Grande Dourados,MS,Universidade Federal,1,100000.0,0.04,0.0
