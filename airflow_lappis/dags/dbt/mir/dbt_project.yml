@@ -16,6 +16,12 @@ clean-targets:
   - "dbt_packages"
   - "logs"
 
+vars:
+  # Texto (sem o código de órgão) usado para filtrar registros do PPA/SIOP que
+  # pertencem ao MIR — os CSVs do PPA trazem o órgão como "67000 - Ministério
+  # da Igualdade Racial", daí o ilike por trecho em vez de igualdade exata.
+  orgao_mir: "Ministério da Igualdade Racial"
+
 models:
   mir: 
     +database: analytics
