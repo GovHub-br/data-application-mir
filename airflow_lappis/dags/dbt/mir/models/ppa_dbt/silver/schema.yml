@@ -193,3 +193,1515 @@ models:
           - unique
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+  - name: agenda_mir
+    description: >
+      Camada silver do PPA/SIOP — agendas transversais (ver bronze `agenda`),
+      restritas às agendas vinculadas a pelo menos um programa do MIR de forma
+      indireta, via `agenda_programa_mir` (chave `codigo` = `codigo_agenda` +
+      `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo
+        description: "Código"
+      - name: titulo
+        description: "Título"
+      - name: descricao
+        description: "Descrição"
+      - name: tipo
+        description: "Tipo"
+      - name: nome
+        description: "Nome"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_desagregacao_meta_entrega_mir
+    description: >
+      Camada silver do PPA/SIOP — `agenda_desagregacao_meta_entrega` (ver
+      bronze `agenda_desagregacao_meta_entrega`) vinculada a um programa do
+      MIR via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_da_entrega
+        description: "Meta da Entrega"
+      - name: publico
+        description: "Público"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_desagregacao_meta_objetivo_especifico_mir
+    description: >
+      Camada silver do PPA/SIOP —
+      `agenda_desagregacao_meta_objetivo_especifico` (ver bronze
+      `agenda_desagregacao_meta_objetivo_especifico`) vinculada a um programa
+      do MIR via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_do_objetivo_especifico
+        description: "Meta do Objetivo Específico"
+      - name: publico
+        description: "Público"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_entrega_mir
+    description: >
+      Camada silver do PPA/SIOP — `agenda_entrega` (ver bronze
+      `agenda_entrega`) vinculada a um programa do MIR via inner join com
+      `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: enunciado
+        description: "Enunciado"
+      - name: descricao
+        description: "Descrição"
+      - name: orgao
+        description: "Órgão"
+      - name: unidade_responsavel
+        description: "Unidade Responsável"
+      - name: projeto_de_investimento
+        description: "Projeto de Investimento"
+      - name: data_de_inicio
+        description: "Data de Início"
+      - name: data_de_termino
+        description: "Data de Término"
+      - name: valor_total
+        description: "Valor Total"
+      - name: execucao_fisica_acumulada
+        description: "Execução Física Acumulada"
+      - name: meta_da_execucao_fisica
+        description: "Meta da Execução Física"
+      - name: pac
+        description: "PAC"
+      - name: identificador_cadastro_novo_pac_governa
+        description: "Identificador Cadastro Novo PAC (Governa)"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: concluida
+        description: "Concluída"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_indicador_entrega_mir
+    description: >
+      Camada silver do PPA/SIOP — `agenda_indicador_entrega` (ver bronze
+      `agenda_indicador_entrega`) vinculada a um programa do MIR via inner
+      join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: denominacao
+        description: "Denominação"
+      - name: sigla
+        description: "Sigla"
+      - name: indice_de_referencia
+        description: "Índice de Referência"
+      - name: em_apuracao
+        description: "Em Apuração"
+      - name: data_de_apuracao
+        description: "Data de Apuração"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: descricao
+        description: "Descrição"
+      - name: periodo_ou_data_a_que_se_refere
+        description: "Período ou Data a que se Refere"
+      - name: data_de_divulgacao_disponibilizacao
+        description: "Data de Divulgação/Disponibilização"
+      - name: periodicidade
+        description: "Periodicidade"
+      - name: polaridade
+        description: "Polaridade"
+      - name: formula_de_calculo
+        description: "Fórmula de Cálculo"
+      - name: variaveis_de_calculo
+        description: "Variáveis de Cálculo"
+      - name: fonte_de_dados_das_variaveis_de_calculo
+        description: "Fonte de Dados das Variáveis de Cálculo"
+      - name: forma_de_disponibilizacao
+        description: "Forma de Disponibilização"
+      - name: procedimento_de_calculo
+        description: "Procedimento de Cálculo"
+      - name: limitacoes
+        description: "Limitações"
+      - name: notas_explicativas
+        description: "Notas Explicativas"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_indicador_objetivo_especifico_mir
+    description: >
+      Camada silver do PPA/SIOP — `agenda_indicador_objetivo_especifico` (ver
+      bronze `agenda_indicador_objetivo_especifico`) vinculada a um programa
+      do MIR via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: denominacao
+        description: "Denominação"
+      - name: sigla
+        description: "Sigla"
+      - name: indice_de_referencia
+        description: "Índice de Referência"
+      - name: em_apuracao
+        description: "Em Apuração"
+      - name: data_de_apuracao
+        description: "Data de Apuração"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: descricao
+        description: "Descrição"
+      - name: periodo_ou_data_a_que_se_refere
+        description: "Período ou Data a que se Refere"
+      - name: data_de_divulgacao_disponibilizacao
+        description: "Data de Divulgação/Disponibilização"
+      - name: periodicidade
+        description: "Periodicidade"
+      - name: polaridade
+        description: "Polaridade"
+      - name: formula_de_calculo
+        description: "Fórmula de Cálculo"
+      - name: variaveis_de_calculo
+        description: "Variáveis de Cálculo"
+      - name: fonte_de_dados_das_variaveis_de_calculo
+        description: "Fonte de Dados das Variáveis de Cálculo"
+      - name: forma_de_disponibilizacao
+        description: "Forma de Disponibilização"
+      - name: procedimento_de_calculo
+        description: "Procedimento de Cálculo"
+      - name: limitacoes
+        description: "Limitações"
+      - name: notas_explicativas
+        description: "Notas Explicativas"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_medida_institucional_objetivo_especifico_mir
+    description: >
+      Camada silver do PPA/SIOP —
+      `agenda_medida_institucional_objetivo_especifico` (ver bronze
+      `agenda_medida_institucional_objetivo_especifico`) vinculada a um
+      programa do MIR via inner join com `programa_mir` (chave `programa` +
+      `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo_geral
+        description: "Objetivo Geral"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: descricao
+        description: "Descrição"
+      - name: enunciado
+        description: "Enunciado"
+      - name: unidade_responsavel
+        description: "Unidade Responsável"
+      - name: resultados_esperados
+        description: "Resultados Esperados"
+      - name: prioritaria
+        description: "Prioritária"
+      - name: pac
+        description: "PAC"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: objetivo
+        description: "Objetivo"
+      - name: medida_institucional_normativa
+        description: "Medida Institucional Normativa"
+      - name: orgao_responsavel
+        description: "Órgão Responsável"
+      - name: concluida
+        description: "Concluída"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_medida_institucional_programa_mir
+    description: >
+      Camada silver do PPA/SIOP — `agenda_medida_institucional_programa` (ver
+      bronze `agenda_medida_institucional_programa`) vinculada a um programa
+      do MIR via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: descricao
+        description: "Descrição"
+      - name: enunciado
+        description: "Enunciado"
+      - name: unidade_responsavel
+        description: "Unidade Responsável"
+      - name: resultados_esperados
+        description: "Resultados Esperados"
+      - name: prioritaria
+        description: "Prioritária"
+      - name: pac
+        description: "PAC"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: medida_institucional_normativa
+        description: "Medida Institucional Normativa"
+      - name: orgao_responsavel
+        description: "Órgão Responsável"
+      - name: concluida
+        description: "Concluída"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_meta_entrega_mir
+    description: >
+      Camada silver do PPA/SIOP — `agenda_meta_entrega` (ver bronze
+      `agenda_meta_entrega`) vinculada a um programa do MIR via inner join com
+      `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_da_entrega
+        description: "Meta da Entrega"
+      - name: meta_cumulativa
+        description: "Meta Cumulativa"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_meta_objetivo_especifico_mir
+    description: >
+      Camada silver do PPA/SIOP — `agenda_meta_objetivo_especifico` (ver
+      bronze `agenda_meta_objetivo_especifico`) vinculada a um programa do MIR
+      via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_do_objetivo_especifico
+        description: "Meta do Objetivo Específico"
+      - name: meta_cumulativa
+        description: "Meta Cumulativa"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_objetivo_especifico_mir
+    description: >
+      Camada silver do PPA/SIOP — `agenda_objetivo_especifico` (ver bronze
+      `agenda_objetivo_especifico`) vinculada a um programa do MIR via inner
+      join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: enunciado
+        description: "Enunciado"
+      - name: descricao
+        description: "Descrição"
+      - name: orgao
+        description: "Órgão"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_objetivo_geral_mir
+    description: >
+      Camada silver do PPA/SIOP — `agenda_objetivo_geral` (ver bronze
+      `agenda_objetivo_geral`) vinculada a um programa do MIR via inner join
+      com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: enunciado
+        description: "Enunciado"
+      - name: descricao
+        description: "Descrição"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_programa_mir
+    description: >
+      Camada silver do PPA/SIOP — `agenda_programa` (ver bronze
+      `agenda_programa`) vinculada a um programa do MIR via inner join com
+      `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: titulo
+        description: "Título"
+      - name: tipo
+        description: "Tipo"
+      - name: orgao
+        description: "Órgão"
+      - name: publico_alvo
+        description: "Público-alvo"
+      - name: descricao_do_problema
+        description: "Descrição do Problema"
+      - name: causa_do_problema
+        description: "Causa do Problema"
+      - name: evidencias_do_problema
+        description: "Evidências do Problema"
+      - name: justificativa_para_a_intervencao
+        description: "Justificativa para a intervenção"
+      - name: evolucao_historica
+        description: "Evolução Histórica"
+      - name: comparacoes_internacionais
+        description: "Comparações Internacionais"
+      - name: relacao_com_os_ods
+        description: "Relação com os ODS"
+      - name: agentes_envolvidos
+        description: "Agentes Envolvidos"
+      - name: articulacao_federativa
+        description: "Articulação Federativa"
+      - name: enfoque_transversal
+        description: "Enfoque Transversal"
+      - name: marco_legal
+        description: "Marco Legal"
+      - name: planos_nacionais_setoriais_e_regionais
+        description: "Planos nacionais, setoriais e regionais"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_regionalizacao_meta_entrega_mir
+    description: >
+      Camada silver do PPA/SIOP — `agenda_regionalizacao_meta_entrega` (ver
+      bronze `agenda_regionalizacao_meta_entrega`) vinculada a um programa do
+      MIR via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_da_entrega
+        description: "Meta da Entrega"
+      - name: regiao
+        description: "Região"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: agenda_regionalizacao_meta_objetivo_especifico_mir
+    description: >
+      Camada silver do PPA/SIOP —
+      `agenda_regionalizacao_meta_objetivo_especifico` (ver bronze
+      `agenda_regionalizacao_meta_objetivo_especifico`) vinculada a um
+      programa do MIR via inner join com `programa_mir` (chave `programa` +
+      `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: codigo_agenda
+        description: "Código Agenda"
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_do_objetivo_especifico
+        description: "Meta do Objetivo Específico"
+      - name: regiao
+        description: "Região"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: nome_agenda
+        description: "Nome Agenda"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: desagregacao_meta_entrega_mir
+    description: >
+      Camada silver do PPA/SIOP — `desagregacao_meta_entrega` (ver bronze
+      `desagregacao_meta_entrega`) vinculada a um programa do MIR via inner
+      join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_da_entrega
+        description: "Meta da Entrega"
+      - name: publico
+        description: "Público"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: desagregacao_meta_objetivo_especifico_mir
+    description: >
+      Camada silver do PPA/SIOP — `desagregacao_meta_objetivo_especifico` (ver
+      bronze `desagregacao_meta_objetivo_especifico`) vinculada a um programa
+      do MIR via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_do_objetivo_especifico
+        description: "Meta do Objetivo Específico"
+      - name: publico
+        description: "Público"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: entrega_mir
+    description: >
+      Camada silver do PPA/SIOP — `entrega` (ver bronze `entrega`) vinculada a
+      um programa do MIR via inner join com `programa_mir` (chave `programa` +
+      `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: enunciado
+        description: "Enunciado"
+      - name: descricao
+        description: "Descrição"
+      - name: orgao
+        description: "Órgão"
+      - name: unidade_responsavel
+        description: "Unidade Responsável"
+      - name: projeto_de_investimento
+        description: "Projeto de Investimento"
+      - name: data_de_inicio
+        description: "Data de Início"
+      - name: data_de_termino
+        description: "Data de Término"
+      - name: valor_total
+        description: "Valor Total"
+      - name: execucao_fisica_acumulada
+        description: "Execução Física Acumulada"
+      - name: meta_da_execucao_fisica
+        description: "Meta da Execução Física"
+      - name: pac
+        description: "PAC"
+      - name: identificador_cadastro_novo_pac_governa
+        description: "Identificador Cadastro Novo PAC (Governa)"
+      - name: concluida
+        description: "Concluída"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: indicador_entrega_mir
+    description: >
+      Camada silver do PPA/SIOP — `indicador_entrega` (ver bronze
+      `indicador_entrega`) vinculada a um programa do MIR via inner join com
+      `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: denominacao
+        description: "Denominação"
+      - name: sigla
+        description: "Sigla"
+      - name: indice_de_referencia
+        description: "Índice de Referência"
+      - name: em_apuracao
+        description: "Em Apuração"
+      - name: data_de_apuracao
+        description: "Data de Apuração"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: descricao
+        description: "Descrição"
+      - name: periodo_ou_data_a_que_se_refere
+        description: "Período ou Data a que se Refere"
+      - name: data_de_divulgacao_disponibilizacao
+        description: "Data de Divulgação/Disponibilização"
+      - name: periodicidade
+        description: "Periodicidade"
+      - name: polaridade
+        description: "Polaridade"
+      - name: formula_de_calculo
+        description: "Fórmula de Cálculo"
+      - name: variaveis_de_calculo
+        description: "Variáveis de Cálculo"
+      - name: fonte_de_dados_das_variaveis_de_calculo
+        description: "Fonte de Dados das Variáveis de Cálculo"
+      - name: forma_de_disponibilizacao
+        description: "Forma de Disponibilização"
+      - name: procedimento_de_calculo
+        description: "Procedimento de Cálculo"
+      - name: limitacoes
+        description: "Limitações"
+      - name: notas_explicativas
+        description: "Notas Explicativas"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: indicador_objetivo_especifico_mir
+    description: >
+      Camada silver do PPA/SIOP — `indicador_objetivo_especifico` (ver bronze
+      `indicador_objetivo_especifico`) vinculada a um programa do MIR via
+      inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: denominacao
+        description: "Denominação"
+      - name: sigla
+        description: "Sigla"
+      - name: indice_de_referencia
+        description: "Índice de Referência"
+      - name: em_apuracao
+        description: "Em Apuração"
+      - name: data_de_apuracao
+        description: "Data de Apuração"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: descricao
+        description: "Descrição"
+      - name: periodo_ou_data_a_que_se_refere
+        description: "Período ou Data a que se Refere"
+      - name: data_de_divulgacao_disponibilizacao
+        description: "Data de Divulgação/Disponibilização"
+      - name: periodicidade
+        description: "Periodicidade"
+      - name: polaridade
+        description: "Polaridade"
+      - name: formula_de_calculo
+        description: "Fórmula de Cálculo"
+      - name: variaveis_de_calculo
+        description: "Variáveis de Cálculo"
+      - name: fonte_de_dados_das_variaveis_de_calculo
+        description: "Fonte de Dados das Variáveis de Cálculo"
+      - name: forma_de_disponibilizacao
+        description: "Forma de Disponibilização"
+      - name: procedimento_de_calculo
+        description: "Procedimento de Cálculo"
+      - name: limitacoes
+        description: "Limitações"
+      - name: notas_explicativas
+        description: "Notas Explicativas"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: medida_institucional_objetivo_especifico_mir
+    description: >
+      Camada silver do PPA/SIOP — `medida_institucional_objetivo_especifico`
+      (ver bronze `medida_institucional_objetivo_especifico`) vinculada a um
+      programa do MIR via inner join com `programa_mir` (chave `programa` +
+      `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo_geral
+        description: "Objetivo Geral"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: descricao
+        description: "Descrição"
+      - name: enunciado
+        description: "Enunciado"
+      - name: unidade_responsavel
+        description: "Unidade Responsável"
+      - name: resultados_esperados
+        description: "Resultados Esperados"
+      - name: prioritaria
+        description: "Prioritária"
+      - name: pac
+        description: "PAC"
+      - name: objetivo
+        description: "Objetivo"
+      - name: medida_institucional_normativa
+        description: "Medida Institucional Normativa"
+      - name: orgao_responsavel
+        description: "Órgão Responsável"
+      - name: concluida
+        description: "Concluída"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: medida_institucional_programa_mir
+    description: >
+      Camada silver do PPA/SIOP — `medida_institucional_programa` (ver bronze
+      `medida_institucional_programa`) vinculada a um programa do MIR via
+      inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: descricao
+        description: "Descrição"
+      - name: enunciado
+        description: "Enunciado"
+      - name: unidade_responsavel
+        description: "Unidade Responsável"
+      - name: resultados_esperados
+        description: "Resultados Esperados"
+      - name: prioritaria
+        description: "Prioritária"
+      - name: pac
+        description: "PAC"
+      - name: medida_institucional_normativa
+        description: "Medida Institucional Normativa"
+      - name: orgao_responsavel
+        description: "Órgão Responsável"
+      - name: concluida
+        description: "Concluída"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: meta_entrega_mir
+    description: >
+      Camada silver do PPA/SIOP — `meta_entrega` (ver bronze `meta_entrega`)
+      vinculada a um programa do MIR via inner join com `programa_mir` (chave
+      `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_da_entrega
+        description: "Meta da Entrega"
+      - name: meta_cumulativa
+        description: "Meta Cumulativa"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: meta_objetivo_especifico_mir
+    description: >
+      Camada silver do PPA/SIOP — `meta_objetivo_especifico` (ver bronze
+      `meta_objetivo_especifico`) vinculada a um programa do MIR via inner
+      join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_do_objetivo_especifico
+        description: "Meta do Objetivo Específico"
+      - name: meta_cumulativa
+        description: "Meta Cumulativa"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: objetivo_especifico_mir
+    description: >
+      Camada silver do PPA/SIOP — `objetivo_especifico` (ver bronze
+      `objetivo_especifico`) vinculada a um programa do MIR via inner join com
+      `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: enunciado
+        description: "Enunciado"
+      - name: descricao
+        description: "Descrição"
+      - name: orgao
+        description: "Órgão"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: objetivo_estrategico_programa_mir
+    description: >
+      Camada silver do PPA/SIOP — `objetivo_estrategico_programa` (ver bronze
+      `objetivo_estrategico_programa`) vinculada a um programa do MIR via
+      inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo_estrategico
+        description: "Objetivo Estratégico"
+      - name: titulo_objetivo_estrategico
+        description: "Título - Objetivo Estratégico"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: objetivo_geral_mir
+    description: >
+      Camada silver do PPA/SIOP — `objetivo_geral` (ver bronze
+      `objetivo_geral`) vinculada a um programa do MIR via inner join com
+      `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: enunciado
+        description: "Enunciado"
+      - name: descricao
+        description: "Descrição"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: regionalizacao_meta_entrega_mir
+    description: >
+      Camada silver do PPA/SIOP — `regionalizacao_meta_entrega` (ver bronze
+      `regionalizacao_meta_entrega`) vinculada a um programa do MIR via inner
+      join com `programa_mir` (chave `programa` + `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: entrega
+        description: "Entrega"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_da_entrega
+        description: "Meta da Entrega"
+      - name: regiao
+        description: "Região"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: regionalizacao_meta_objetivo_especifico_mir
+    description: >
+      Camada silver do PPA/SIOP — `regionalizacao_meta_objetivo_especifico`
+      (ver bronze `regionalizacao_meta_objetivo_especifico`) vinculada a um
+      programa do MIR via inner join com `programa_mir` (chave `programa` +
+      `ano_ppa`).
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: exercicio
+        description: "Exercício"
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo"
+      - name: objetivo_especifico
+        description: "Objetivo Específico"
+      - name: indicador
+        description: "Indicador"
+      - name: meta_do_objetivo_especifico
+        description: "Meta do Objetivo Específico"
+      - name: regiao
+        description: "Região"
+      - name: unidade_de_medida
+        description: "Unidade de Medida"
+      - name: valor_esperado_1o_ano_ppa
+        description: "Valor esperado - 1º ano PPA"
+      - name: valor_esperado_2o_ano_ppa
+        description: "Valor esperado - 2º ano PPA"
+      - name: valor_esperado_3o_ano_ppa
+        description: "Valor esperado - 3º ano PPA"
+      - name: meta_final_ppa
+        description: "Meta Final PPA"
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: id_hash
+        description: "Chave surrogate herdada da bronze (md5 das colunas de negócio + ano_ppa)."
+        tests:
+          - not_null
+          - unique
+      - name: dt_ingest
+        description: "Timestamp de ingestão (auditoria, herdado da bronze)."
