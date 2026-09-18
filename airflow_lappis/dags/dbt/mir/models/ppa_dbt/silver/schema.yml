@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: programa_mir
+  - name: programa_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — programas do PPA 2024-2027 (e suas revisões
       2025/2026) cujo órgão responsável é o MIR (`{{ var("orgao_mir") }}`).
@@ -100,11 +100,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: acao_nao_orcamentaria_mir
+  - name: acao_nao_orcamentaria_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — ações não-orçamentárias (o "Ação_Orçamentária"
       renomeado em 2026, mesma entidade — ver bronze `acao_nao_orcamentaria`)
-      vinculadas a um programa do MIR via inner join com `programa_mir`
+      vinculadas a um programa do MIR via inner join com `programa_filtrado_mir`
       (chave `programa` + `ano_ppa`).
     meta:
       tags:
@@ -193,11 +193,11 @@ models:
           - unique
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
-  - name: agenda_mir
+  - name: agenda_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — agendas transversais (ver bronze `agenda`),
       restritas às agendas vinculadas a pelo menos um programa do MIR de forma
-      indireta, via `agenda_programa_mir` (chave `codigo` = `codigo_agenda` +
+      indireta, via `agenda_programa_filtrado_mir` (chave `codigo` = `codigo_agenda` +
       `ano_ppa`).
     meta:
       tags:
@@ -227,11 +227,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_desagregacao_meta_entrega_mir
+  - name: agenda_desagregacao_meta_entrega_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `agenda_desagregacao_meta_entrega` (ver
       bronze `agenda_desagregacao_meta_entrega`) vinculada a um programa do
-      MIR via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+      MIR via inner join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -282,12 +282,12 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_desagregacao_meta_objetivo_especifico_mir
+  - name: agenda_desagregacao_meta_objetivo_especifico_filtrado_mir
     description: >
       Camada silver do PPA/SIOP —
       `agenda_desagregacao_meta_objetivo_especifico` (ver bronze
       `agenda_desagregacao_meta_objetivo_especifico`) vinculada a um programa
-      do MIR via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+      do MIR via inner join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -336,11 +336,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_entrega_mir
+  - name: agenda_entrega_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `agenda_entrega` (ver bronze
       `agenda_entrega`) vinculada a um programa do MIR via inner join com
-      `programa_mir` (chave `programa` + `ano_ppa`).
+      `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -401,11 +401,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_indicador_entrega_mir
+  - name: agenda_indicador_entrega_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `agenda_indicador_entrega` (ver bronze
       `agenda_indicador_entrega`) vinculada a um programa do MIR via inner
-      join com `programa_mir` (chave `programa` + `ano_ppa`).
+      join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -478,11 +478,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_indicador_objetivo_especifico_mir
+  - name: agenda_indicador_objetivo_especifico_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `agenda_indicador_objetivo_especifico` (ver
       bronze `agenda_indicador_objetivo_especifico`) vinculada a um programa
-      do MIR via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+      do MIR via inner join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -553,12 +553,12 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_medida_institucional_objetivo_especifico_mir
+  - name: agenda_medida_institucional_objetivo_especifico_filtrado_mir
     description: >
       Camada silver do PPA/SIOP —
       `agenda_medida_institucional_objetivo_especifico` (ver bronze
       `agenda_medida_institucional_objetivo_especifico`) vinculada a um
-      programa do MIR via inner join com `programa_mir` (chave `programa` +
+      programa do MIR via inner join com `programa_filtrado_mir` (chave `programa` +
       `ano_ppa`).
     meta:
       tags:
@@ -612,11 +612,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_medida_institucional_programa_mir
+  - name: agenda_medida_institucional_programa_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `agenda_medida_institucional_programa` (ver
       bronze `agenda_medida_institucional_programa`) vinculada a um programa
-      do MIR via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+      do MIR via inner join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -663,11 +663,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_meta_entrega_mir
+  - name: agenda_meta_entrega_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `agenda_meta_entrega` (ver bronze
       `agenda_meta_entrega`) vinculada a um programa do MIR via inner join com
-      `programa_mir` (chave `programa` + `ano_ppa`).
+      `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -716,11 +716,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_meta_objetivo_especifico_mir
+  - name: agenda_meta_objetivo_especifico_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `agenda_meta_objetivo_especifico` (ver
       bronze `agenda_meta_objetivo_especifico`) vinculada a um programa do MIR
-      via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+      via inner join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -767,11 +767,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_objetivo_especifico_mir
+  - name: agenda_objetivo_especifico_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `agenda_objetivo_especifico` (ver bronze
       `agenda_objetivo_especifico`) vinculada a um programa do MIR via inner
-      join com `programa_mir` (chave `programa` + `ano_ppa`).
+      join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -810,11 +810,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_objetivo_geral_mir
+  - name: agenda_objetivo_geral_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `agenda_objetivo_geral` (ver bronze
       `agenda_objetivo_geral`) vinculada a um programa do MIR via inner join
-      com `programa_mir` (chave `programa` + `ano_ppa`).
+      com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -849,11 +849,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_programa_mir
+  - name: agenda_programa_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `agenda_programa` (ver bronze
       `agenda_programa`) vinculada a um programa do MIR via inner join com
-      `programa_mir` (chave `programa` + `ano_ppa`).
+      `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -914,11 +914,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_regionalizacao_meta_entrega_mir
+  - name: agenda_regionalizacao_meta_entrega_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `agenda_regionalizacao_meta_entrega` (ver
       bronze `agenda_regionalizacao_meta_entrega`) vinculada a um programa do
-      MIR via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+      MIR via inner join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -969,12 +969,12 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: agenda_regionalizacao_meta_objetivo_especifico_mir
+  - name: agenda_regionalizacao_meta_objetivo_especifico_filtrado_mir
     description: >
       Camada silver do PPA/SIOP —
       `agenda_regionalizacao_meta_objetivo_especifico` (ver bronze
       `agenda_regionalizacao_meta_objetivo_especifico`) vinculada a um
-      programa do MIR via inner join com `programa_mir` (chave `programa` +
+      programa do MIR via inner join com `programa_filtrado_mir` (chave `programa` +
       `ano_ppa`).
     meta:
       tags:
@@ -1024,11 +1024,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: desagregacao_meta_entrega_mir
+  - name: desagregacao_meta_entrega_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `desagregacao_meta_entrega` (ver bronze
       `desagregacao_meta_entrega`) vinculada a um programa do MIR via inner
-      join com `programa_mir` (chave `programa` + `ano_ppa`).
+      join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -1073,11 +1073,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: desagregacao_meta_objetivo_especifico_mir
+  - name: desagregacao_meta_objetivo_especifico_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `desagregacao_meta_objetivo_especifico` (ver
       bronze `desagregacao_meta_objetivo_especifico`) vinculada a um programa
-      do MIR via inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+      do MIR via inner join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -1120,10 +1120,10 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: entrega_mir
+  - name: entrega_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `entrega` (ver bronze `entrega`) vinculada a
-      um programa do MIR via inner join com `programa_mir` (chave `programa` +
+      um programa do MIR via inner join com `programa_filtrado_mir` (chave `programa` +
       `ano_ppa`).
     meta:
       tags:
@@ -1179,11 +1179,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: indicador_entrega_mir
+  - name: indicador_entrega_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `indicador_entrega` (ver bronze
       `indicador_entrega`) vinculada a um programa do MIR via inner join com
-      `programa_mir` (chave `programa` + `ano_ppa`).
+      `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -1250,11 +1250,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: indicador_objetivo_especifico_mir
+  - name: indicador_objetivo_especifico_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `indicador_objetivo_especifico` (ver bronze
       `indicador_objetivo_especifico`) vinculada a um programa do MIR via
-      inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+      inner join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -1319,11 +1319,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: medida_institucional_objetivo_especifico_mir
+  - name: medida_institucional_objetivo_especifico_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `medida_institucional_objetivo_especifico`
       (ver bronze `medida_institucional_objetivo_especifico`) vinculada a um
-      programa do MIR via inner join com `programa_mir` (chave `programa` +
+      programa do MIR via inner join com `programa_filtrado_mir` (chave `programa` +
       `ano_ppa`).
     meta:
       tags:
@@ -1371,11 +1371,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: medida_institucional_programa_mir
+  - name: medida_institucional_programa_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `medida_institucional_programa` (ver bronze
       `medida_institucional_programa`) vinculada a um programa do MIR via
-      inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+      inner join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -1416,10 +1416,10 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: meta_entrega_mir
+  - name: meta_entrega_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `meta_entrega` (ver bronze `meta_entrega`)
-      vinculada a um programa do MIR via inner join com `programa_mir` (chave
+      vinculada a um programa do MIR via inner join com `programa_filtrado_mir` (chave
       `programa` + `ano_ppa`).
     meta:
       tags:
@@ -1463,11 +1463,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: meta_objetivo_especifico_mir
+  - name: meta_objetivo_especifico_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `meta_objetivo_especifico` (ver bronze
       `meta_objetivo_especifico`) vinculada a um programa do MIR via inner
-      join com `programa_mir` (chave `programa` + `ano_ppa`).
+      join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -1508,11 +1508,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: objetivo_especifico_mir
+  - name: objetivo_especifico_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `objetivo_especifico` (ver bronze
       `objetivo_especifico`) vinculada a um programa do MIR via inner join com
-      `programa_mir` (chave `programa` + `ano_ppa`).
+      `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -1545,11 +1545,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: objetivo_estrategico_programa_mir
+  - name: objetivo_estrategico_programa_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `objetivo_estrategico_programa` (ver bronze
       `objetivo_estrategico_programa`) vinculada a um programa do MIR via
-      inner join com `programa_mir` (chave `programa` + `ano_ppa`).
+      inner join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -1576,11 +1576,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: objetivo_geral_mir
+  - name: objetivo_geral_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `objetivo_geral` (ver bronze
       `objetivo_geral`) vinculada a um programa do MIR via inner join com
-      `programa_mir` (chave `programa` + `ano_ppa`).
+      `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -1609,11 +1609,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: regionalizacao_meta_entrega_mir
+  - name: regionalizacao_meta_entrega_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `regionalizacao_meta_entrega` (ver bronze
       `regionalizacao_meta_entrega`) vinculada a um programa do MIR via inner
-      join com `programa_mir` (chave `programa` + `ano_ppa`).
+      join com `programa_filtrado_mir` (chave `programa` + `ano_ppa`).
     meta:
       tags:
         - silver
@@ -1658,11 +1658,11 @@ models:
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
 
-  - name: regionalizacao_meta_objetivo_especifico_mir
+  - name: regionalizacao_meta_objetivo_especifico_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — `regionalizacao_meta_objetivo_especifico`
       (ver bronze `regionalizacao_meta_objetivo_especifico`) vinculada a um
-      programa do MIR via inner join com `programa_mir` (chave `programa` +
+      programa do MIR via inner join com `programa_filtrado_mir` (chave `programa` +
       `ano_ppa`).
     meta:
       tags:

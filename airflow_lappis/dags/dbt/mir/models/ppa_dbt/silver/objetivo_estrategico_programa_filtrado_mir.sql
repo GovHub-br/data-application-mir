@@ -5,13 +5,13 @@ with
         select *
         from {{ ref("objetivo_estrategico_programa") }}
     ),
-    programa_mir as (
+    programa_filtrado_mir as (
         select programa, ano_ppa
-        from {{ ref("programa_mir") }}
+        from {{ ref("programa_filtrado_mir") }}
     )
 
 select objetivo_estrategico_programa.*
 from objetivo_estrategico_programa
-inner join programa_mir
-    on objetivo_estrategico_programa.programa = programa_mir.programa
-    and objetivo_estrategico_programa.ano_ppa = programa_mir.ano_ppa
+inner join programa_filtrado_mir
+    on objetivo_estrategico_programa.programa = programa_filtrado_mir.programa
+    and objetivo_estrategico_programa.ano_ppa = programa_filtrado_mir.ano_ppa
