@@ -20,7 +20,17 @@ with
 
     ted as (select * from {{ ref("vinculo_ne_ted") }}),
 
-    convenio as (select * from {{ ref("vinculo_ne_convenio") }})
+    convenio as (select * from {{ ref("vinculo_ne_convenio") }}),
+
+    -- Primeiro exercicio em que cada NE foi inscrita em restos a pagar. As
+    -- inscricoes dos exercicios seguintes sao reinscricoes: o saldo nao pago do
+    -- mesmo dinheiro, que nao pode ser somado de novo.
+    primeira_inscricao_rap as (
+        select ne_ccor, min(right(emissao_dia, 4)::integer) as ano_primeira_inscricao
+        from empenhos
+        where emissao_dia ~ '^000/\d{4}$' and restos_a_pagar_inscritos <> 0
+        group by ne_ccor
+    )
 
 select
     e.id_hash as id_execucao_ne,
@@ -34,6 +44,11 @@ select
         then make_date(right(e.emissao_dia, 4)::integer, 1, 1)
     end as data_emissao,
     coalesce(e.emissao_dia ~ '^000/\d{4}$', false) as inscricao_rap,
+    coalesce(
+        e.emissao_dia ~ '^000/\d{4}$'
+        and right(e.emissao_dia, 4)::integer > r.ano_primeira_inscricao,
+        false
+    ) as reinscricao_rap,
     e.ne_ccor_ano_emissao,
 
     -- Unidades gestoras
@@ -118,3 +133,4 @@ from empenhos as e
 left join emendas as em on em.ne_ccor = e.ne_ccor
 left join ted as t on t.ne_ccor = e.ne_ccor
 left join convenio as c on c.ne_ccor = e.ne_ccor
+left join primeira_inscricao_rap as r on r.ne_ccor = e.ne_ccor

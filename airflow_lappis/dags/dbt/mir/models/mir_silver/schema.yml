@@ -89,6 +89,15 @@ models:
         description: "Verdadeiro quando a linha e inscricao de restos a pagar (emissao_dia = 000/AAAA)."
         tests:
           - not_null
+      - name: reinscricao_rap
+        description: >
+          Verdadeiro na linha de inscricao de restos a pagar de uma NE que ja foi
+          inscrita num exercicio anterior. A reinscricao e o saldo nao pago do mesmo
+          dinheiro (inscricao anterior menos pagamentos e cancelamentos): o RAP
+          inscrito acumulado soma so as linhas com reinscricao_rap = false; o saldo
+          de RAP de um exercicio usa todas as inscricoes daquele ano.
+        tests:
+          - not_null
       - name: ug_emitente_codigo
         description: "UG emitente da NE (6 primeiros digitos de ne_ccor)."
       - name: codigo_emenda
@@ -128,9 +137,8 @@ models:
         description: "Valor pago na linha."
       - name: restos_a_pagar_inscritos
         description: >
-          Restos a pagar inscritos (linhas com inscricao_rap). E saldo do exercicio
-          (ano de data_emissao): o saldo nao pago de uma NE aparece de novo como
-          inscrito no exercicio seguinte. NAO somar entre exercicios; ler ano a
-          ano. A consulta de origem ainda nao separa os reinscritos.
+          Restos a pagar inscritos (linhas com inscricao_rap). O saldo nao pago de
+          uma NE reaparece como inscrito no exercicio seguinte; para somar entre
+          exercicios, usar so as linhas com reinscricao_rap = false.
       - name: restos_a_pagar_pagos
         description: "Restos a pagar pagos na linha."
