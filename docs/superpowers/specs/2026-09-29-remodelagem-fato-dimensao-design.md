@@ -24,7 +24,9 @@ A bronze não muda.
 
 1. **A emenda não é um instrumento, é a origem do recurso.** O instrumento (convênio, termo de fomento ou TED) é financiado **ou** por emenda **ou** por orçamento próprio do MIR, nunca pelos dois.
 2. **O vínculo emenda → instrumento nasce na nota de empenho (NE).** O número do instrumento é extraído por regex dos textos da NE. Cada NE aponta para no máximo um instrumento. Uma emenda pode chegar a vários instrumentos (hoje, de 1 a 9 convênios por emenda). Um instrumento pode receber mais de uma emenda (hoje, 2 casos).
-3. **Existe uma fonte única de execução orçamentária.** Todas as NEs de emenda (221/221) e todas as NEs de TED (679/679) já estão em `siafi_dbt.ppa_tesouro`. O `tg_emendas` serve só para atribuir a emenda a cada NE; os valores vêm sempre do `ppa_tesouro`. Assim uma NE nunca é somada duas vezes.
+3. **Existe uma fonte única de execução orçamentária.** Todas as NEs de emenda (221/221) e todas as NEs de TED (679/679) já estão em `siafi_dbt.ppa_tesouro`. Os valores vêm sempre do `ppa_tesouro`. Assim uma NE nunca é somada duas vezes.
+4. **A origem do recurso é o Resultado Primário (RP) da NE** (`ppa_tesouro.resultado_eof_codigo`): `2` (primário discricionário) = **Recurso próprio**; `6` (discricionária decorrente de emenda individual) = **Emenda**. Cada NE tem um único RP (0 casos com mais de um). As 221 NEs do `tg_emendas` são todas RP 6. Outras 42 NEs RP 6 (R$ 25,2 mi empenhados, R$ 21,8 mi pagos, 2024 a set/2025) não estão no `tg_emendas` e hoje são tratadas como recurso próprio; o novo modelo corrige isso.
+5. **O `tg_emendas` só diz *qual* emenda e *qual* parlamentar.** Ele não decide se a NE é de emenda. Uma NE RP 6 sem correspondência no `tg_emendas` é emenda com autor não identificado (`sk_emenda = -1`).
 
 ## 3. Camadas e schemas
 
@@ -49,8 +51,8 @@ A bronze não muda.
 
 | Modelo | Grão | Regras que concentra | Fontes (bronze) |
 |---|---|---|---|
-| `execucao_ne` | linha do `ppa_tesouro` (NE × mês × PTRES × natureza × fonte × PO) | **núcleo**: `codigo_emenda` (via `tg_emendas.ne_ccor`; nulo = recurso próprio); `sistema_instrumento` (SICONV · TED · Não identificado), `nr_instrumento` e `metodo_vinculo` (`info_complementar` · `descricao` · `observacao` · `nao_encontrado`), usando as regex hoje em `numero_transferencia` e `empenhos_por_plano_acao` | `ppa_tesouro`, `tg_emendas`, `num_transf`↔plano |
-| `convenio` | instrumento (`nr_convenio`) | recorte do MIR (UG emitente 810008 ou com NE da UG 810008, regra atual de `convenios_consolidados`); atributos 1:1 da proposta (modalidade, objeto, proponente, município); UGs responsáveis agregadas; `origem_recurso` = Emenda se alguma NE do instrumento em `execucao_ne` tem `codigo_emenda` | `convenio`, `proposta`, `execucao_ne` |
+| `execucao_ne` | linha do `ppa_tesouro` (NE × mês × PTRES × natureza × fonte × PO) | **núcleo**: `origem_recurso` pelo RP (`resultado_eof_codigo`: 2 → Recurso próprio; 6 → Emenda; qualquer outro código falha no teste `accepted_values`, para que um RP novo, como 7 de bancada, seja tratado conscientemente e não caia em "próprio" em silêncio); `codigo_emenda` via `tg_emendas.ne_ccor` (nulo em RP 6 = emenda com autor não identificado); `sistema_instrumento` (SICONV · TED · Não identificado), `nr_instrumento` e `metodo_vinculo` (`info_complementar` · `descricao` · `observacao` · `nao_encontrado`), usando as regex hoje em `numero_transferencia` e `empenhos_por_plano_acao` | `ppa_tesouro`, `tg_emendas`, `num_transf`↔plano |
+| `convenio` | instrumento (`nr_convenio`) | recorte do MIR (UG emitente 810008 ou com NE da UG 810008, regra atual de `convenios_consolidados`); atributos 1:1 da proposta (modalidade, objeto, proponente, município); UGs responsáveis agregadas; `origem_recurso` = origem das NEs do instrumento em `execucao_ne` (Recurso próprio quando o instrumento não tem NE) | `convenio`, `proposta`, `execucao_ne` |
 | `convenio_movimento_financeiro` | movimento | união de desembolso, ingresso de contrapartida, desbloqueio, pagamento e pagamento de tributo, com `tipo_movimento`, recortada aos convênios do MIR | `desembolso`, `ingresso_contrapartida`, `desbloqueio`, `pagamento`, `pagamento_tributo` |
 | `convenio_cronograma` | parcela × mês | responsável (Concedente/Convenente/Rendimento), recorte do MIR | `cronograma_desembolso` |
 | `convenio_evento` | evento | `tipo_evento` (mudança de situação, termo aditivo, prorrogação de ofício, solicitação de alteração, solicitação de rendimento), recorte do MIR | `historico_situacao`, `termo_aditivo`, `prorroga_oficio`, `solicitacao_alteracao`, `solicitacao_rendimento_aplicacao` |
@@ -143,7 +145,7 @@ Substitui `emendas_execucao_por_ug`, `emendas_instrumentos_execucao` e `resumo_e
 
 | Fato | Grão | Medidas |
 |---|---|---|
-| `fato_execucao_orcamentaria` | linha de `execucao_ne` com `codigo_emenda` não nulo | empenhado, liquidado, pago, RAP inscrito, RAP pago |
+| `fato_execucao_orcamentaria` | linha de `execucao_ne` com `origem_recurso = 'Emenda'` (RP 6) | empenhado, liquidado, pago, RAP inscrito, RAP pago |
 | `fato_dotacao` | linha de `emenda_dotacao` | dotação inicial, dotação atualizada |
 | `fato_emenda_posicao` | emenda (snapshot) | dotação atualizada, empenhado, liquidado, pago, qtde de instrumentos |
 
@@ -175,7 +177,9 @@ A bronze desses domínios e `dados_abertos_dbt/silver/parlamentares_historico` p
 | Grão | todas as fatos e posições | `unique` na combinação que define o grão |
 | Reconciliação | teste singular | soma de empenhado/liquidado/pago de `execucao_ne` = `ppa_tesouro` recortado |
 | Consistência entre marts | teste singular | empenhado com origem Emenda em `mir_convenios` + `mir_teds` + execução direta em `mir_emendas` = empenhado total de `mir_emendas` |
-| Exclusividade da origem | teste singular | nenhum instrumento com NEs de emenda **e** NEs sem emenda |
+| Origem do recurso | `accepted_values` em `execucao_ne.resultado_eof_codigo` | só RP 2 e 6; um código novo falha o build |
+| Exclusividade da origem | teste singular | nenhum instrumento com NEs RP 2 **e** RP 6 |
+| Autor da emenda | teste singular com limite | NEs RP 6 sem `codigo_emenda` não passam da linha de base (hoje, 42) |
 | Cobertura do vínculo | teste singular com limite | % de NEs com `metodo_vinculo = 'nao_encontrado'` não maior que a linha de base medida na etapa 1 (o valor fica fixado no teste e só sobe com justificativa no PR) |
 | Paridade (temporário) | análise dbt | posição nova × gold antigo, instrumento a instrumento; roda antes da remoção e é apagada depois |
 | Indicador | pytest | suíte do I1 verde |
@@ -193,5 +197,7 @@ Cada etapa só avança com `dbt build` verde para os modelos da etapa.
 ## 13. Riscos
 
 - **Divergência de números na paridade:** alguns resultados atuais têm efeitos colaterais conhecidos (inflação por grão no TED, `union distinct` em `convenios_consolidados`). Toda diferença encontrada é classificada como *bug antigo corrigido* ou *regressão*, e só a segunda bloqueia a etapa. As diferenças aceitas são registradas no PR.
+- **Diferença esperada no mart de Emendas:** as 42 NEs RP 6 fora do `tg_emendas` (R$ 25,2 mi empenhados) passam a contar como emenda. Na paridade, isso é classificado como correção. Pela mesma regra, os instrumentos ligados a essas NEs podem mudar de "Recurso próprio" para "Emenda" nos marts de Convênios e TEDs, inclusive no I1 (`origem`). Se algum teste do I1 comparar a origem com os CSVs da BI, a diferença é documentada e validada com a equipe da BI antes de atualizar o fixture.
+- **Formato de mês no `ppa_tesouro`:** `emissao_mes` é texto (`SET/2025`) e inclui `000/AAAA` (sem mês definido, possivelmente saldo de abertura). A silver converte para data e mapeia `000` para uma data convencional (1º de janeiro do ano), com flag `mes_indefinido`, para que essas linhas não se percam na `dim_tempo`.
 - **Painéis Power BI existentes** que leem os golds antigos quebram na remoção (etapa 5). A lista dos painéis afetados precisa ser confirmada com a equipe antes da etapa 5.
 - **Join por nome do parlamentar** continua sujeito a grafias divergentes, como hoje. O modelo não piora nem resolve esse ponto.
