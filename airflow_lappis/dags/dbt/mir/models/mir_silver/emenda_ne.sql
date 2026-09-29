@@ -18,7 +18,8 @@ with
         group by ne_ccor
     ),
 
-    -- Cada NE tem um autor e um localizador no tg_emendas
+    -- Cada NE tem um autor e um localizador no tg_emendas (teste
+    -- emenda_ne_localizador_unico); a ordem so torna a escolha deterministica
     autores as (
         select distinct
             on (ne_ccor)
@@ -31,7 +32,7 @@ with
             uf_pt as uf,
             uf_pt_descricao as uf_nome
         from {{ ref("tg_emendas") }}
-        order by ne_ccor, autor_emendas_orcamento_descricao
+        order by ne_ccor, autor_emendas_orcamento_descricao, localizador_gasto
     ),
 
     origem as (

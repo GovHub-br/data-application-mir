@@ -14,8 +14,11 @@ with
         select
             sk_emenda,
             sum(despesas_empenhadas) as empenhado,
+            sum(despesas_liquidadas) as liquidado,
             sum(despesas_pagas) as pago,
-            sum(restos_a_pagar_inscritos_acumulavel) as rap_inscrito
+            sum(restos_a_pagar_inscritos_acumulavel) as rap_inscrito,
+            sum(restos_a_pagar_pagos) as rap_pago,
+            count(distinct ne_ccor) as qtd_nes
         from {{ ref("emendas_fato_execucao_orcamentaria") }}
         group by sk_emenda
     ),
@@ -39,5 +42,8 @@ where
     or p.dotacao_inicial <> coalesce(d.inicial, 0)
     or p.dotacao_atualizada <> coalesce(d.atualizada, 0)
     or p.despesas_empenhadas <> coalesce(x.empenhado, 0)
+    or p.despesas_liquidadas <> coalesce(x.liquidado, 0)
     or p.despesas_pagas <> coalesce(x.pago, 0)
     or p.restos_a_pagar_inscritos_acumulavel <> coalesce(x.rap_inscrito, 0)
+    or p.restos_a_pagar_pagos <> coalesce(x.rap_pago, 0)
+    or p.qtd_nes <> coalesce(x.qtd_nes, 0)

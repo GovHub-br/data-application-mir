@@ -69,7 +69,9 @@ models:
         tests: [unique, not_null, membro_nao_identificado]
 
   - name: emendas_dim_localidade
-    description: "Localizador do gasto das emendas: regiao e UF, ou NACIONAL."
+    description: >
+      Localizador do gasto das emendas: regiao e UF. A UF fica nula quando o
+      gasto e regional ou NACIONAL (a regiao continua preenchida).
     columns:
       - name: sk_localidade
         tests: [unique, not_null, membro_nao_identificado]
