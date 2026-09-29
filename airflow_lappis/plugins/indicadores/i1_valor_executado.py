@@ -2,37 +2,45 @@
 
 Porte de ``i1_valor_executado.py`` e ``i1_etapa_cadeia_ted.R`` (equipe de BI,
 2026-07-21) para funções puras. A lógica e as decisões metodológicas são as
-do script original; só a origem dos dados muda (tabelas dbt no lugar dos CSVs
-exportados para o OneDrive).
+do script original; os dados vêm dos data marts ``mir_teds`` e
+``mir_convenios`` (remodelagem fato-dimensão do dbt MIR, etapa 5).
 
     Leitura 1 — valor por instrumento (TED + convênio + fomento), SEM território
     Leitura 2 — valor por território (UF e município), SOMENTE convênios/fomentos
 
 Fontes (tabelas do dbt):
-    siafi_dbt.planos_acao_ted           → cadastro dos TEDs
-    siafi_dbt.ted_resumo_orcamentario   → valores financeiros por TED
-    siafi_dbt.pf_unificado_planos_acao  → PF por plano (etapa da cadeia)
-    siafi_dbt.nc_plano_acao             → NC por plano (etapa da cadeia)
-    siafi_dbt.ted_empenhos_plano_acao   → NE por plano (etapa da cadeia)
-    siconv_dbt.resumo_convenios         → convênios/fomentos consolidados
-    emendas.instrumentos_emendas        → marcação de origem emenda do TED
+    mir_teds.dim_plano_acao              → cadastro dos TEDs e origem do recurso
+    mir_teds.fato_plano_acao_posicao     → valores por TED e quantidades de PF/NC/NE
+    mir_teds.fato_execucao_orcamentaria  → NEs por TED (programa de governo)
+    mir_teds.dim_acao_orcamentaria       → programa de cada PTRES
+    mir_convenios.dim_convenio           → cadastro dos convênios/fomentos
+    mir_convenios.fato_convenio_posicao  → valores por convênio
+    mir_convenios.dim_convenente         → convenente
+    mir_convenios.dim_localidade         → UF e município de execução
+
+As dimensões se ligam às posições pelas chaves ``sk_*``; o membro ``-1``
+("Não identificado") das dimensões não entra no universo.
 
 Decisões metodológicas (resumo; o detalhe está no script original):
  1. Duas leituras separadas: TED fica FORA da leitura territorial, porque a
     única UF disponível é a sede do executor, não o território atendido.
- 2. Convênios vêm de resumo_convenios (grão: um instrumento por linha). O tipo
-    é ``modalidade_instrumento``, a origem é ``parlamentares`` preenchido e
-    ``valor_empenhado`` já é consolidado (não há coluna de anulação).
+ 2. Convênios vêm de fato_convenio_posicao (grão: um instrumento por linha).
+    O tipo é a ``modalidade``, a origem é ``origem_recurso`` (Emenda quando
+    alguma NE do instrumento é de emenda) e o empenhado é o registrado no
+    SICONV (``valor_empenhado_siconv``, a mesma medida do gold antigo).
  3. Universo dos convênios: ano >= 2023 (data_assinatura, fallback
-    inicio_vigencia); excluídos Cancelado/Anulado; empenhado zero permanece
-    na contagem, marcado em ``sem_empenho``.
+    data_inicio_vigencia); excluídos Cancelado/Anulado; empenhado zero
+    permanece na contagem, marcado em ``sem_empenho``.
  4. Universo dos TEDs: todos os planos exceto REJEITADO. As flags
-    ``in_forma_execucao_*`` desagregam, não filtram.
- 5. Empenhado líquido do TED = SOMA das linhas do resumo por plano (várias
-    ``num_transf`` do mesmo plano não são versões — não deduplicar).
- 6. Origem do TED marcada no grão de instrumento via instrumentos_emendas.
+    ``execucao_*`` desagregam, não filtram.
+ 5. Empenhado do TED vem da posição do plano: bruto, anulado e líquido já
+    consolidam todas as NEs ligadas ao plano.
+ 6. Origem do TED: ``origem_recurso`` da dim_plano_acao.
  7. Etapa da cadeia sob a Definição B (TED = flag descentralizada OU tem NC),
-    universo diferente do I1: TEDs fora dela ficam com ``etapa_cadeia`` vazia.
+    pelas quantidades de PF, NC e NE da posição; TEDs fora dela ficam com
+    ``etapa_cadeia`` vazia.
+ 8. Programa de governo do TED: o programa com maior empenhado nas NEs do
+    plano (empate: menor código); vazio se o plano não tem NE.
 """
 
 from collections import defaultdict
@@ -44,6 +52,8 @@ SITUACOES_EXCLUIDAS_CONVENIO = {"Cancelado", "Convênio Anulado", "Convenio Anul
 SITUACOES_EXCLUIDAS_TED = {"REJEITADO"}
 FLAGS_VERDADEIRAS = {"SIM", "TRUE", "S", "1"}
 ROTULO_NAO_INFORMADO = "NAO_INFORMADO"
+MEMBRO_NAO_IDENTIFICADO = "-1"
+ORIGEM_EMENDA = "Emenda"
 
 
 # ---------------------------------------------------------------------------
@@ -86,31 +96,43 @@ def _share(parte: float, total: float) -> float:
     return round(parte / total * 100, 2) if total else 0
 
 
-def _ids(linhas: Iterable[dict], campo: str) -> set[str]:
-    return {_txt(r.get(campo)) for r in linhas if _txt(r.get(campo))}
+def _por_chave(linhas: Iterable[dict], campo: str) -> dict[Any, dict]:
+    return {r.get(campo): r for r in linhas}
+
+
+def _membros(linhas: Iterable[dict], campo_sk: str) -> list[dict]:
+    """Linhas da dimensão sem o membro -1 (Não identificado)."""
+    return [r for r in linhas if _txt(r.get(campo_sk)) != MEMBRO_NAO_IDENTIFICADO]
+
+
+def _origem(linha: dict) -> str:
+    if _txt(linha.get("origem_recurso")) == ORIGEM_EMENDA:
+        return "emenda"
+    return "orcamento_regular"
 
 
 # ---------------------------------------------------------------------------
 # Etapa da cadeia (Definição B) — porte de i1_etapa_cadeia_ted.R
 # ---------------------------------------------------------------------------
 def classificar_etapa_cadeia(
-    planos: list[dict], pf: list[dict], nc: list[dict], ne: list[dict]
+    planos: list[dict], posicao_planos: list[dict]
 ) -> dict[str, str]:
     """Estágio no funil PF → NC → NE por TED, sob a Definição B.
 
-    Universo: plano com flag ``in_forma_execucao_descentralizada`` OU que
-    aparece em nc_plano_acao. Retorna ``{id_plano_acao: estagio}``.
+    Universo: plano com flag ``execucao_descentralizada`` OU com NC na
+    posição. Retorna ``{id_plano_acao: estagio}``.
     """
-    ids_pf = _ids(pf, "id_plano_acao")
-    ids_nc = _ids(nc, "id_plano_acao")
-    ids_ne = _ids(ne, "plano_acao")
+    posicao = _por_chave(posicao_planos, "sk_plano_acao")
 
     etapas: dict[str, str] = {}
-    for p in planos:
+    for p in _membros(planos, "sk_plano_acao"):
         pid = _txt(p.get("id_plano_acao"))
-        if not (_flag(p.get("in_forma_execucao_descentralizada")) or pid in ids_nc):
+        pos = posicao.get(p.get("sk_plano_acao"), {})
+        tem_pf = _num(pos.get("qtd_pf")) > 0
+        tem_nc = _num(pos.get("qtd_nc")) > 0
+        tem_ne = _num(pos.get("qtd_nes")) > 0
+        if not (_flag(p.get("execucao_descentralizada")) or tem_nc):
             continue
-        tem_pf, tem_nc, tem_ne = pid in ids_pf, pid in ids_nc, pid in ids_ne
         if tem_pf and tem_nc and tem_ne:
             etapas[pid] = "S4_cadeia_plena"
         elif tem_pf and tem_nc:
@@ -127,75 +149,81 @@ def classificar_etapa_cadeia(
 # ---------------------------------------------------------------------------
 # Bloco 1 — TEDs: valor por instrumento, SEM território
 # ---------------------------------------------------------------------------
+def _programa_por_plano(
+    execucao_teds: list[dict], acoes_teds: list[dict]
+) -> dict[Any, str]:
+    """Programa de governo com maior empenhado nas NEs de cada plano."""
+    programa_da_acao = {
+        a.get("sk_acao_orcamentaria"): _txt(a.get("codigo_programa")) for a in acoes_teds
+    }
+    empenhado: dict[tuple, float] = defaultdict(float)
+    for r in execucao_teds:
+        programa = programa_da_acao.get(r.get("sk_acao_orcamentaria"), "")
+        if programa:
+            chave = (r.get("sk_plano_acao"), programa)
+            empenhado[chave] += _num(r.get("despesas_empenhadas"))
+
+    escolhido: dict[Any, str] = {}
+    for (sk_plano, programa), _valor in sorted(
+        empenhado.items(), key=lambda x: (-x[1], x[0][1])
+    ):
+        escolhido.setdefault(sk_plano, programa)
+    return escolhido
+
+
 def calcular_teds(
     planos: list[dict],
-    resumo: list[dict],
-    instrumentos_emendas: list[dict],
+    posicao_planos: list[dict],
+    execucao_teds: list[dict],
+    acoes_teds: list[dict],
     etapa_por_plano: dict[str, str] | None = None,
 ) -> list[dict]:
     etapa_por_plano = etapa_por_plano or {}
-
-    teds_de_emenda = {
-        _txt(r.get("numero_instrumento"))
-        for r in instrumentos_emendas
-        if _txt(r.get("tipo_instrumento")).upper() == "TED"
-        and _txt(r.get("numero_instrumento"))
-    }
-
-    fin_por_plano: dict[str, list[dict]] = defaultdict(list)
-    for r in resumo:
-        chave = _txt(r.get("plano_acao"))
-        if chave:
-            fin_por_plano[chave].append(r)
+    posicao = _por_chave(posicao_planos, "sk_plano_acao")
+    programa_por_plano = _programa_por_plano(execucao_teds, acoes_teds)
 
     teds = []
-    for p in planos:
-        situacao = _txt(p.get("tx_situacao_plano_acao"))
+    for p in _membros(planos, "sk_plano_acao"):
+        situacao = _txt(p.get("situacao"))
         if situacao in SITUACOES_EXCLUIDAS_TED:
             continue
 
+        sk = p.get("sk_plano_acao")
         pid = _txt(p.get("id_plano_acao"))
-        sq = _txt(p.get("sq_instrumento"))
-        linhas = fin_por_plano.get(pid, [])
+        pos = posicao.get(sk, {})
 
-        empenhado = sum(_num(r.get("empenhado")) for r in linhas)
-        anulado = sum(_num(r.get("empenho_anulado")) for r in linhas)
-        liquidado = sum(_num(r.get("despesas_liquidada")) for r in linhas)
-        pago = sum(
-            _num(r.get("despesas_pagas_exercicio")) + _num(r.get("despesas_pagas_rap"))
-            for r in linhas
-        )
-        programas = (_txt(r.get("programa_governo")) for r in linhas)
-        programa = next((prog for prog in programas if prog), "")
+        empenhado = _num(pos.get("empenhado_bruto"))
+        anulado = _num(pos.get("empenho_anulado"))
+        pago = _num(pos.get("despesas_pagas")) + _num(pos.get("restos_a_pagar_pagos"))
         formas = [
             nome
             for nome, campo in (
-                ("direta", "in_forma_execucao_direta"),
-                ("particulares", "in_forma_execucao_particulares"),
-                ("descentralizada", "in_forma_execucao_descentralizada"),
+                ("direta", "execucao_direta"),
+                ("particulares", "execucao_particulares"),
+                ("descentralizada", "execucao_descentralizada"),
             )
             if _flag(p.get(campo))
         ]
 
         teds.append({
             "id_plano_acao": pid,
-            "sq_instrumento": sq,
+            "sq_instrumento": _txt(p.get("num_transf")),
             "instrumento": "TED",
-            "origem": "emenda" if sq in teds_de_emenda else "orcamento_regular",
-            "ano": _txt(p.get("aa_ano_plano_acao")),
+            "origem": _origem(p),
+            "ano": _txt(p.get("ano")),
             "situacao": situacao,
             "sigla_executor": _txt(p.get("sigla_unidade_descentralizada")),
             "nome_executor": _txt(p.get("unidade_descentralizada")),
-            "programa_governo": programa,
+            "programa_governo": programa_por_plano.get(sk, ""),
             "etapa_cadeia": etapa_por_plano.get(pid, ""),
             "forma_execucao_2n": "; ".join(formas),
-            "vl_firmado": round(_num(p.get("vl_total_plano_acao")), 2),
+            "vl_firmado": round(_num(pos.get("valor_firmado")), 2),
             "empenhado_bruto": round(empenhado, 2),
             "empenho_anulado": round(anulado, 2),
             "empenhado_liquido": round(empenhado - anulado, 2),
-            "liquidado": round(liquidado, 2),
+            "liquidado": round(_num(pos.get("despesas_liquidadas")), 2),
             "pago": round(pago, 2),
-            "n_linhas_resumo": len(linhas),
+            "qtd_nes": int(_num(pos.get("qtd_nes"))),
         })
     return teds
 
@@ -234,44 +262,58 @@ def agregar_teds_por_executor(teds: list[dict]) -> list[dict]:
 # Bloco 2 — Convênios e termos: valor + território real
 # ---------------------------------------------------------------------------
 def _ano_instrumento(r: dict) -> tuple[int | None, str | None]:
-    """Ano de referência: data_assinatura, com fallback para inicio_vigencia."""
-    for campo in ("data_assinatura", "inicio_vigencia"):
+    """Ano de referência: data_assinatura, com fallback para o início da vigência."""
+    for campo, rotulo in (
+        ("data_assinatura", "data_assinatura"),
+        ("data_inicio_vigencia", "inicio_vigencia"),
+    ):
         ano = _ano(r.get(campo))
         if ano is not None:
-            return ano, campo
+            return ano, rotulo
     return None, None
 
 
 def calcular_convenios(
-    gold_convenios: list[dict], ano_corte: int = ANO_CORTE
+    convenios: list[dict],
+    posicao_convenios: list[dict],
+    convenentes: list[dict],
+    localidades: list[dict],
+    ano_corte: int = ANO_CORTE,
 ) -> list[dict]:
-    convenios = []
-    for r in gold_convenios:
+    posicao = _por_chave(posicao_convenios, "sk_convenio")
+    convenente_por_sk = _por_chave(convenentes, "sk_convenente")
+    localidade_por_sk = _por_chave(localidades, "sk_localidade")
+
+    saida = []
+    for r in _membros(convenios, "sk_convenio"):
         ano, ano_fonte = _ano_instrumento(r)
         if ano is None or ano < ano_corte:
             continue
-        situacao = _txt(r.get("situacao_atual"))
+        situacao = _txt(r.get("situacao"))
         if situacao in SITUACOES_EXCLUIDAS_CONVENIO:
             continue
 
-        empenhado = _num(r.get("valor_empenhado"))
-        convenios.append({
+        pos = posicao.get(r.get("sk_convenio"), {})
+        convenente = convenente_por_sk.get(pos.get("sk_convenente"), {})
+        localidade = localidade_por_sk.get(pos.get("sk_localidade"), {})
+        empenhado = _num(pos.get("valor_empenhado_siconv"))
+        saida.append({
             "nr_convenio": _txt(r.get("nr_convenio")),
-            "instrumento": _txt(r.get("modalidade_instrumento")),
-            "origem": "emenda" if _txt(r.get("parlamentares")) else "orcamento_regular",
+            "instrumento": _txt(r.get("modalidade")),
+            "origem": _origem(r),
             "ano": ano,
             "ano_fonte": ano_fonte,
             "situacao": situacao,
-            "uf_execucao": _txt(r.get("uf_execucao")),
-            "municipio_execucao": _txt(r.get("municipio_execucao")),
-            "convenente": _txt(r.get("nome_convenente")),
-            "categoria_convenente": _txt(r.get("categoria_convenente")),
-            "vl_firmado": round(_num(r.get("valor_firmado_atualizado")), 2),
+            "uf_execucao": _txt(localidade.get("uf")),
+            "municipio_execucao": _txt(localidade.get("municipio")),
+            "convenente": _txt(convenente.get("convenente_nome")),
+            "categoria_convenente": _txt(convenente.get("convenente_natureza_juridica")),
+            "vl_firmado": round(_num(pos.get("valor_firmado_atualizado")), 2),
             "empenhado_liquido": round(empenhado, 2),
-            "pago": round(_num(r.get("valor_total_pago")), 2),
+            "pago": round(_num(pos.get("valor_pago_fornecedores")), 2),
             "sem_empenho": 1 if empenhado == 0 else 0,
         })
-    return convenios
+    return saida
 
 
 def _agregar_territorio(
@@ -374,22 +416,25 @@ def calcular_carteira(teds: list[dict], convenios: list[dict]) -> list[dict]:
 # ---------------------------------------------------------------------------
 def calcular_i1(
     planos: list[dict],
-    resumo: list[dict],
-    instrumentos_emendas: list[dict],
-    gold_convenios: list[dict],
-    pf: list[dict],
-    nc: list[dict],
-    ne: list[dict],
+    posicao_planos: list[dict],
+    execucao_teds: list[dict],
+    acoes_teds: list[dict],
+    convenios: list[dict],
+    posicao_convenios: list[dict],
+    convenentes: list[dict],
+    localidades: list[dict],
 ) -> dict[str, list[dict]]:
-    """Calcula as seis saídas do I1 a partir das tabelas-fonte."""
-    etapas = classificar_etapa_cadeia(planos, pf, nc, ne)
-    teds = calcular_teds(planos, resumo, instrumentos_emendas, etapas)
-    convenios = calcular_convenios(gold_convenios)
+    """Calcula as seis saídas do I1 a partir das tabelas dos marts."""
+    etapas = classificar_etapa_cadeia(planos, posicao_planos)
+    teds = calcular_teds(planos, posicao_planos, execucao_teds, acoes_teds, etapas)
+    convenios_i1 = calcular_convenios(
+        convenios, posicao_convenios, convenentes, localidades
+    )
     return {
         "i1_ted_por_instrumento": teds,
         "i1_ted_por_executor": agregar_teds_por_executor(teds),
-        "i1_convenios_por_instrumento": convenios,
-        "i1_convenios_por_uf": agregar_convenios_por_uf(convenios),
-        "i1_convenios_por_municipio": agregar_convenios_por_municipio(convenios),
-        "i1_valor_por_instrumento": calcular_carteira(teds, convenios),
+        "i1_convenios_por_instrumento": convenios_i1,
+        "i1_convenios_por_uf": agregar_convenios_por_uf(convenios_i1),
+        "i1_convenios_por_municipio": agregar_convenios_por_municipio(convenios_i1),
+        "i1_valor_por_instrumento": calcular_carteira(teds, convenios_i1),
     }
