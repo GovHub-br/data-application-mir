@@ -326,3 +326,41 @@ models:
         description: >
           Soma dos empenhos registrados no SICONV (historico completo). O nucleo
           execucao_ne so cobre os exercicios do relatorio do Tesouro.
+
+  - name: emenda_ne
+    description: >
+      NEs de emenda, uma linha por NE: a emenda (tg_emendas) e o parlamentar
+      autor com o partido vigente na data de emissao da NE, pelas prioridades do
+      emendas_partidos (1 = filiacao vigente; 2 = nome encontrado fora do
+      periodo, filiacao mais proxima; 3 = nome nao encontrado).
+    columns:
+      - name: ne_ccor
+        description: "Numero completo da nota de empenho."
+        tests:
+          - unique
+          - not_null
+      - name: codigo_emenda
+        description: "Codigo da emenda (tg_emendas.autor_emendas_orcamento): ano (4) + autor (4) + numero (4)."
+        tests:
+          - not_null
+      - name: emenda_descricao
+        description: "Texto do autor e numero da emenda, como vem do Tesouro (ex.: FERNANDO MINEIRO / EMENDA 13)."
+      - name: autor_nome
+        description: "Nome do autor extraido da descricao."
+      - name: data_emissao_ne
+        description: "Primeira data de emissao da NE que nao e inscricao de restos a pagar."
+        tests:
+          - not_null
+      - name: id_parlamentar
+        description: "Parlamentar em parlamentares_historico. Nulo quando o nome nao foi encontrado."
+      - name: cargo_parlamentar
+        description: "Deputado ou Senador."
+      - name: sigla_partido
+        description: "Partido do parlamentar na data de emissao da NE."
+      - name: prioridade_match
+        description: "1 = filiacao vigente na data; 2 = filiacao mais proxima; 3 = nome nao encontrado."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3]
+              quote: false
