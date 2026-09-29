@@ -122,3 +122,91 @@ models:
         tests:
           - accepted_values:
               values: ["PF", "PJ", "Não identificado"]
+
+  - name: fato_execucao_orcamentaria
+    description: >
+      Execucao orcamentaria (SIAFI) dos convenios do MIR, no grao da linha do
+      relatorio do Tesouro. Some restos_a_pagar_inscritos_acumulavel entre
+      exercicios; restos_a_pagar_inscritos inclui as reinscricoes (saldo do
+      mesmo dinheiro) e so serve para o saldo de um exercicio.
+    columns:
+      - name: id_execucao_ne
+        tests: [unique, not_null]
+      - name: sk_convenio
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_convenio'), field: sk_convenio}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_tempo'), field: sk_tempo}
+      - name: sk_unidade_gestora
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_unidade_gestora'), field: sk_unidade_gestora}
+      - name: sk_acao_orcamentaria
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_acao_orcamentaria'), field: sk_acao_orcamentaria}
+      - name: sk_natureza_despesa
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_natureza_despesa'), field: sk_natureza_despesa}
+      - name: sk_fonte_recurso
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_fonte_recurso'), field: sk_fonte_recurso}
+      - name: sk_emenda
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_emenda'), field: sk_emenda}
+      - name: sk_parlamentar
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_parlamentar'), field: sk_parlamentar}
+
+  - name: fato_fluxo_financeiro
+    description: "Movimentos financeiros dos convenios; tipo_movimento degenerado."
+    columns:
+      - name: id_movimento
+        tests: [unique, not_null]
+      - name: sk_convenio
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_convenio'), field: sk_convenio}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_tempo'), field: sk_tempo}
+      - name: sk_fornecedor
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_fornecedor'), field: sk_fornecedor}
+
+  - name: fato_cronograma_desembolso
+    description: "Parcelas previstas de desembolso; responsavel degenerado."
+    columns:
+      - name: id_parcela
+        tests: [unique, not_null]
+      - name: sk_convenio
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_convenio'), field: sk_convenio}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_tempo'), field: sk_tempo}
+
+  - name: fato_evento_convenio
+    description: "Eventos administrativos dos convenios; tipo_evento e situacao degenerados."
+    columns:
+      - name: id_evento
+        tests: [unique, not_null]
+      - name: sk_convenio
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_convenio'), field: sk_convenio}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_tempo'), field: sk_tempo}
