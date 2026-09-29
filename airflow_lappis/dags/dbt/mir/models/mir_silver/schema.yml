@@ -182,4 +182,6 @@ models:
         tests:
           - not_null
       - name: ug_responsavel_codigo
-        description: "UGs responsaveis das NEs vinculadas, separadas por virgula."
+        description: "UGs responsaveis das NEs vinculadas, separadas por virgula e ordenadas pelo codigo."
+      - name: ug_responsavel_nome
+        description: "Nomes das UGs responsaveis, na mesma ordem de ug_responsavel_codigo."
