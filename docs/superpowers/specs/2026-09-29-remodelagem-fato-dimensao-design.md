@@ -132,9 +132,11 @@ Correções em relação ao gold antigo (levantadas em 2026-09-29; todas as dife
 
 - **Convênios contados como TED:** das 345 linhas de `ted_resumo_orcamentario`, 245 não têm plano; 234 delas são números de convênios e termos de fomento que a cascata pegou como transferência (R$ 88 mi empenhados). Ficam fora do mart de TEDs.
 - **NC de 2026 em dobro:** a fonte nova traz ORIGEM e DESTINO de cada movimento; o gold antigo somava os dois.
-- **Tipo da NC:** o gold antigo tratava anulação (300302 e o texto novo) como crédito recebido e só reconhecia devolução pelos códigos antigos. Com as duas correções, o crédito recebido pelos planos cai de R$ 339,5 mi para R$ 206,6 mi, com R$ 38,3 mi anulados e R$ 18,5 mi devolvidos (antes de contar as NCs recuperadas pelo texto e pelo processo).
+- **Tipo da NC:** o gold antigo tratava anulação (300302 e o texto novo) como crédito recebido e só reconhecia devolução pelos códigos antigos. Com as duas correções, o crédito recebido pelos planos cai de R$ 339,5 mi para R$ 206,6 mi, com R$ 38,3 mi anulados e R$ 18,5 mi devolvidos.
+- **NCs internas do MIR:** o crédito de um TED passa duas vezes pelo SIAFI — a Setorial Financeira (238012) repassa para a 810008 e a 810008 descentraliza para o executor. As NCs com os dois lados na lista de UGs do MIR (seed `ugs_mir`, lista explícita por decisão do usuário em 2026-09-29; o prefixo 81 não identifica o MIR, 810012 é o Ministério das Mulheres) ficam fora antes de qualquer ligação (163 linhas, R$ 109,6 mi). Sem essa regra, as etapas de texto e processo ligavam essas NCs internas e contavam R$ 66,6 mi em dobro (achado da revisão final da etapa 3). Com ela, texto e processo recuperam só 2 NCs.
 - **PF no plano errado:** ver `ted_programacao_pf`.
-- NCs sem número de transferência e sem TED no texto ou no processo (em geral descentralização interna do MIR para termos de fomento) ficam fora do mart; um teste de aviso conta as que citam TED sem número.
+- NCs sem número de transferência e sem TED no texto ou no processo ficam fora do mart; um teste de aviso conta as que citam TED sem número (linha de base 0, excluídas as internas).
+- A ponte plano ↔ transferência (`sq_instrumento` da carga mais recente do plano) fica num único modelo, `mir_silver.ted_plano_instrumento`, lido por todos os modelos de TED.
 
 O indicador I1 não muda: do resumo ele usa só os valores de empenho, que são os mesmos; de NC e PF, só a presença por plano.
 

@@ -489,3 +489,18 @@ models:
       - name: ug_executora_nome
         tests:
           - not_null
+
+  - name: ted_plano_instrumento
+    description: >
+      Ponte unica entre o SIAFI e o TransfereGov: numero da transferencia
+      (sq_instrumento) de cada plano de acao de TED, pela carga mais recente do
+      plano. Lida por todos os modelos de TED.
+    columns:
+      - name: id_plano_acao
+        tests:
+          - unique
+          - not_null
+      - name: num_transf
+        description: "sq_instrumento do plano. Nulo em planos ainda nao firmados."
+        tests:
+          - unique

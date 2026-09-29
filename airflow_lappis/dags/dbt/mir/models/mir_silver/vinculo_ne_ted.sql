@@ -2,21 +2,14 @@
 
 -- Vinculo NE -> plano de acao de TED, no grao da NE. Le a cascata de extracao
 -- de num_transf (ted_ne_transferencia, validada metodo a metodo) e resolve o
--- plano pelo numero do instrumento no TransfereGov (sq_instrumento), que e o
--- num_transf do SIAFI. Cada NE tem no maximo um plano (garantido pelo teste
+-- plano pela ponte ted_plano_instrumento (sq_instrumento do TransfereGov, que e
+-- o num_transf do SIAFI). Cada NE tem no maximo um plano (garantido pelo teste
 -- vinculo_ne_ted_plano_unico), entao max() nao escolhe entre valores.
 with
-    planos as (
-        select distinct on (id_plano_acao) id_plano_acao, sq_instrumento
-        from {{ ref("planos_acao_ted") }}
-        where sq_instrumento is not null
-        order by id_plano_acao, dt_ingest desc
-    ),
-
     linhas as (
         select t.ne_ccor, t.num_transf, t.metodo, p.id_plano_acao
         from {{ ref("ted_ne_transferencia") }} as t
-        inner join planos as p on p.sq_instrumento = t.num_transf
+        inner join {{ ref("ted_plano_instrumento") }} as p on p.num_transf = t.num_transf
     )
 
 select

@@ -24,3 +24,19 @@ seeds:
         tests:
           - unique
           - not_null
+  - name: ugs_mir
+    description: >
+      Unidades gestoras do MIR. Lista explicita (decisao do usuario em
+      2026-09-29): o prefixo 81 nao identifica o MIR (810012 e o Ministerio das
+      Mulheres) e a Setorial Financeira do MIR e a 238012. Usada para separar o
+      lado do MIR do lado executor nas NCs e PFs de TED e para descartar as NCs
+      internas (MIR para MIR).
+    config:
+      column_types:
+        ug_codigo: text
+        ug_nome: text
+    columns:
+      - name: ug_codigo
+        tests:
+          - unique
+          - not_null
