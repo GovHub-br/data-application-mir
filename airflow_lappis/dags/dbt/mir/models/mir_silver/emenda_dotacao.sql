@@ -2,8 +2,10 @@
 
 -- Dotacao das emendas do MIR, uma linha por movimento do relatorio do Tesouro
 -- (lancamentos positivos e negativos por dia; a soma e a dotacao do periodo).
--- Linhas identicas no mesmo dia sao movimentos distintos: a chave leva um
--- sequencial entre elas. O parlamentar e o autor com o partido vigente na data
+-- Linhas identicas no mesmo dia sao movimentos distintos: a chave leva todos
+-- os campos do relatorio (inclusive municipio e observacao, que distinguem a
+-- maioria das repeticoes) e um sequencial entre as que restarem iguais, para
+-- nao depender da ordem de carga. O parlamentar e o autor com o partido vigente na data
 -- do movimento (macro parlamentar_na_data, mesma regra das NEs).
 with
     base as (
@@ -20,6 +22,8 @@ with
                     d.modalidade_aplicacao,
                     d.fonte_recursos_detalhada,
                     d.localizador_gasto,
+                    d.municipio_pt,
+                    d.doc_observacao,
                     d.dotacao_inicial,
                     d.dotacao_atualizada
                 order by d.dt_ingest
@@ -41,6 +45,8 @@ with
                     modalidade_aplicacao,
                     fonte_recursos_detalhada,
                     localizador_gasto,
+                    municipio_pt,
+                    doc_observacao,
                     dotacao_inicial,
                     dotacao_atualizada,
                     sequencial

@@ -4,7 +4,8 @@
     1 = filiacao vigente na data; 2 = nome encontrado, mas nenhuma filiacao
     cobre a data (fica a mais proxima); 3 = nome nao encontrado (parlamentar
     nulo). Filiacao sem data de fim vale como aberta (infinity), sem depender
-    da data de hoje.
+    da data de hoje. No dia da troca de partido as duas filiacoes cobrem a
+    data; vale a mais recente.
     origem: nome de uma CTE com as colunas chave, autor_nome e data_referencia.
     Devolve uma linha por chave: chave, id_parlamentar, cargo_parlamentar,
     sigla_partido, prioridade_match.
@@ -37,6 +38,7 @@
             abs(o.data_referencia - p.data_filiacao::date),
             abs(o.data_referencia - p.data_desfiliacao::date)
         ) nulls last,
+        p.data_filiacao desc nulls last,
         p.id_parlamentar,
         p.sigla_partido
 {% endmacro %}
