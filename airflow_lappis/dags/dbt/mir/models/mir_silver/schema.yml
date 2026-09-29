@@ -5,8 +5,9 @@ models:
     description: >
       Vinculo de cada nota de empenho (NE) do ppa_tesouro ao plano de acao de TED,
       no grao da NE. Consolida a cascata de extracao de num_transf de
-      empenhos_por_plano_acao (metodos validados um a um); contem apenas NEs com
-      plano de acao encontrado. A cascata migra para mir_silver na etapa 3.
+      ted_ne_transferencia (metodos validados um a um) e resolve o plano pelo
+      sq_instrumento do TransfereGov; contem apenas NEs com plano de acao
+      encontrado.
     columns:
       - name: ne_ccor
         description: "Numero completo da nota de empenho (UG + gestao + ano + NE + sequencial)."
@@ -364,3 +365,20 @@ models:
           - accepted_values:
               values: [1, 2, 3]
               quote: false
+
+  - name: ted_ne_transferencia
+    description: >
+      Cascata de extracao do numero de transferencia (num_transf) e da NC das
+      linhas de empenho do ppa_tesouro, metodo a metodo (ver o comentario do
+      modelo). Movida de empenhos_por_plano_acao na etapa 3, sem mudar o
+      resultado. Contem so as linhas com num_transf ou NC encontrados, alem das
+      linhas marcadas como sem vinculo.
+    columns:
+      - name: ne_ccor
+        description: "Numero completo da nota de empenho."
+        tests:
+          - not_null
+      - name: num_transf
+        description: "Numero da transferencia extraido (sq_instrumento do plano no TransfereGov)."
+      - name: metodo
+        description: "Metodo da cascata que encontrou o num_transf ou a NC."
