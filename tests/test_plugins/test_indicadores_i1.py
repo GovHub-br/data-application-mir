@@ -31,10 +31,15 @@ FIXTURES = Path(__file__).parent.parent / "fixtures" / "indicadores" / "i1"
 # ---------------------------------------------------------------------------
 # Helpers — linhas no formato das tabelas dos marts
 # ---------------------------------------------------------------------------
+def _sk(id_plano_acao):
+    """Chave do plano diferente do número (como o hash dos marts); -1 é o membro -1."""
+    return -1 if id_plano_acao == -1 else 10_000 + id_plano_acao
+
+
 def _plano(id_plano_acao, situacao="APROVADO", sq="900", **extra):
-    """Linha de mir_teds.dim_plano_acao (sk = id, para simplificar)."""
+    """Linha de mir_teds.dim_plano_acao."""
     base = {
-        "sk_plano_acao": id_plano_acao,
+        "sk_plano_acao": _sk(id_plano_acao),
         "id_plano_acao": id_plano_acao,
         "num_transf": sq,
         "situacao": situacao,
@@ -50,11 +55,11 @@ def _plano(id_plano_acao, situacao="APROVADO", sq="900", **extra):
     return base
 
 
-def _posicao(sk_plano_acao, firmado=Decimal("1000.00"), bruto=0, anulado=0,
+def _posicao(id_plano_acao, firmado=Decimal("1000.00"), bruto=0, anulado=0,
              liquidado=0, pago=0, rap_pago=0, qtd_pf=0, qtd_nc=0, qtd_nes=0):
-    """Linha de mir_teds.fato_plano_acao_posicao."""
+    """Linha de mir_teds.fato_plano_acao_posicao do plano de número id_plano_acao."""
     return {
-        "sk_plano_acao": sk_plano_acao,
+        "sk_plano_acao": _sk(id_plano_acao),
         "valor_firmado": firmado,
         "empenhado_bruto": bruto,
         "empenho_anulado": anulado,
@@ -67,9 +72,9 @@ def _posicao(sk_plano_acao, firmado=Decimal("1000.00"), bruto=0, anulado=0,
     }
 
 
-def _nc(sk_plano_acao, ptres):
+def _nc(id_plano_acao, ptres):
     """Linha de mir_teds.fato_credito_descentralizado (só as colunas usadas)."""
-    return {"sk_plano_acao": sk_plano_acao, "ptres": ptres}
+    return {"sk_plano_acao": _sk(id_plano_acao), "ptres": ptres}
 
 
 def _acao(ptres, codigo_programa):
@@ -428,6 +433,28 @@ def test_convenio_membro_nao_identificado_fica_fora() -> None:
     convenios = calcular_convenios(**fontes)
 
     assert [c["nr_convenio"] for c in convenios] == ["1"]
+
+
+def test_convenio_localidade_e_convenente_nao_identificados_ficam_vazios() -> None:
+    """O membro -1 das dimensões não vira rótulo: território cai em NAO_INFORMADO."""
+    fontes = _fontes_convenios([_convenio(1)])
+    fontes["posicao_convenios"][0].update(sk_convenente=-1, sk_localidade=-1)
+    fontes["convenentes"].append({
+        "sk_convenente": -1, "convenente_nome": "Não identificado",
+        "convenente_natureza_juridica": None,
+    })
+    fontes["localidades"].append(
+        {"sk_localidade": -1, "uf": None, "municipio": "Não identificado"}
+    )
+
+    [c] = calcular_convenios(**fontes)
+    [mun] = agregar_convenios_por_municipio([c])
+
+    assert c["convenente"] == ""
+    assert c["municipio_execucao"] == ""
+    assert (mun["municipio_execucao"], mun["uf_execucao"]) == (
+        "NAO_INFORMADO", "NAO_INFORMADO",
+    )
 
 
 # ---------------------------------------------------------------------------
