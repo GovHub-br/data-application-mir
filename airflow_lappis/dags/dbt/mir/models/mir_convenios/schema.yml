@@ -62,3 +62,63 @@ models:
     columns:
       - name: sk_parlamentar
         tests: [unique, not_null, membro_nao_identificado]
+
+  - name: dim_convenio
+    description: >
+      Convenios, termos de fomento, colaboracao e parceria do MIR: modalidade,
+      origem do recurso, situacao, marcacoes e datas. vigente e meta_expirada
+      sao calculados contra data_referencia (data da carga).
+    columns:
+      - name: sk_convenio
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: nr_convenio
+        tests: [unique, not_null]
+      - name: origem_recurso
+        description: "Emenda, Recurso próprio ou Não identificada (sem NE no relatorio do Tesouro)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Emenda", "Recurso próprio", "Não identificada"]
+      - name: complemento_proprio
+        description: "Instrumento de Emenda que tambem recebeu NE de recurso proprio (complemento ate o minimo legal)."
+      - name: data_referencia
+        description: "Data da carga, usada para calcular vigente e meta_expirada."
+      - name: vigente
+        description: "data_fim_vigencia >= data_referencia."
+      - name: meta_expirada
+        description: "Alguma meta com fim anterior a data_referencia."
+
+  - name: dim_convenente
+    description: "Convenente (proponente) pelo CNPJ."
+    columns:
+      - name: sk_convenente
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: convenente_documento
+        tests: [unique, not_null]
+
+  - name: dim_localidade
+    description: "Municipio IBGE do convenente, com UF e regiao; linha so com UF quando falta o municipio."
+    columns:
+      - name: sk_localidade
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: chave_localidade
+        tests: [unique, not_null]
+      - name: uf
+        tests:
+          - relationships:
+              to: ref('uf_regiao')
+              field: uf
+
+  - name: dim_fornecedor
+    description: >
+      Fornecedores pagos pelos convenios. CPF aparece mascarado como o SICONV
+      publica; a chave de PF e documento mascarado + nome.
+    columns:
+      - name: sk_fornecedor
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: fornecedor_chave
+        tests: [unique, not_null]
+      - name: fornecedor_tipo
+        tests:
+          - accepted_values:
+              values: ["PF", "PJ", "Não identificado"]
