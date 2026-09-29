@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: dim_tempo
+    description: "Calendario diario de 2000 a 2040; sk_tempo = AAAAMMDD; -1 = sem data."
+    columns:
+      - name: sk_tempo
+        description: "Data como AAAAMMDD (bigint); -1 = Nao identificado."
+        tests:
+          - unique
+          - not_null
+          - membro_nao_identificado
+      - name: data
+        description: "Dia."
+      - name: ano_mes
+        description: "Ano e mes (AAAA-MM), para eixos mensais no Power BI."
