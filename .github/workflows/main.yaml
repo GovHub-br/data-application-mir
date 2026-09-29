@@ -22,7 +22,7 @@ env:
   DBT_PROJECT_DIR: "${{ github.workspace }}/airflow_lappis/dags/dbt/mir"
 
   IMAGE_REGISTRY_OWNER: govhub-br
-  IMAGE_NAME: ghcr.io/govhub-br/airflow-ipea
+  IMAGE_NAME: ghcr.io/govhub-br/airflow-mir
   IMAGE_TAG_SHA: ${{ github.sha }}
 
 jobs:
@@ -110,6 +110,8 @@ jobs:
           context: .
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
             ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_SHA }}
             ${{ env.IMAGE_NAME }}:latest
