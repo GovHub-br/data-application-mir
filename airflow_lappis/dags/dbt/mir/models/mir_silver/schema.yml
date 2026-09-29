@@ -250,3 +250,56 @@ models:
         description: "Valor previsto da parcela."
         tests:
           - not_null
+
+  - name: convenio_evento
+    description: >
+      Eventos administrativos datados dos convenios do MIR, uma linha por evento:
+      mudanca de situacao, termo aditivo, prorrogacao de oficio, solicitacao de
+      alteracao e solicitacao de uso de rendimento de aplicacao.
+    columns:
+      - name: id_evento
+        description: "Chave do evento: md5 do tipo, do convenio e da chave natural na origem."
+        tests:
+          - unique
+          - not_null
+      - name: nr_convenio
+        description: "Convenio do evento."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('convenio_mir')
+              field: nr_convenio
+      - name: tipo_evento
+        description: "Tipo do evento."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Mudança de situação", "Termo aditivo", "Prorrogação de ofício", "Solicitação de alteração", "Solicitação de rendimento"]
+      - name: data_evento
+        description: "Data do evento (situacao, assinatura do aditivo ou da prorrogacao, ou da solicitacao)."
+      - name: situacao
+        description: "Situacao informada pelo evento (nova situacao do convenio, situacao da prorrogacao ou da solicitacao)."
+      - name: valor
+        description: "Valor global do aditivo ou valor solicitado de rendimento."
+      - name: valor_aprovado
+        description: "Valor aprovado da solicitacao de rendimento."
+      - name: dias
+        description: "Dias na situacao (mudanca de situacao) ou dias prorrogados."
+      - name: data_fim_nova
+        description: "Nova data de fim de vigencia (termo aditivo ou prorrogacao)."
+
+  - name: convenio_contagens
+    description: >
+      Contagens de metas fisicas e licitacoes por convenio do MIR, uma linha por
+      convenio (zero quando nao ha registro).
+    columns:
+      - name: nr_convenio
+        description: "Convenio."
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('convenio_mir')
+              field: nr_convenio
+      - name: meta_expirada
+        description: "Verdadeiro se alguma meta tem data de fim anterior a data da execucao."
