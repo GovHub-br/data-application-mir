@@ -127,6 +127,10 @@ models:
       - name: despesas_pagas
         description: "Valor pago na linha."
       - name: restos_a_pagar_inscritos
-        description: "Restos a pagar inscritos (linhas com inscricao_rap)."
+        description: >
+          Restos a pagar inscritos (linhas com inscricao_rap). E saldo do exercicio
+          (ano de data_emissao): o saldo nao pago de uma NE aparece de novo como
+          inscrito no exercicio seguinte. NAO somar entre exercicios; ler ano a
+          ano. A consulta de origem ainda nao separa os reinscritos.
       - name: restos_a_pagar_pagos
         description: "Restos a pagar pagos na linha."
