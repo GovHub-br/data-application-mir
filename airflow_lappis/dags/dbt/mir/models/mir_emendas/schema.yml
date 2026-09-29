@@ -158,3 +158,14 @@ models:
         tests:
           - not_null
           - relationships: {to: ref('emendas_dim_localidade'), field: sk_localidade}
+
+  - name: emendas_fato_emenda_posicao
+    description: >
+      Posicao acumulada por emenda (snapshot): dotacao, execucao das NEs de
+      emenda e quantidades. Execucao 0 quando a emenda so tem dotacao.
+    columns:
+      - name: sk_emenda
+        tests:
+          - unique
+          - not_null
+          - relationships: {to: ref('emendas_dim_emenda'), field: sk_emenda}
