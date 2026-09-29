@@ -40,12 +40,12 @@ Consultas de verificação: `docker exec mir-dump-pg17 psql -U postgres -d analy
 | Linhas de empenho no `ppa_tesouro` (`ne_ccor <> '-9'`) | 22.247 |
 | NEs distintas | 1.835 |
 | NEs com plano de TED (cascata) | 210 (1.297 linhas) |
-| NEs com convênio candidato válido | 285 (281 únicos, 4 ambíguos) |
-| NEs `SICONV` em `execucao_ne` (1 NE com convênio também é TED e fica TED) | 280 (862 linhas) |
-| NEs `Não identificado` | 1.345 (20.088 linhas) |
+| NEs com convênio candidato válido | 299 (295 únicos, 4 resolvidos pelo desempate de processo, 0 ambíguos) |
+| NEs `SICONV` em `execucao_ne` (1 NE com convênio também é TED e fica TED) | 298 (896 linhas) |
+| NEs `Não identificado` | 1.327 (20.054 linhas) |
 | Linhas `inscricao_rap` | 885 |
 | NEs de emenda (`tg_emendas`) | 221, todas presentes no `ppa_tesouro` |
-| NEs de emenda sem instrumento | 25 |
+| NEs de emenda sem instrumento | 7 (3,2%) |
 
 ## File Structure
 
@@ -821,3 +821,14 @@ Expected: nenhum arquivo de `mir_silver` ou `tests/mir_silver` listado como "wou
 - **Macros de dimensão, `surrogate_key` e seed do IBGE** passam para a etapa 2 (mart de Convênios), onde são usados pela primeira vez e podem ser testados através das dimensões reais. O spec (§12 item 1) os colocava na etapa 1; a mudança evita macros sem consumidor.
 - **Cascata de TED em `mir_silver`:** `vinculo_ne_ted` lê `empenhos_por_plano_acao` (silver antiga). A cascata é movida para `mir_silver` na etapa 3, junto com o mart de TEDs.
 - **Origem mista em instrumentos (decisão pendente com o usuário):** os termos de fomento 965040 e 965084 têm NE de emenda em 2024 e NEs de recurso próprio em 2025. A regra "instrumento é de emenda ou próprio" não vale para esses dois casos. Isso afeta `origem_recurso` de `dim_convenio` (etapa 2) e o teste de exclusividade do spec §11. `execucao_ne` não é afetado, porque carrega a origem por NE.
+
+## Correções pós-revisão final (2026-09-29)
+
+A revisão final da etapa encontrou e o usuário aprovou:
+
+- **C1:** o vínculo de convênio passou a aceitar os números alfanuméricos adotados a partir de 2026 (ex.: `7AACWU`), com limites de palavra na regex. 14 NEs de emenda de 2026 que caíam em `Não identificado` passaram a `SICONV`.
+- **I1:** NE com mais de um convênio candidato é desempatada pelo número de processo (o convênio cujo `nr_processo` aparece em alguma linha da NE). Resolveu as 4 NEs ambíguas; o processo confirmou os 281 vínculos únicos anteriores sem divergência. Não é filtro: candidato único nunca é descartado. Um teste de aviso (`vinculo_ne_convenio_processo_diverge`) lista vínculos cujo processo não bate.
+- **I2:** o teste de cobertura de emendas passou a ser percentual (> 10% sem instrumento) e de aviso (`execucao_ne_cobertura_emendas`), substituindo o limite absoluto de 25.
+- **I3:** teste direto de no máximo uma emenda por NE no `tg_emendas` (`tg_emendas_uma_emenda_por_ne`).
+- **M2:** documentado que a chave do instrumento é `(sistema_instrumento, nr_instrumento)`.
+- **Pendente (C2):** testes com mais de um pai podem rodar cedo demais no cosmos 1.9 (`DbtDag` com configuração padrão). Aguarda conferência dos logs de produção antes de ativar `should_detach_multiple_parents_tests=True` no `cosmos_dag.py`.
