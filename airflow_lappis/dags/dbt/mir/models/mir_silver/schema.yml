@@ -142,3 +142,44 @@ models:
           exercicios, usar so as linhas com reinscricao_rap = false.
       - name: restos_a_pagar_pagos
         description: "Restos a pagar pagos na linha."
+
+  - name: convenio_mir
+    description: >
+      Universo de convenios, termos de fomento, colaboracao e parceria do MIR no
+      SICONV: ug_emitente 810008 ou com NE da UG 810008 vinculada em execucao_ne.
+      Uma linha por instrumento, com os atributos 1:1 da proposta (modalidade,
+      objeto, convenente, municipio) e a origem do recurso derivada das NEs do
+      nucleo.
+    columns:
+      - name: nr_convenio
+        description: "Numero do instrumento no SICONV."
+        tests:
+          - unique
+          - not_null
+      - name: modalidade
+        description: "Modalidade da proposta: CONVENIO, TERMO DE FOMENTO, TERMO DE COLABORACAO ou TERMO DE PARCERIA."
+        tests:
+          - not_null
+      - name: convenente_documento
+        description: "CNPJ do convenente (proponente), so digitos."
+        tests:
+          - not_null
+      - name: cod_municipio_ibge
+        description: "Codigo IBGE do municipio do convenente (7 digitos)."
+      - name: origem_recurso
+        description: >
+          Emenda (alguma NE do instrumento e de emenda), Recurso próprio (tem NE e
+          nenhuma e de emenda) ou Não identificada (sem NE no nucleo; convenios
+          assinados antes do periodo do relatorio do Tesouro).
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Emenda", "Recurso próprio", "Não identificada"]
+      - name: complemento_proprio
+        description: >
+          Verdadeiro quando um instrumento de Emenda tambem recebeu NE de recurso
+          proprio (complemento ate o repasse minimo legal de R$ 200 mil).
+        tests:
+          - not_null
+      - name: ug_responsavel_codigo
+        description: "UGs responsaveis das NEs vinculadas, separadas por virgula."
