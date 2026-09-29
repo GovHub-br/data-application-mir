@@ -545,7 +545,6 @@ with
     )
 
 -- A resolucao do plano de acao fica fora da cascata: vinculo_ne_ted resolve
--- pelo sq_instrumento do plano, e o modelo antigo empenhos_por_plano_acao pela
--- ponte num_transf_n_plano_acao.
+-- pelo sq_instrumento do plano.
 select distinct *
 from empenhos_restantes_metodo_9

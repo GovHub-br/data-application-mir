@@ -1,6 +1,6 @@
 {#
     Parlamentar autor de uma emenda numa data. Acha o parlamentar pelo nome em
-    parlamentares_historico, com as prioridades do emendas_partidos:
+    parlamentares_historico, com as prioridades do antigo emendas_partidos:
     1 = filiacao vigente na data; 2 = nome encontrado, mas nenhuma filiacao
     cobre a data (fica a mais proxima); 3 = nome nao encontrado (parlamentar
     nulo). Filiacao sem data de fim vale como aberta (infinity), sem depender

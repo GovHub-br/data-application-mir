@@ -1,7 +1,7 @@
 {{ config(materialized="table") }}
 
 -- Universo de convenios do MIR no SICONV, no grao do instrumento. Mesmo
--- recorte de convenios_consolidados: ug_emitente 810008 ou com NE da UG 810008
+-- recorte do antigo convenios_consolidados: ug_emitente 810008 ou com NE da UG 810008
 -- vinculada no nucleo. A origem do recurso vem das NEs do nucleo (de qualquer
 -- UG); sem NE, a origem nao e conhecida.
 with

@@ -1,7 +1,7 @@
 {{ config(materialized="table") }}
 
 -- Vinculo NE -> convenio do SICONV, no grao da NE.
--- Mesma regra de convenio usada hoje em numero_transferencia, mas aplicada a
+-- Mesma regra de convenio do antigo numero_transferencia, mas aplicada a
 -- TODAS as linhas de cada NE do ppa_tesouro (e nao so as de emendas): o
 -- ne_info_complementar varia entre linhas da mesma NE. Aceita os numeros
 -- numericos e os alfanumericos adotados a partir de 2026 (ex.: 7AACWU). So
