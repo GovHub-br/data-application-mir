@@ -4,14 +4,26 @@ models:
   - name: numero_transferencia
     description: >
       Tabela da camada silver que extrai e padroniza o número de transferência
-      das emendas parlamentares. A extração é feita sequencialmente a partir de
-      múltiplas colunas usando as seguintes regras:
+      das emendas parlamentares. A extração por linha é feita sequencialmente
+      a partir de múltiplas colunas usando as seguintes regras:
       1. Se `ne_info_complementar` contém apenas dígitos, usa diretamente.
-      2. Se `ne_ccor_descricao` contém CONVENIO, FOMENTO ou FOMENO, extrai 6 dígitos via regex.
-      3. Se `ne_ccor_descricao` contém TED seguido de 6 dígitos, extrai via regex.
-      4. Se `doc_observacao` contém CONVENIO, FOMENTO ou FOMENO, extrai 6 dígitos via regex.
-      5. Se `doc_observacao` contém TED seguido de 6 dígitos, extrai via regex.
-      Caso nenhuma regra se aplique, `numero_transferencia` fica como NULL.
+      2. Se `ne_ccor_descricao` contém o rótulo "NUM. TRANSFERENCIA" ou "SICONV", extrai
+         6 dígitos via regex (checado antes de CONVENIO/TED por ser mais específico).
+      3. Se `ne_ccor_descricao` contém CONVENIO, FOMENTO ou FOMENO, extrai 6 dígitos via regex.
+      4. Se `ne_ccor_descricao` contém TED seguido de 6 dígitos, extrai via regex.
+      5. Repete as regras 2 a 4 em `doc_observacao`.
+      Depois da extração por linha, duas etapas de cruzamento preenchem o que
+      ainda ficou nulo:
+      - Backfill por `ne_ccor`: a mesma nota de empenho aparece em várias linhas
+        (uma por mês/movimento); se qualquer linha da NE extraiu um número, ele
+        é propagado para as demais linhas da mesma NE.
+      - Cruzamento com o empenho de origem: notas geradas pela rotina de
+        transferência de saldo (NSSALDO) não trazem número próprio, só uma
+        referência tipo "EMPENHO DE ORIGEM: <UG>/<ano>NE<sequencial>"; o número
+        é herdado da nota de origem casando essa referência com o `ne_ccor`
+        de outra linha da mesma tabela.
+      Caso nenhuma regra ou cruzamento se aplique, `numero_transferencia` fica
+      como NULL.
     meta:
       tags:
         - silver
@@ -109,8 +121,10 @@ models:
       - name: numero_transferencia
         description: >
           Número de transferência extraído das colunas ne_info_complementar,
-          ne_ccor_descricao e doc_observacao via regex. Pode ser número de
-          convênio ou TED. NULL quando não foi possível extrair.
+          ne_ccor_descricao e doc_observacao via regex, com backfill por
+          ne_ccor e cruzamento com o empenho de origem para notas de saldo
+          (NSSALDO). Pode ser número de convênio, TED ou SICONV. NULL quando
+          não foi possível extrair nem cruzar.
       - name: dt_ingest
         description: "Timestamp de ingestão dos dados."
     tests:
