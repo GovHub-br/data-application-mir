@@ -1746,3 +1746,23 @@ git commit -m "test(dbt/mir): paridade temporaria de mir_emendas com o gold anti
 ## Fora desta etapa
 
 - Etapa 5: migração do I1 para os marts novos (o I1 pode mudar onde o modelo novo cobre mais cenários; cada mudança listada no PR), remoção do gold e da silver antigos, das análises de paridade, da casca `empenhos_por_plano_acao` e do teste antigo quebrado `test_ted_resumo_orcamentario_grao_unico`; `drop table` explícito das tabelas órfãs; lista dos painéis do Power BI afetados.
+
+## Resultado da paridade (2026-09-29)
+
+Por autor (48 autores, os mesmos nos dois lados): dotação inicial e atualizada, empenhado, liquidado, pago e RAP pago **idênticos**. Única diferença:
+
+| Medida | Autores | Classificação |
+|---|---|---|
+| `rap_inscrito` | 6 | regra do usuário: o novo soma o RAP sem as reinscrições (spec §13) |
+
+Por NE, tipo do instrumento (19 de 221 NEs):
+
+| Antigo → novo | NEs | Classificação |
+|---|---|---|
+| (nulo) → Convênio / Fomento | 14 | bug antigo corrigido: números alfanuméricos de 2026 (`7AACWU` etc.), que o regex antigo não aceitava |
+| (nulo) → TED | 1 | bug antigo corrigido: o plano do TED achado pela cascata |
+| TED → Convênio de outro órgão | 2 | bug antigo corrigido: o convênio 972499 (de outro órgão) era contado como TED (mesmo bug do gold antigo de TED, etapa 3) |
+| CONVENIO → Convênio de outro órgão | 1 | decisão do usuário: convênio 973202 fora de `convenio_mir` |
+| TERMO DE FOMENTO → Convênio | 1 | NE `810008000012024NE000083`: o antigo atribuía instrumentos diferentes por linha (963708 fomento e 965038 convênio); o núcleo liga no grão da NE e escolhe o 965038 pelo desempate por processo (regra do usuário, etapa 1) |
+
+Teste de consistência entre os marts: o empenhado de emenda fecha (Convênios 51.672.240,37 + TEDs 1.650.000,00 + outro órgão 900.000,00 + execução direta / não identificado 1.600.000,00 = 55.822.240,37).
