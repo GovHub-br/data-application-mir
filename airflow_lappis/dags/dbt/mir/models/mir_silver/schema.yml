@@ -185,3 +185,68 @@ models:
         description: "UGs responsaveis das NEs vinculadas, separadas por virgula e ordenadas pelo codigo."
       - name: ug_responsavel_nome
         description: "Nomes das UGs responsaveis, na mesma ordem de ug_responsavel_codigo."
+
+  - name: convenio_movimento_financeiro
+    description: >
+      Movimentos financeiros datados dos convenios do MIR, uma linha por
+      movimento: desembolso federal, contrapartida depositada, desbloqueio,
+      pagamento a fornecedor e pagamento de tributo.
+    columns:
+      - name: id_movimento
+        description: "Chave do movimento: md5 do tipo, do convenio e da chave natural na origem."
+        tests:
+          - unique
+          - not_null
+      - name: nr_convenio
+        description: "Convenio do movimento."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('convenio_mir')
+              field: nr_convenio
+      - name: tipo_movimento
+        description: "Tipo do movimento."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Desembolso federal", "Contrapartida depositada", "Desbloqueio", "Pagamento a fornecedor", "Pagamento de tributo"]
+      - name: data_movimento
+        description: "Data do movimento. Nula em pagamentos de tributo sem data na origem."
+      - name: valor
+        description: "Valor do movimento."
+        tests:
+          - not_null
+      - name: fornecedor_documento
+        description: "CPF/CNPJ do fornecedor (so digitos). Preenchido so em pagamento a fornecedor."
+      - name: documento_referencia
+        description: "Documento de origem: numero SIAFI do desembolso, OB do desbloqueio ou DL do pagamento."
+
+  - name: convenio_cronograma
+    description: >
+      Parcelas previstas no cronograma de desembolso dos convenios do MIR, uma
+      linha por convenio x parcela x responsavel.
+    columns:
+      - name: id_parcela
+        description: "Chave da parcela: md5 de convenio, numero da parcela e responsavel."
+        tests:
+          - unique
+          - not_null
+      - name: nr_convenio
+        description: "Convenio da parcela."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('convenio_mir')
+              field: nr_convenio
+      - name: responsavel
+        description: "Responsavel pela parcela: Concedente, Convenente ou Rendimento de Aplicação."
+        tests:
+          - not_null
+      - name: data_prevista
+        description: "Primeiro dia do mes previsto para a parcela."
+        tests:
+          - not_null
+      - name: valor_previsto
+        description: "Valor previsto da parcela."
+        tests:
+          - not_null
