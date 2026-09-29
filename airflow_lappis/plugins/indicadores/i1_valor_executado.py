@@ -276,8 +276,13 @@ def calcular_convenios(
     ano_corte: int = ANO_CORTE,
 ) -> list[dict]:
     posicao = _por_chave(posicao_convenios, "sk_convenio")
-    convenente_por_sk = _por_chave(convenentes, "sk_convenente")
-    localidade_por_sk = _por_chave(localidades, "sk_localidade")
+    # O membro -1 fica fora: convenente e território não informados saem vazios
+    convenente_por_sk = _por_chave(
+        _membros(convenentes, "sk_convenente"), "sk_convenente"
+    )
+    localidade_por_sk = _por_chave(
+        _membros(localidades, "sk_localidade"), "sk_localidade"
+    )
 
     saida = []
     for r in _membros(convenios, "sk_convenio"):

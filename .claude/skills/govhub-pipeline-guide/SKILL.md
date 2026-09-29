@@ -517,8 +517,8 @@ Closes #{numero}
 
 ## Evidências
 {instrução clara do que o usuário deve rodar e colar aqui antes de submeter.
-Ex: "Cole aqui o output de `dbt run --select siconv_dbt.silver.*` e a contagem de
-linhas de ao menos 2 modelos: `select count(*) from analytics.siconv_dbt.convenio_empenho`"}
+Ex: "Cole aqui o output de `dbt build --select path:models/mir_silver` e a contagem de
+linhas de ao menos 2 modelos: `select count(*) from analytics.mir_silver.convenio_mir`"}
 
 ## Checklist
 - {[x] se testes foram adicionados} Testes DBT adicionados/atualizados

@@ -82,5 +82,6 @@ muda**.
    Fonte) e trocar pelas do mart, conforme as tabelas acima.
 2. Conferir os totais do painel com os números que mudam de propósito.
 3. Quando nenhum painel ler mais as tabelas antigas, rodar
-   `docs/mir-drop-legado.sql`. Se algum objeto ainda depender delas, o script
-   falha sem apagar nada.
+   `docs/mir-drop-legado.sql`. Se uma view ou outro objeto do banco ainda
+   depender delas, o script falha sem apagar nada. Um painel do Power BI **não**
+   impede o drop: o painel que ainda ler uma tabela antiga quebra.
