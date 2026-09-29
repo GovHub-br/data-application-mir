@@ -52,6 +52,9 @@ models:
     mir_convenios:
       +materialized: table
       +schema: mir_convenios
+    mir_teds:
+      +materialized: table
+      +schema: mir_teds
 
 
 
