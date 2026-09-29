@@ -52,3 +52,69 @@ models:
         tests:
           - accepted_values:
               values: ["info_complementar", "descricao", "observacao"]
+
+  - name: execucao_ne
+    description: >
+      Nucleo da execucao orcamentaria do MIR: uma linha por linha de empenho do
+      ppa_tesouro (ne_ccor <> '-9'), fonte unica dos valores de empenhado,
+      liquidado, pago e restos a pagar para os tres data marts. Cada linha traz a
+      origem do recurso (Emenda quando a NE esta no tg_emendas) e o instrumento
+      vinculado (TED pela cascata de num_transf, que tem precedencia; senao
+      convenio unico do SICONV; senao Nao identificado).
+    columns:
+      - name: id_execucao_ne
+        description: "Chave da linha (id_hash do ppa_tesouro)."
+        tests:
+          - unique
+          - not_null
+      - name: ne_ccor
+        description: "Numero completo da nota de empenho."
+        tests:
+          - not_null
+      - name: data_emissao
+        description: >
+          Data de emissao da linha. Para inscricao de restos a pagar (emissao_dia
+          = 000/AAAA) usa 1 de janeiro do ano AAAA.
+        tests:
+          - not_null
+      - name: inscricao_rap
+        description: "Verdadeiro quando a linha e inscricao de restos a pagar (emissao_dia = 000/AAAA)."
+        tests:
+          - not_null
+      - name: ug_emitente_codigo
+        description: "UG emitente da NE (6 primeiros digitos de ne_ccor)."
+      - name: codigo_emenda
+        description: "Codigo da emenda parlamentar (tg_emendas.autor_emendas_orcamento). Nulo = recurso proprio."
+      - name: origem_recurso
+        description: "Emenda ou Recurso próprio."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Emenda", "Recurso próprio"]
+      - name: sistema_instrumento
+        description: "Sistema do instrumento vinculado: TED (TransfereGov), SICONV ou Não identificado."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["TED", "SICONV", "Não identificado"]
+      - name: nr_instrumento
+        description: "id_plano_acao (TED) ou nr_convenio (SICONV). Nulo quando Não identificado."
+      - name: num_transf
+        description: "Numero de transferencia do TED, quando houver."
+      - name: metodo_vinculo
+        description: >
+          Como o instrumento foi encontrado: 'ted: <metodos da cascata>',
+          'convenio: <campo>', 'ambiguo' (mais de um convenio candidato) ou
+          'nao_encontrado'.
+        tests:
+          - not_null
+      - name: despesas_empenhadas
+        description: "Valor empenhado na linha."
+      - name: despesas_liquidadas
+        description: "Valor liquidado na linha."
+      - name: despesas_pagas
+        description: "Valor pago na linha."
+      - name: restos_a_pagar_inscritos
+        description: "Restos a pagar inscritos (linhas com inscricao_rap)."
+      - name: restos_a_pagar_pagos
+        description: "Restos a pagar pagos na linha."
