@@ -382,3 +382,53 @@ models:
         description: "Numero da transferencia extraido (sq_instrumento do plano no TransfereGov)."
       - name: metodo
         description: "Metodo da cascata que encontrou o num_transf ou a NC."
+
+  - name: ted_plano_acao
+    description: >
+      Planos de acao de TED do MIR (TransfereGov), uma linha por plano, com o
+      programa achatado e a origem do recurso derivada das NEs do nucleo.
+      num_transf (sq_instrumento) liga NC, PF e NE ao plano.
+    columns:
+      - name: id_plano_acao
+        tests:
+          - unique
+          - not_null
+      - name: num_transf
+        description: "Numero da transferencia no SIAFI (sq_instrumento). Nulo em planos ainda nao firmados."
+      - name: origem_recurso
+        description: "Emenda, Recurso próprio ou Não identificada (plano sem NE vinculada)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Emenda", "Recurso próprio", "Não identificada"]
+      - name: complemento_proprio
+        tests:
+          - not_null
+
+  - name: ted_programacao_pf
+    description: >
+      Programacao financeira dos TEDs, uma linha por linha do relatorio do
+      Tesouro. Plano pela inscricao da PF (= sq_instrumento).
+    columns:
+      - name: id_movimento
+        tests:
+          - unique
+          - not_null
+      - name: tipo
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Transferência", "Devolução"]
+      - name: data_movimento
+        tests:
+          - not_null
+      - name: id_plano_acao
+        description: "Plano da PF. Nulo quando a inscricao nao e de um plano do TransfereGov."
+        tests:
+          - relationships:
+              to: ref('ted_plano_acao')
+              field: id_plano_acao
+      - name: ug_executora_codigo
+        description: "Lado da PF que nao e o MIR: a unidade que executa o TED."
+        tests:
+          - not_null
