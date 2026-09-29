@@ -22,7 +22,7 @@ A bronze não muda.
 
 ## 2. Conceitos de negócio que orientam o modelo
 
-1. **A emenda não é um instrumento, é a origem do recurso.** O instrumento (convênio, termo de fomento ou TED) é financiado **ou** por emenda **ou** por orçamento próprio do MIR, nunca pelos dois.
+1. **A emenda não é um instrumento, é a origem do recurso.** O instrumento (convênio, termo de fomento ou TED) é financiado **ou** por emenda **ou** por orçamento próprio do MIR. Exceção conhecida: o instrumento de emenda cujo repasse ficou abaixo do mínimo legal de R$ 200 mil (Decreto nº 11.351/2023, art. 10) recebe, por termo aditivo, um complemento de orçamento próprio (RP 2). Ele continua sendo um instrumento de **Emenda**, marcado com `complemento_proprio = true` (casos 965040 e 965084, com municípios; decisão do usuário em 2026-09-29).
 2. **O vínculo emenda → instrumento nasce na nota de empenho (NE).** O número do instrumento é extraído por regex dos textos da NE. Cada NE aponta para no máximo um instrumento. Uma emenda pode chegar a vários instrumentos (hoje, de 1 a 9 convênios por emenda). Um instrumento pode receber mais de uma emenda (hoje, 2 casos).
 3. **Existe uma fonte única de execução orçamentária.** Todas as NEs de emenda (221/221) e todas as NEs de TED (679/679) já estão em `siafi_dbt.ppa_tesouro`. O `tg_emendas` serve só para atribuir a emenda a cada NE; os valores vêm sempre do `ppa_tesouro`. Assim uma NE nunca é somada duas vezes.
 
@@ -50,7 +50,7 @@ A bronze não muda.
 | Modelo | Grão | Regras que concentra | Fontes (bronze) |
 |---|---|---|---|
 | `execucao_ne` | linha do `ppa_tesouro` (NE × mês × PTRES × natureza × fonte × PO) | **núcleo**: `codigo_emenda` (via `tg_emendas.ne_ccor`; nulo = recurso próprio); `sistema_instrumento` (SICONV · TED · Não identificado), `nr_instrumento` e `metodo_vinculo` (`info_complementar` · `descricao` · `observacao` · `nao_encontrado`), usando as regex hoje em `numero_transferencia` e `empenhos_por_plano_acao` | `ppa_tesouro`, `tg_emendas`, `num_transf`↔plano |
-| `convenio` | instrumento (`nr_convenio`) | recorte do MIR (UG emitente 810008 ou com NE da UG 810008, regra atual de `convenios_consolidados`); atributos 1:1 da proposta (modalidade, objeto, proponente, município); UGs responsáveis agregadas; `origem_recurso` = Emenda se alguma NE do instrumento em `execucao_ne` tem `codigo_emenda` | `convenio`, `proposta`, `execucao_ne` |
+| `convenio` | instrumento (`nr_convenio`) | recorte do MIR (UG emitente 810008 ou com NE da UG 810008, regra atual de `convenios_consolidados`); atributos 1:1 da proposta (modalidade, objeto, proponente, município); UGs responsáveis agregadas; `origem_recurso` = Emenda se alguma NE do instrumento em `execucao_ne` tem `codigo_emenda`, senão Recurso próprio; `complemento_proprio` = true quando um instrumento de Emenda também tem NEs de recurso próprio | `convenio`, `proposta`, `execucao_ne` |
 | `convenio_movimento_financeiro` | movimento | união de desembolso, ingresso de contrapartida, desbloqueio, pagamento e pagamento de tributo, com `tipo_movimento`, recortada aos convênios do MIR | `desembolso`, `ingresso_contrapartida`, `desbloqueio`, `pagamento`, `pagamento_tributo` |
 | `convenio_cronograma` | parcela × mês | responsável (Concedente/Convenente/Rendimento), recorte do MIR | `cronograma_desembolso` |
 | `convenio_evento` | evento | `tipo_evento` (mudança de situação, termo aditivo, prorrogação de ofício, solicitação de alteração, solicitação de rendimento), recorte do MIR | `historico_situacao`, `termo_aditivo`, `prorroga_oficio`, `solicitacao_alteracao`, `solicitacao_rendimento_aplicacao` |
@@ -77,7 +77,7 @@ Um único conjunto para todas as modalidades do SICONV. Substitui `resumo_conven
 
 | Dimensão | Grão | Atributos |
 |---|---|---|
-| `dim_convenio` | `nr_convenio` | modalidade, origem do recurso, objeto, situação e subsituação, flags de inadimplente/rescindido/anulado, datas de assinatura, publicação e vigência (original e atual), `vigente`, UG(s) responsável(eis), número do processo |
+| `dim_convenio` | `nr_convenio` | modalidade, origem do recurso, `complemento_proprio`, objeto, situação e subsituação, flags de inadimplente/rescindido/anulado, datas de assinatura, publicação e vigência (original e atual), `vigente`, UG(s) responsável(eis), número do processo |
 | `dim_convenente` | CNPJ do proponente | nome, natureza jurídica |
 | `dim_localidade` | município IBGE | município, UF, região; linhas só com UF quando falta município |
 | `dim_fornecedor` | CPF/CNPJ | nome, PF/PJ, documento mascarado quando PF |
@@ -175,7 +175,7 @@ A bronze desses domínios e `dados_abertos_dbt/silver/parlamentares_historico` p
 | Grão | todas as fatos e posições | `unique` na combinação que define o grão |
 | Reconciliação | teste singular | soma de empenhado/liquidado/pago de `execucao_ne` = `ppa_tesouro` recortado |
 | Consistência entre marts | teste singular | empenhado com origem Emenda em `mir_convenios` + `mir_teds` + execução direta em `mir_emendas` = empenhado total de `mir_emendas` |
-| Exclusividade da origem | teste singular | nenhum instrumento com NEs de emenda **e** NEs sem emenda |
+| Complemento próprio | teste singular de aviso | lista instrumentos de Emenda com NEs de recurso próprio (`complemento_proprio`); linha de base 2 (965040, 965084). Aviso, não erro: o caso é legítimo, mas um número crescente merece revisão |
 | Cobertura do vínculo | teste singular com limite | % de NEs com `metodo_vinculo = 'nao_encontrado'` não maior que a linha de base medida na etapa 1 (o valor fica fixado no teste e só sobe com justificativa no PR) |
 | Paridade (temporário) | análise dbt | posição nova × gold antigo, instrumento a instrumento; roda antes da remoção e é apagada depois |
 | Indicador | pytest | suíte do I1 verde |
@@ -195,4 +195,4 @@ Cada etapa só avança com `dbt build` verde para os modelos da etapa.
 - **Divergência de números na paridade:** alguns resultados atuais têm efeitos colaterais conhecidos (inflação por grão no TED, `union distinct` em `convenios_consolidados`). Toda diferença encontrada é classificada como *bug antigo corrigido* ou *regressão*, e só a segunda bloqueia a etapa. As diferenças aceitas são registradas no PR.
 - **Painéis Power BI existentes** que leem os golds antigos quebram na remoção (etapa 5). A lista dos painéis afetados precisa ser confirmada com a equipe antes da etapa 5.
 - **Join por nome do parlamentar** continua sujeito a grafias divergentes, como hoje. O modelo não piora nem resolve esse ponto.
-- **Restos a pagar inscritos são saldo por exercício** (decisão do usuário em 2026-09-29). O saldo não pago de uma NE reaparece como inscrito no exercício seguinte; por exemplo, a NE de emenda do convênio 965040 (R$ 197.073,97) aparece em 2025 e em 2026. As fatos e posições nunca somam `restos_a_pagar_inscritos` entre exercícios: a medida é lida por exercício (e a posição acumulada usa o exercício mais recente). A consulta de origem do Tesouro Gerencial ainda não separa os restos a pagar reinscritos; o usuário vai ajustá-la, e então este tratamento é revisto.
+- **Reinscrição de restos a pagar** (regra do usuário, generalizada em 2026-09-29). O saldo não pago de uma NE reaparece como inscrito no exercício seguinte: a reinscrição é sempre o mesmo dinheiro (inscrição anterior menos pagamentos e cancelamentos; confirmado nos 164 casos do dump). `execucao_ne.reinscricao_rap` marca essas linhas. As fatos e posições somam RAP inscrito acumulado só com `reinscricao_rap = false` (remove R$ 12,2 mi de dupla contagem no dump); o saldo de RAP de um exercício usa todas as inscrições daquele ano. O teste de aviso `execucao_ne_reinscricao_rap_saldo` acusa reinscrição maior que o saldo.
