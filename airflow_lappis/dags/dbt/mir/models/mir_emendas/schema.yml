@@ -75,3 +75,86 @@ models:
         tests: [unique, not_null, membro_nao_identificado]
       - name: localizador_gasto
         tests: [unique, not_null]
+
+  - name: emendas_fato_execucao_orcamentaria
+    description: >
+      Execucao orcamentaria (SIAFI) das emendas, no grao da linha do relatorio
+      do Tesouro, de qualquer instrumento. Some restos_a_pagar_inscritos_acumulavel
+      entre exercicios; restos_a_pagar_inscritos inclui as reinscricoes.
+    columns:
+      - name: id_execucao_ne
+        tests: [unique, not_null]
+      - name: sk_emenda
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_emenda'), field: sk_emenda}
+      - name: sk_parlamentar
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_parlamentar'), field: sk_parlamentar}
+      - name: sk_instrumento_executor
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_instrumento_executor'), field: sk_instrumento_executor}
+      - name: sk_favorecido
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_favorecido'), field: sk_favorecido}
+      - name: sk_localidade
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_localidade'), field: sk_localidade}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_tempo'), field: sk_tempo}
+      - name: sk_unidade_gestora
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_unidade_gestora'), field: sk_unidade_gestora}
+      - name: sk_acao_orcamentaria
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_acao_orcamentaria'), field: sk_acao_orcamentaria}
+      - name: sk_natureza_despesa
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_natureza_despesa'), field: sk_natureza_despesa}
+      - name: sk_fonte_recurso
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_fonte_recurso'), field: sk_fonte_recurso}
+
+  - name: emendas_fato_dotacao
+    description: "Dotacao das emendas, um movimento por linha (lancamentos positivos e negativos)."
+    columns:
+      - name: id_movimento
+        tests: [unique, not_null]
+      - name: sk_emenda
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_emenda'), field: sk_emenda}
+      - name: sk_parlamentar
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_parlamentar'), field: sk_parlamentar}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_tempo'), field: sk_tempo}
+      - name: sk_acao_orcamentaria
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_acao_orcamentaria'), field: sk_acao_orcamentaria}
+      - name: sk_natureza_despesa
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_natureza_despesa'), field: sk_natureza_despesa}
+      - name: sk_fonte_recurso
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_fonte_recurso'), field: sk_fonte_recurso}
+      - name: sk_localidade
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_localidade'), field: sk_localidade}
