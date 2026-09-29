@@ -54,7 +54,7 @@ A bronze não muda.
 | `convenio_movimento_financeiro` | movimento | união de desembolso, ingresso de contrapartida, desbloqueio, pagamento e pagamento de tributo, com `tipo_movimento`, recortada aos convênios do MIR | `desembolso`, `ingresso_contrapartida`, `desbloqueio`, `pagamento`, `pagamento_tributo` |
 | `convenio_cronograma` | parcela × mês | responsável (Concedente/Convenente/Rendimento), recorte do MIR | `cronograma_desembolso` |
 | `convenio_evento` | evento | `tipo_evento` (mudança de situação, termo aditivo, prorrogação de ofício, solicitação de alteração, solicitação de rendimento), recorte do MIR | `historico_situacao`, `termo_aditivo`, `prorroga_oficio`, `solicitacao_alteracao`, `solicitacao_rendimento_aplicacao` |
-| `convenio_contagens` | instrumento | quantidades de metas e licitações, meta expirada, valor contratado | `meta_crono_fisico`, `licitacao` |
+| `convenio_contagens` | instrumento | quantidades e valores de metas e licitações, data de fim da primeira meta, data do último desembolso | `meta_crono_fisico`, `licitacao` |
 | `plano_acao_ted` | plano de ação | plano + atributos do programa; `num_transf`; `origem_recurso` | `planos_acao_ted`, `programas_ted`, `execucao_ne` |
 | `ted_credito_nc` | movimento de NC | reconstrução da NC SIAFI (`LPAD(ug,6)+LPAD(gestao,5)+ano+'NC'+LPAD(seq,6)`); ponte `num_transf` → plano; sinal/tipo pelo evento (Recebido · Devolvido · Anulado) | `nc_tesouro_mir`, `pf_ptres`, `notas_de_credito` |
 | `ted_programacao_pf` | movimento de PF | união `pf_tesouro` + `pf_transfere`; tipo pela `pf_acao` (Transferência · Devolução · Cancelamento) | `pf_tesouro`, `pf_transfere`, `planos_acao_ted` |
@@ -66,7 +66,8 @@ Regras gerais da silver:
 - **Sem ciclo de dependência:** `execucao_ne` não lê `convenio` nem `plano_acao_ted`; só identifica o sistema e o número do instrumento. A modalidade (Convênio, Fomento, Colaboração, Parceria) vem de `convenio`, que por sua vez lê `execucao_ne` para derivar `origem_recurso`. Ordem: `execucao_ne` → `convenio` / `plano_acao_ted` → gold.
 
 - Nenhum modelo repete colunas de outra entidade; a ligação é pela chave de negócio.
-- O recorte do MIR é aplicado **antes** de qualquer join. O SICONV bronze tem o governo inteiro (por exemplo, 7,3 mi de pagamentos e 8,9 mi de linhas de histórico) e o MIR tem 834 instrumentos.
+- O recorte do MIR é aplicado **antes** de qualquer join. O SICONV bronze tem o governo inteiro (por exemplo, 7,3 mi de pagamentos e 8,9 mi de linhas de histórico) e o MIR tem 643 instrumentos. O filtro fica dentro de cada ramo, subconsulta e agregação, não num join no fim.
+- **Nada que dependa da data de hoje:** a silver guarda datas (fim da primeira meta, último desembolso, fim de vigência), nunca marcações como meta expirada, `vigente` ou dias sem desembolso. O gold ou o Power BI calcula a marcação com a data de referência explícita, para que o dado não mude sozinho a cada rodada noturna (decisão do usuário em 2026-09-29).
 - Materialização `table`.
 
 ## 6. Gold: mart de Convênios e Termos de Fomento (`mir_convenios`)
@@ -93,7 +94,7 @@ Um único conjunto para todas as modalidades do SICONV. Substitui `resumo_conven
 
 | Fato | Grão | Medidas | FKs |
 |---|---|---|---|
-| `fato_execucao_orcamentaria` | linha de `execucao_ne` com instrumento do SICONV | empenhado, liquidado, pago, RAP inscrito, RAP pago | convênio, tempo, UG, ação, natureza, fonte, emenda, parlamentar |
+| `fato_execucao_orcamentaria` | linha de `execucao_ne` com instrumento do SICONV do universo `convenio_mir` | empenhado, liquidado, pago, RAP inscrito, RAP pago | convênio, tempo, UG, ação, natureza, fonte, emenda, parlamentar |
 | `fato_fluxo_financeiro` | movimento | valor; `tipo_movimento` degenerado | convênio, tempo, fornecedor (`-1` quando não há) |
 | `fato_cronograma_desembolso` | parcela × mês | valor previsto; responsável degenerado | convênio, tempo |
 | `fato_evento_convenio` | evento | quantidade, valor, dias; `tipo_evento` e situação degenerados | convênio, tempo |
@@ -134,7 +135,7 @@ Substitui `emendas_execucao_por_ug`, `emendas_instrumentos_execucao` e `resumo_e
 |---|---|---|
 | `dim_emenda` | código da emenda | número, ano, texto do autor |
 | `dim_parlamentar` | SCD2 | nome, cargo, partido, UF, foto, logo |
-| `dim_instrumento_executor` | tipo + número | tipo (Convênio · Fomento · Colaboração · Parceria · TED · Execução direta / não identificado), número, objeto, situação |
+| `dim_instrumento_executor` | tipo + número | tipo (Convênio · Fomento · Colaboração · Parceria · TED · Convênio de outro órgão · Execução direta / não identificado), número, objeto, situação |
 | `dim_favorecido` | CPF/CNPJ do empenho | nome, PF/PJ, documento mascarado quando PF |
 | `dim_localidade` | localizador do gasto | UF, município quando houver |
 | `dim_tempo`, `dim_unidade_gestora`, `dim_acao_orcamentaria`, `dim_natureza_despesa`, `dim_fonte_recurso` | como em §6 | |
@@ -148,6 +149,8 @@ Substitui `emendas_execucao_por_ug`, `emendas_instrumentos_execucao` e `resumo_e
 | `fato_emenda_posicao` | emenda (snapshot) | dotação atualizada, empenhado, liquidado, pago, qtde de instrumentos |
 
 O instrumento de cada emenda é registrado na NE (`execucao_ne.sistema_instrumento`/`nr_instrumento`) e chega ao mart pela FK `sk_instrumento_executor`. A `dim_instrumento_executor` completa tipo, objeto e situação com `mir_silver.convenio` (modalidade) e `mir_silver.plano_acao_ted`. Nos marts de Convênios e TEDs, a mesma coluna aparece como `sk_emenda` na fato de execução.
+
+Instrumentos do SICONV fora do universo `convenio_mir`: 24 convênios de outros órgãos (FUNAD, UFRJ, UFRGS, UFSM, UERJ, AGU, Ministério das Mulheres) aparecem no núcleo por NEs de outras UGs no relatório do MIR (145 linhas, R$ 13,7 mi empenhados, R$ 0,9 mi de emenda). Ficam fora do mart de Convênios; no mart de Emendas entram na `dim_instrumento_executor` com tipo "Convênio de outro órgão" (decisão do usuário em 2026-09-29).
 
 ## 9. Migração do indicador I1
 

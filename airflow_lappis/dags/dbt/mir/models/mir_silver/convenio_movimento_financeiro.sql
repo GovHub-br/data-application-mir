@@ -5,7 +5,8 @@
 -- compare entradas e saidas numa fato so. A chave de cada tipo e a chave
 -- natural da origem; contrapartida e tributo nao tem chave na origem e usam
 -- data e valor (unicos nos dados atuais, garantidos pelo teste unique);
--- desbloqueio usa a linha inteira, sem as repeticoes da origem.
+-- desbloqueio usa a linha inteira, sem as repeticoes da origem. O recorte do
+-- MIR e aplicado em cada ramo, antes da uniao, para nao ler o SICONV inteiro.
 with
     mir as (select nr_convenio from {{ ref("convenio_mir") }}),
 
@@ -16,10 +17,12 @@ with
             id_desembolso::text as chave_origem,
             data_desembolso as data_movimento,
             vl_desembolsado as valor,
+            null::numeric as valor_bloqueado,
             null::text as fornecedor_documento,
             null::text as fornecedor_nome,
             nr_siafi as documento_referencia
         from {{ ref("desembolso") }}
+        where nr_convenio in (select nr_convenio from mir)
 
         union all
 
@@ -31,10 +34,12 @@ with
             ) as chave_origem,
             dt_ingresso_contrapartida as data_movimento,
             vl_ingresso_contrapartida as valor,
+            null::numeric as valor_bloqueado,
             null::text as fornecedor_documento,
             null::text as fornecedor_nome,
             null::text as documento_referencia
         from {{ ref("ingresso_contrapartida") }}
+        where nr_convenio in (select nr_convenio from mir)
 
         union all
 
@@ -53,12 +58,18 @@ with
             ) as chave_origem,
             data_cadastro as data_movimento,
             vl_desbloqueado as valor,
+            vl_bloqueado as valor_bloqueado,
             null::text as fornecedor_documento,
             null::text as fornecedor_nome,
             nr_ob as documento_referencia
         -- O desbloqueio nao tem chave na origem e traz linhas identicas
         -- repetidas: remove as repeticoes e usa a linha inteira como chave
-        from (select distinct * from {{ ref("desbloqueio") }}) as d
+        from
+            (
+                select distinct *
+                from {{ ref("desbloqueio") }}
+                where nr_convenio in (select nr_convenio from mir)
+            ) as d
 
         union all
 
@@ -68,10 +79,12 @@ with
             nr_mov_fin::text as chave_origem,
             data_pag as data_movimento,
             vl_pago as valor,
+            null::numeric as valor_bloqueado,
             regexp_replace(identif_fornecedor, '\D', '', 'g') as fornecedor_documento,
             nome_fornecedor as fornecedor_nome,
             nr_dl as documento_referencia
         from {{ ref("pagamento") }}
+        where nr_convenio in (select nr_convenio from mir)
 
         union all
 
@@ -81,10 +94,12 @@ with
             concat_ws('|', data_tributo, vl_pag_tributos) as chave_origem,
             data_tributo as data_movimento,
             vl_pag_tributos as valor,
+            null::numeric as valor_bloqueado,
             null::text as fornecedor_documento,
             null::text as fornecedor_nome,
             null::text as documento_referencia
         from {{ ref("pagamento_tributo") }}
+        where nr_convenio in (select nr_convenio from mir)
     )
 
 select
@@ -93,8 +108,8 @@ select
     m.tipo_movimento,
     m.data_movimento,
     m.valor,
+    m.valor_bloqueado,
     m.fornecedor_documento,
     m.fornecedor_nome,
     m.documento_referencia
 from movimentos as m
-inner join mir on mir.nr_convenio = m.nr_convenio
