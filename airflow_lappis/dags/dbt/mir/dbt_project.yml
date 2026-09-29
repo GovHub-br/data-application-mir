@@ -55,6 +55,9 @@ models:
     mir_teds:
       +materialized: table
       +schema: mir_teds
+    mir_emendas:
+      +materialized: table
+      +schema: mir_emendas
 
 
 
