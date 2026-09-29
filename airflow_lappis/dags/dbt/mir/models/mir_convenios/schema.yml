@@ -210,3 +210,26 @@ models:
         tests:
           - not_null
           - relationships: {to: ref('dim_tempo'), field: sk_tempo}
+
+  - name: fato_convenio_posicao
+    description: >
+      Posicao acumulada por convenio (snapshot), uma linha por convenio.
+      valor_empenhado_siconv e o empenhado registrado no SICONV (historico
+      completo); despesas_* e restos_a_pagar_* vem das NEs do relatorio do
+      Tesouro e sao nulos quando o convenio nao tem NE nesse periodo.
+    columns:
+      - name: sk_convenio
+        tests:
+          - unique
+          - not_null
+          - relationships: {to: ref('dim_convenio'), field: sk_convenio}
+      - name: sk_convenente
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_convenente'), field: sk_convenente}
+      - name: sk_localidade
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_localidade'), field: sk_localidade}
+      - name: restos_a_pagar_inscritos_acumulavel
+        description: "RAP inscrito sem as reinscricoes (somavel entre exercicios)."
