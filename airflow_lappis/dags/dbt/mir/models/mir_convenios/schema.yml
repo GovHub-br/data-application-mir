@@ -59,6 +59,9 @@ models:
     description: >
       Parlamentar x cargo x partido (SCD2), com valido_de e valido_ate. A fato
       aponta para o partido vigente na data de emissao da NE (mir_silver.emenda_ne).
+      As janelas podem se sobrepor entre partidos do mesmo parlamentar (a origem
+      traz filiacoes sobrepostas): para filtrar por data, use a fato, nao a
+      dimensao.
     columns:
       - name: sk_parlamentar
         tests: [unique, not_null, membro_nao_identificado]
@@ -166,7 +169,10 @@ models:
           - relationships: {to: ref('dim_parlamentar'), field: sk_parlamentar}
 
   - name: fato_fluxo_financeiro
-    description: "Movimentos financeiros dos convenios; tipo_movimento degenerado."
+    description: >
+      Movimentos financeiros dos convenios; tipo_movimento degenerado. Pagamentos
+      sem documento valido na origem (2.586 em 2026-09-29, R$ 7,9 mi) ficam com
+      fornecedor -1.
     columns:
       - name: id_movimento
         tests: [unique, not_null]

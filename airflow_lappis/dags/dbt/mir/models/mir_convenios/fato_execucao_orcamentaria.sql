@@ -2,7 +2,8 @@
 -- vinculadas a um convenio do universo convenio_mir, no mesmo grao (linha do
 -- relatorio do Tesouro). Convenios de outros orgaos com NE no relatorio do MIR
 -- ficam fora (entram so no mart de Emendas). A emenda e o parlamentar vem da
--- NE; linha de recurso proprio fica com emenda e parlamentar -1.
+-- NE; linha de recurso proprio fica com emenda e parlamentar -1, e NE de
+-- emenda cujo autor nao foi encontrado fica so com parlamentar -1.
 select
     x.id_execucao_ne,
     x.ne_ccor,
