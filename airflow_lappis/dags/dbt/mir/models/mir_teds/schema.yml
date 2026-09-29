@@ -150,3 +150,17 @@ models:
         tests:
           - not_null
           - relationships: {to: ref('teds_dim_parlamentar'), field: sk_parlamentar}
+
+  - name: teds_fato_plano_acao_posicao
+    description: >
+      Posicao acumulada por plano de acao (snapshot), uma linha por plano.
+      Credito e financeiro sao 0 sem NC ou PF; as medidas de execucao sao nulas
+      quando o plano nao tem NE ligada.
+    columns:
+      - name: sk_plano_acao
+        tests:
+          - unique
+          - not_null
+          - relationships: {to: ref('teds_dim_plano_acao'), field: sk_plano_acao}
+      - name: restos_a_pagar_inscritos_acumulavel
+        description: "RAP inscrito sem as reinscricoes (somavel entre exercicios)."
