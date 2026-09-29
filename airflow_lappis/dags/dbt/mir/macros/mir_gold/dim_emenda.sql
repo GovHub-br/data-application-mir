@@ -1,6 +1,7 @@
 {#
     Emenda parlamentar. O codigo tem 12 digitos: ano (4) + autor (4) + numero
-    (4), ex.: 202443740013 = emenda 13 de 2024.
+    (4), ex.: 202443740013 = emenda 13 de 2024. Le as emendas com NE e as que so
+    tem dotacao; com NE, os atributos vem da NE (primeira pelo ne_ccor).
 #}
 {% macro dim_emenda() %}
     select
@@ -13,8 +14,27 @@
     from
         (
             select distinct on (codigo_emenda) codigo_emenda, emenda_descricao, autor_nome
-            from {{ ref("emenda_ne") }}
-            order by codigo_emenda, ne_ccor
+            from
+                (
+                    select
+                        codigo_emenda,
+                        emenda_descricao,
+                        autor_nome,
+                        1 as origem,
+                        ne_ccor as desempate
+                    from {{ ref("emenda_ne") }}
+
+                    union all
+
+                    select
+                        codigo_emenda,
+                        emenda_descricao,
+                        autor_nome,
+                        2 as origem,
+                        id_movimento as desempate
+                    from {{ ref("emenda_dotacao") }}
+                ) as fontes
+            order by codigo_emenda, origem, desempate
         ) as e
 
     union all
