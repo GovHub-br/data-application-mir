@@ -193,7 +193,7 @@ models:
       pagamento a fornecedor e pagamento de tributo.
     columns:
       - name: id_movimento
-        description: "Chave do movimento: md5 do tipo, do convenio e da chave natural na origem."
+        description: "Chave do movimento: md5 do tipo, do convenio e da chave natural na origem (linha inteira no desbloqueio)."
         tests:
           - unique
           - not_null

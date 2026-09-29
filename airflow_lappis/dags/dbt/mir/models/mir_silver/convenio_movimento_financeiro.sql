@@ -3,7 +3,9 @@
 -- Movimentos financeiros dos convenios do MIR, uma linha por movimento. Une as
 -- tabelas do SICONV que tem a mesma forma (convenio, data, valor) para que o BI
 -- compare entradas e saidas numa fato so. A chave de cada tipo e a chave
--- natural da origem (unica nos dados do MIR, garantida pelo teste unique).
+-- natural da origem; contrapartida e tributo nao tem chave na origem e usam
+-- data e valor (unicos nos dados atuais, garantidos pelo teste unique);
+-- desbloqueio usa a linha inteira, sem as repeticoes da origem.
 with
     mir as (select nr_convenio from {{ ref("convenio_mir") }}),
 
@@ -39,13 +41,24 @@ with
         select
             nr_convenio,
             'Desbloqueio' as tipo_movimento,
-            nr_ob as chave_origem,
+            concat_ws(
+                '|',
+                nr_ob,
+                data_cadastro,
+                data_envio,
+                tipo_recurso_desbloqueio,
+                vl_total_desbloqueio,
+                vl_desbloqueado,
+                vl_bloqueado
+            ) as chave_origem,
             data_cadastro as data_movimento,
             vl_desbloqueado as valor,
             null::text as fornecedor_documento,
             null::text as fornecedor_nome,
             nr_ob as documento_referencia
-        from {{ ref("desbloqueio") }}
+        -- O desbloqueio nao tem chave na origem e traz linhas identicas
+        -- repetidas: remove as repeticoes e usa a linha inteira como chave
+        from (select distinct * from {{ ref("desbloqueio") }}) as d
 
         union all
 
