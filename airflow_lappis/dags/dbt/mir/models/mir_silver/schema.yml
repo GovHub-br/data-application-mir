@@ -216,6 +216,8 @@ models:
         description: "Valor do movimento."
         tests:
           - not_null
+      - name: valor_bloqueado
+        description: "Valor que permanece bloqueado apos o desbloqueio. Preenchido so em desbloqueio."
       - name: fornecedor_documento
         description: "CPF/CNPJ do fornecedor (so digitos). Preenchido so em pagamento a fornecedor."
       - name: documento_referencia
@@ -291,7 +293,9 @@ models:
   - name: convenio_contagens
     description: >
       Contagens de metas fisicas e licitacoes por convenio do MIR, uma linha por
-      convenio (zero quando nao ha registro).
+      convenio (zero quando nao ha registro), com as datas que o gold ou o BI usa
+      para calcular marcacoes relativas a data de referencia (meta expirada,
+      dias sem desembolso).
     columns:
       - name: nr_convenio
         description: "Convenio."
@@ -301,5 +305,7 @@ models:
           - relationships:
               to: ref('convenio_mir')
               field: nr_convenio
-      - name: meta_expirada
-        description: "Verdadeiro se alguma meta tem data de fim anterior a data da execucao."
+      - name: data_fim_primeira_meta
+        description: "Menor data de fim entre as metas do convenio. Meta expirada = esta data anterior a data de referencia."
+      - name: data_ultimo_desembolso
+        description: "Data do ultimo desembolso informada pelo SICONV (dt_ult_desembolso). Dias sem desembolso = data de referencia menos esta data."

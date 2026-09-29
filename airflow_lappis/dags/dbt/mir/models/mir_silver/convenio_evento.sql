@@ -5,8 +5,11 @@
 -- * historico_situacao traz linhas repetidas a cada ingestao, as vezes com
 -- dias_historico_sit recalculado: fica uma linha por convenio x data x
 -- situacao, com o maior numero de dias;
--- * prorroga_oficio traz linhas identicas e reuso de nr_prorroga para
--- prorrogacoes distintas: a chave inclui a data de inicio.
+-- * prorroga_oficio traz linhas repetidas e reuso de nr_prorroga para
+-- prorrogacoes distintas: a chave inclui a data de inicio e, quando a mesma
+-- chave vem com conteudo diferente (assinatura ou fim), fica a assinatura mais
+-- recente.
+-- O recorte do MIR e aplicado em cada ramo, antes de agrupar e unir.
 with
     mir as (select nr_convenio from {{ ref("convenio_mir") }}),
 
@@ -18,10 +21,21 @@ with
             cod_historico_sit,
             max(dias_historico_sit) as dias_historico_sit
         from {{ ref("historico_situacao") }}
+        where nr_convenio in (select nr_convenio from mir)
         group by nr_convenio, dia_historico_sit, historico_sit, cod_historico_sit
     ),
 
-    prorrogacoes as (select distinct * from {{ ref("prorroga_oficio") }}),
+    prorrogacoes as (
+        select distinct on (nr_convenio, nr_prorroga, dt_inicio_prorroga) *
+        from {{ ref("prorroga_oficio") }}
+        where nr_convenio in (select nr_convenio from mir)
+        order by
+            nr_convenio,
+            nr_prorroga,
+            dt_inicio_prorroga,
+            dt_assinatura_prorroga desc nulls last,
+            dt_fim_prorroga desc nulls last
+    ),
 
     eventos as (
         select
@@ -53,6 +67,7 @@ with
             null::integer as dias,
             dt_fim_ta as data_fim_nova
         from {{ ref("termo_aditivo") }}
+        where nr_convenio in (select nr_convenio from mir)
 
         union all
 
@@ -83,6 +98,7 @@ with
             null::integer as dias,
             null::date as data_fim_nova
         from {{ ref("solicitacao_alteracao") }}
+        where nr_convenio in (select nr_convenio from mir)
 
         union all
 
@@ -98,6 +114,7 @@ with
             null::integer as dias,
             null::date as data_fim_nova
         from {{ ref("solicitacao_rendimento_aplicacao") }}
+        where nr_convenio in (select nr_convenio from mir)
     )
 
 select
@@ -112,4 +129,3 @@ select
     e.dias,
     e.data_fim_nova
 from eventos as e
-inner join mir on mir.nr_convenio = e.nr_convenio
