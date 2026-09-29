@@ -432,3 +432,60 @@ models:
         description: "Lado da PF que nao e o MIR: a unidade que executa o TED."
         tests:
           - not_null
+          - relationships:
+              to: ref('ted_unidade_executora')
+              field: ug_executora_codigo
+
+  - name: ted_credito_nc
+    description: >
+      Credito descentralizado (NC) dos TEDs, uma linha por movimento (so o lado
+      ORIGEM da fonte de 2026). So NCs ligadas a um TED: pelo campo de
+      transferencia, pelo numero no texto ou pelo processo SEI.
+    columns:
+      - name: id_movimento
+        tests:
+          - unique
+          - not_null
+      - name: tipo
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Recebido", "Devolvido", "Anulado"]
+      - name: data_movimento
+        description: "Data da NC; nas anteriores a 2026 (sem data na fonte), 1 de janeiro do ano do numero da NC."
+        tests:
+          - not_null
+      - name: data_estimada
+        tests:
+          - not_null
+      - name: num_transf
+        tests:
+          - not_null
+      - name: metodo_vinculo
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["campo", "texto", "processo"]
+      - name: id_plano_acao
+        description: "Plano do TED. Nulo quando o numero nao e de um plano do TransfereGov."
+        tests:
+          - relationships:
+              to: ref('ted_plano_acao')
+              field: id_plano_acao
+      - name: ug_executora_codigo
+        tests:
+          - not_null
+          - relationships:
+              to: ref('ted_unidade_executora')
+              field: ug_executora_codigo
+
+  - name: ted_unidade_executora
+    description: "UGs que executam os TEDs (lado que nao e o MIR nas NCs e PFs)."
+    columns:
+      - name: ug_executora_codigo
+        tests:
+          - unique
+          - not_null
+      - name: ug_executora_nome
+        tests:
+          - not_null
