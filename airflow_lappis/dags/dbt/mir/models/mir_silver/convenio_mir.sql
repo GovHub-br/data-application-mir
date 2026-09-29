@@ -32,14 +32,27 @@ with
         select
             nr_convenio,
             bool_or(origem_recurso = 'Emenda') as tem_emenda,
-            bool_or(origem_recurso = 'Recurso próprio') as tem_proprio,
+            bool_or(origem_recurso = 'Recurso próprio') as tem_proprio
+        from nes
+        group by nr_convenio
+    ),
+
+    -- UGs responsaveis das NEs, uma vez cada; codigo e nome ordenados pelo
+    -- codigo para que as duas listas fiquem alinhadas posicao a posicao
+    ugs as (
+        select
+            nr_convenio,
             string_agg(
-                distinct ug_responsavel_codigo, ', ' order by ug_responsavel_codigo
+                ug_responsavel_codigo, ', ' order by ug_responsavel_codigo
             ) as ug_responsavel_codigo,
             string_agg(
-                distinct ug_responsavel_nome, ', ' order by ug_responsavel_nome
+                ug_responsavel_nome, ', ' order by ug_responsavel_codigo
             ) as ug_responsavel_nome
-        from nes
+        from
+            (
+                select distinct nr_convenio, ug_responsavel_codigo, ug_responsavel_nome
+                from nes
+            ) as pares
         group by nr_convenio
     )
 
@@ -89,9 +102,10 @@ select
         else 'Não identificada'
     end as origem_recurso,
     coalesce(o.tem_emenda and o.tem_proprio, false) as complemento_proprio,
-    o.ug_responsavel_codigo,
-    o.ug_responsavel_nome
+    u.ug_responsavel_codigo,
+    u.ug_responsavel_nome
 from {{ ref("convenio") }} as c
 inner join recorte as r on r.nr_convenio = c.nr_convenio
 left join {{ ref("proposta") }} as p on p.id_proposta = c.id_proposta
 left join origem as o on o.nr_convenio = c.nr_convenio
+left join ugs as u on u.nr_convenio = c.nr_convenio
