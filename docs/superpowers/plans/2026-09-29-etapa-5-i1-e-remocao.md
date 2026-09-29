@@ -70,6 +70,8 @@ export DB_DW_HOST_MIR=localhost DB_DW_PORT_MIR=5433 DB_DW_USER_MIR=postgres \
 
 ### Task 1: Plugin do I1 lê os marts
 
+> **Desvio aplicado na execução (Tarefa 2, 2026-09-29):** a paridade mostrou que o gold antigo tirava o programa de governo das NCs (`max(programa_governo)` de `nc_plano_acao`), não das NEs. A decisão 8 passou a ser "maior código de programa entre as NCs do plano (PTRES da NC → `dim_acao_orcamentaria`)", com 0 diferenças contra o antigo. No código final, o argumento `execucao_teds` (`fato_execucao_orcamentaria`) virou `creditos_teds` (`mir_teds.fato_credito_descentralizado`), e `dim_acao_orcamentaria` é ligada pelo `ptres`. Os blocos abaixo mostram a versão original do plano.
+
 **Files:**
 - Modify: `airflow_lappis/plugins/indicadores/i1_valor_executado.py`
 - Test: `tests/test_plugins/test_indicadores_i1.py`
@@ -1403,7 +1405,7 @@ Em `docs/superpowers/specs/2026-09-29-remodelagem-fato-dimensao-design.md`:
 1. §9: substituir o primeiro item (`dags/indicadores/mir/i1_valor_executado_dag.py`: ...) por:
 
 ```markdown
-- `dags/indicadores/mir/i1_valor_executado_dag.py`: o `FONTES` lê `mir_teds.dim_plano_acao`, `fato_plano_acao_posicao`, `fato_execucao_orcamentaria` e `dim_acao_orcamentaria`, e `mir_convenios.dim_convenio`, `fato_convenio_posicao`, `dim_convenente` e `dim_localidade`. A etapa da cadeia usa as quantidades de PF, NC e NE da posição do plano; o programa de governo do TED é o de maior empenhado nas NEs do plano. Na saída `i1_ted_por_instrumento`, `n_linhas_resumo` virou `qtd_nes` (decisão do usuário em 2026-09-29).
+- `dags/indicadores/mir/i1_valor_executado_dag.py`: o `FONTES` lê `mir_teds.dim_plano_acao`, `fato_plano_acao_posicao`, `fato_credito_descentralizado` e `dim_acao_orcamentaria`, e `mir_convenios.dim_convenio`, `fato_convenio_posicao`, `dim_convenente` e `dim_localidade`. A etapa da cadeia usa as quantidades de PF, NC e NE da posição do plano; o programa de governo do TED é o maior código de programa entre as NCs do plano, a mesma regra do gold antigo. Na saída `i1_ted_por_instrumento`, `n_linhas_resumo` virou `qtd_nes` (decisão do usuário em 2026-09-29).
 ```
 
 2. §10: substituir a lista por:
@@ -1448,3 +1450,49 @@ git commit -m "docs(dbt/mir): script de drop do legado e guia de migracao do Pow
 - Rodar `docs/mir-drop-legado.sql` em produção (o usuário, depois de migrar os painéis).
 - Squash dos trailers `Co-Authored-By` errados da etapa 1 (f15a6a0, 67875d4, 65f0015), antes do PR.
 - Descrição do PR: diferenças da paridade das etapas 2 a 5 e a lista de valores do I1 que mudaram.
+
+## Resultado da paridade do I1 (2026-09-29)
+
+Comparação feita com o I1 antigo (plugin de d285ffe sobre `planos_acao_ted`, `ted_resumo_orcamentario`, `pf_unificado_planos_acao`, `nc_plano_acao`, `ted_empenhos_plano_acao`, `resumo_convenios` e `instrumentos_emendas`) contra o novo (marts), no dump local.
+
+### Linhas por saída
+
+| Saída | Antigo | Novo |
+|---|---|---|
+| `i1_ted_por_instrumento` | 118 | 118 |
+| `i1_ted_por_executor` | 52 | 52 |
+| `i1_convenios_por_instrumento` | 413 | 224 |
+| `i1_convenios_por_uf` | 17 | 17 |
+| `i1_convenios_por_municipio` | 76 | 76 |
+| `i1_valor_por_instrumento` | 6 | 6 |
+
+### Carteira (`i1_valor_por_instrumento`)
+
+| Instrumento | Origem | n (antigo → novo) | Empenhado líquido (antigo → novo) | Pago (antigo → novo) |
+|---|---|---|---|---|
+| TED | emenda | 2 → 4 | 1.250.000,00 → 1.650.000,00 | 1.250.000,00 → 1.650.000,00 |
+| TED | orçamento regular | 116 → 114 | 101.416.983,79 → 101.217.983,79 | 92.735.624,01 → 92.335.624,01 |
+| CONVENIO | emenda | 36 → 27 | 9.375.824,10 → 7.246.112,05 | 1.423.321,64 → 1.055.160,82 |
+| CONVENIO | orçamento regular | 11 → 1 | 3.158.200,00 → 300.000,00 | 687.000,00 → 0,00 |
+| TERMO DE FOMENTO | emenda | 276 → 162 | 73.158.744,79 → 41.729.011,29 | 50.326.274,88 → 26.537.937,04 |
+| TERMO DE FOMENTO | orçamento regular | 90 → 34 | 52.249.640,75 → 23.827.603,42 | 50.859.215,42 → 23.988.395,71 |
+
+### Diferenças por causa
+
+**Convênios (224 instrumentos; campos iguais, exceto a origem):**
+- **Convênios repetidos no gold antigo:** o I1 antigo lia `resumo_convenios` com 188 convênios repetidos (189 linhas a mais; 413 linhas para 224 convênios). Cada repetição contava como instrumento e somava de novo empenhado, pago e firmado. É a principal queda da carteira de convênios e termos.
+- **Origem Emenda pela NE (23):** convênios com NE de emenda no núcleo e sem parlamentar no SICONV passam de `orcamento_regular` para `emenda`: 7AAAOI, 7AAAOJ, 7AAAQD, 7AAAZV, 7AAAZW, 7AACOO, 7AACTT, 7AACWM, 7AACWO, 7AACWR, 7AACWU, 7AACWV, 7AACXF, 965039, 965088, 965090, 965241, 965317, 970192, 970196, 971338, 972607, 973281.
+- Tipo, ano, situação, UF, município, convenente, categoria, firmado, empenhado, pago e `sem_empenho`: 0 diferenças.
+
+**TEDs (118 planos):**
+- **Origem Emenda:**
+  - plano 4407 (TED 978244): NE de emenda 2025NE004076 ligada pela cascata nova (método 10);
+  - plano 5808 (TED 998427): NE de emenda de 2026, que o `instrumentos_emendas` antigo não marcava como TED.
+- **Empenhado:**
+  - plano 2932: 184.287,85 → 185.287,85;
+  - plano 4407: 0 → 200.000,00.
+  - Os dois vêm de NEs que a cascata antiga não ligava ao plano, casos já conhecidos da etapa 3.
+- **Etapa da cadeia** (`S3_NC_sem_PF` → `S4_cadeia_plena` nos planos 5743 e 5808; `S3_NC_sem_PF` → `S3_ate_NC` no 6211): a PF passou a ser ligada pela inscrição (`pf_inscricao` = `sq_instrumento`). No modelo antigo esses planos não tinham PF.
+- **Programa de governo:** 0 diferenças, com a regra das NCs (ver o desvio na Tarefa 1).
+- Número, ano, situação, executor, forma de execução, firmado, anulado, liquidado e pago: 0 diferenças.
+- **Coluna:** `n_linhas_resumo` virou `qtd_nes`.
