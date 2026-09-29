@@ -38,12 +38,13 @@ A bronze não muda.
 
 - **Chave substituta:** `sk_<dimensao>` do tipo `bigint`, derivada deterministicamente da chave natural:
   `('x' || substr(md5(<chave natural>), 1, 16))::bit(64)::bigint`, implementada em uma macro `surrogate_key(cols)`. Não usa sequência nem pacote externo, e a chave é estável entre execuções.
+- **Chave de tempo:** `sk_tempo` é a data no formato `AAAAMMDD` (`bigint`), e não um md5, para que a chave seja legível e ordenável; `-1` quando a data é nula. A fato calcula as chaves com as mesmas macros da dimensão, sem join; o teste `relationships` garante que cada chave existe.
 - **Membro "não identificado":** toda dimensão tem uma linha `sk = -1` com rótulo `Não identificado`. Nenhuma FK de fato fica nula.
 - **Datas:** cada fato se liga à `dim_tempo` só pela data do próprio evento (relacionamento ativo único no Power BI). Datas de assinatura e vigência são atributos da dimensão do instrumento.
-- **Parlamentar em SCD2:** `dim_parlamentar` tem uma linha por parlamentar × período de filiação (`valido_de`, `valido_ate`). A fato recebe a versão vigente na data de emissão da NE, preservando as prioridades 1/2/3 do `emendas_partidos` atual.
-- **LGPD:** CPF de pessoa física é mascarado nas dimensões de favorecido/fornecedor (`***.123.456-**`); a `sk` usa o documento completo.
+- **Parlamentar em SCD2:** `dim_parlamentar` tem uma linha por parlamentar × cargo × partido (`valido_de` = primeira filiação, `valido_ate` = última desfiliação, nulo se aberta). A fato recebe o partido vigente na data de emissão da NE (`mir_silver.emenda_ne`), preservando as prioridades 1/2/3 do `emendas_partidos` atual; o fim de filiação em aberto é tratado como `infinity`, sem `current_date`.
+- **LGPD:** CPF de pessoa física aparece mascarado nas dimensões de favorecido/fornecedor. O SICONV já publica o CPF mascarado (`***12345***`), então a chave do fornecedor PF é documento mascarado + nome (os 5 dígitos visíveis sozinhos colidem entre pessoas); CPF que chegue sem máscara é mascarado no mesmo formato.
 - **Dimensões repetidas entre marts** (tempo, UG, ação/PTRES, natureza, fonte, parlamentar, emenda) são geradas por **macros** dbt compartilhadas. A regra fica em um lugar e cada mart materializa a sua cópia, então os marts são independentes no Power BI.
-- **Seed:** cadastro de municípios do IBGE (`seeds/municipios_ibge.csv`) alimenta `dim_localidade`.
+- **Seed:** `seeds/uf_regiao.csv` (UF → nome da UF e região) alimenta `dim_localidade`. O nome do município e o código IBGE já vêm da proposta, então o cadastro completo de municípios não é necessário.
 
 ## 5. Silver (`mir_silver`)
 
@@ -51,15 +52,15 @@ A bronze não muda.
 |---|---|---|---|
 | `execucao_ne` | linha do `ppa_tesouro` (NE × mês × PTRES × natureza × fonte × PO) | **núcleo**: `codigo_emenda` (via `tg_emendas.ne_ccor`; nulo = recurso próprio); `sistema_instrumento` (SICONV · TED · Não identificado), `nr_instrumento` e `metodo_vinculo` (`info_complementar` · `descricao` · `observacao` · `nao_encontrado`), usando as regex hoje em `numero_transferencia` e `empenhos_por_plano_acao` | `ppa_tesouro`, `tg_emendas`, `num_transf`↔plano |
 | `convenio_mir` (o nome `convenio` já é do modelo bronze) | instrumento (`nr_convenio`) | recorte do MIR (UG emitente 810008 ou com NE da UG 810008, regra atual de `convenios_consolidados`); atributos 1:1 da proposta (modalidade, objeto, proponente, município); UGs responsáveis agregadas; `origem_recurso` = Emenda se alguma NE do instrumento em `execucao_ne` tem `codigo_emenda`; Recurso próprio se tem NE e nenhuma é de emenda; **Não identificada** se o instrumento não tem NE no núcleo (418 dos 643 convênios, todos assinados entre 2008 e 2022, antes do período do relatório do Tesouro; decisão do usuário em 2026-09-29); `complemento_proprio` = true quando um instrumento de Emenda também tem NEs de recurso próprio | `convenio`, `proposta`, `execucao_ne` |
-| `convenio_movimento_financeiro` | movimento | união de desembolso, ingresso de contrapartida, desbloqueio, pagamento e pagamento de tributo, com `tipo_movimento`, recortada aos convênios do MIR | `desembolso`, `ingresso_contrapartida`, `desbloqueio`, `pagamento`, `pagamento_tributo` |
+| `convenio_movimento_financeiro` | movimento | união de desembolso, ingresso de contrapartida, desbloqueio, pagamento e pagamento de tributo, com `tipo_movimento`, recortada aos convênios do MIR; tipo (PF/PJ) e chave do fornecedor | `desembolso`, `ingresso_contrapartida`, `desbloqueio`, `pagamento`, `pagamento_tributo` |
 | `convenio_cronograma` | parcela × mês | responsável (Concedente/Convenente/Rendimento), recorte do MIR | `cronograma_desembolso` |
 | `convenio_evento` | evento | `tipo_evento` (mudança de situação, termo aditivo, prorrogação de ofício, solicitação de alteração, solicitação de rendimento), recorte do MIR | `historico_situacao`, `termo_aditivo`, `prorroga_oficio`, `solicitacao_alteracao`, `solicitacao_rendimento_aplicacao` |
-| `convenio_contagens` | instrumento | quantidades e valores de metas e licitações, data de fim da primeira meta, data do último desembolso | `meta_crono_fisico`, `licitacao` |
+| `convenio_contagens` | instrumento | quantidades e valores de metas, licitações e empenhos registrados no SICONV, data de fim da primeira meta, data do último desembolso | `meta_crono_fisico`, `licitacao`, `empenho`, `desembolso` |
 | `plano_acao_ted` | plano de ação | plano + atributos do programa; `num_transf`; `origem_recurso` | `planos_acao_ted`, `programas_ted`, `execucao_ne` |
 | `ted_credito_nc` | movimento de NC | reconstrução da NC SIAFI (`LPAD(ug,6)+LPAD(gestao,5)+ano+'NC'+LPAD(seq,6)`); ponte `num_transf` → plano; sinal/tipo pelo evento (Recebido · Devolvido · Anulado) | `nc_tesouro_mir`, `pf_ptres`, `notas_de_credito` |
 | `ted_programacao_pf` | movimento de PF | união `pf_tesouro` + `pf_transfere`; tipo pela `pf_acao` (Transferência · Devolução · Cancelamento) | `pf_tesouro`, `pf_transfere`, `planos_acao_ted` |
 | `emenda_dotacao` | emenda × PTRES × natureza × localizador × mês | dotação inicial e atualizada | `tg_emendas_dotacao` |
-| `parlamentar_filiacao` | parlamentar × período | reaproveita `dados_abertos.parlamentares_historico` (via `ref`) | `parlamentares_historico` |
+| `emenda_ne` | NE de emenda | emenda (código, descrição, autor) e parlamentar autor com o partido vigente na data de emissão da NE (prioridades 1/2/3 do `emendas_partidos`) | `tg_emendas`, `execucao_ne`, `parlamentares_historico` (via `ref`) |
 
 Regras gerais da silver:
 
@@ -78,7 +79,7 @@ Um único conjunto para todas as modalidades do SICONV. Substitui `resumo_conven
 
 | Dimensão | Grão | Atributos |
 |---|---|---|
-| `dim_convenio` | `nr_convenio` | modalidade, origem do recurso, `complemento_proprio`, objeto, situação e subsituação, flags de inadimplente/rescindido/anulado, datas de assinatura, publicação e vigência (original e atual), `vigente`, UG(s) responsável(eis), número do processo |
+| `dim_convenio` | `nr_convenio` | modalidade, origem do recurso, `complemento_proprio`, objeto, situação e subsituação, flags de inadimplente/rescindido/anulado, datas de assinatura, publicação e vigência (original e atual), fim da primeira meta, `vigente` e `meta_expirada` calculados contra `data_referencia` (data da carga, exposta na dimensão), UG(s) responsável(eis), número do processo |
 | `dim_convenente` | CNPJ do proponente | nome, natureza jurídica |
 | `dim_localidade` | município IBGE | município, UF, região; linhas só com UF quando falta município |
 | `dim_fornecedor` | CPF/CNPJ | nome, PF/PJ, documento mascarado quando PF |
@@ -98,7 +99,7 @@ Um único conjunto para todas as modalidades do SICONV. Substitui `resumo_conven
 | `fato_fluxo_financeiro` | movimento | valor; `tipo_movimento` degenerado | convênio, tempo, fornecedor (`-1` quando não há) |
 | `fato_cronograma_desembolso` | parcela × mês | valor previsto; responsável degenerado | convênio, tempo |
 | `fato_evento_convenio` | evento | quantidade, valor, dias; `tipo_evento` e situação degenerados | convênio, tempo |
-| `fato_convenio_posicao` | instrumento (snapshot acumulado) | valor firmado inicial e atualizado, repasse e contrapartida previstos, desembolsado, saldo em conta, contrapartida depositada, desbloqueado/bloqueado, empenhado, liquidado, pago, tributos, qtde de desembolsos/pagamentos/metas/licitações/aditivos/prorrogações, maior intervalo sem repasse, data do último desembolso e do último pagamento | convênio, convenente, localidade |
+| `fato_convenio_posicao` | instrumento (snapshot acumulado) | valor firmado inicial e atualizado, repasse e contrapartida previstos, desembolsado, saldo em conta, contrapartida depositada, desbloqueado/bloqueado, empenhado registrado no SICONV (histórico completo, mesma medida do gold antigo), empenhado/liquidado/pago/RAP das NEs do núcleo SIAFI (só os exercícios do relatório do Tesouro; nulo sem NE), pago a fornecedores, tributos, qtde de desembolsos/pagamentos/empenhos/metas/licitações/aditivos/prorrogações, data do último desembolso e do último pagamento. Os "dias sem repasse" do gold antigo não entram: o BI calcula a partir da data do último desembolso | convênio, convenente, localidade |
 
 ## 7. Gold: mart de TEDs (`mir_teds`)
 
