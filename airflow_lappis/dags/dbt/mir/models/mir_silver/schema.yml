@@ -66,8 +66,9 @@ models:
       ppa_tesouro (ne_ccor <> '-9'), fonte unica dos valores de empenhado,
       liquidado, pago e restos a pagar para os tres data marts. Cada linha traz a
       origem do recurso (Emenda quando a NE esta no tg_emendas) e o instrumento
-      vinculado (TED pela cascata de num_transf, que tem precedencia; senao
-      convenio unico do SICONV; senao Nao identificado).
+      vinculado (TED pela cascata de num_transf, que tem precedencia; senao o
+      convenio escolhido em vinculo_ne_convenio, por candidato unico ou desempate
+      por processo; senao Nao identificado).
     columns:
       - name: id_execucao_ne
         description: "Chave da linha (id_hash do ppa_tesouro)."
