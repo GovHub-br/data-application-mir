@@ -1,5 +1,6 @@
 -- Falha se, para algum tipo de movimento, a quantidade ou a soma na silver
 -- divergir da bronze correspondente restrita aos convenios do MIR.
+-- Desbloqueio compara com a origem sem as linhas identicas repetidas.
 with
     mir as (select nr_convenio from {{ ref("convenio_mir") }}),
 
@@ -19,7 +20,7 @@ with
         where nr_convenio in (select nr_convenio from mir)
         union all
         select 'Desbloqueio', count(*), coalesce(sum(vl_desbloqueado), 0)
-        from {{ ref("desbloqueio") }}
+        from (select distinct * from {{ ref("desbloqueio") }}) as d
         where nr_convenio in (select nr_convenio from mir)
         union all
         select 'Pagamento a fornecedor', count(*), coalesce(sum(vl_pago), 0)
