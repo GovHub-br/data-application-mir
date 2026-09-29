@@ -169,18 +169,20 @@ Instrumentos do SICONV fora do universo `convenio_mir`: 24 convênios de outros 
 
 ## 9. Migração do indicador I1
 
-- `dags/indicadores/mir/i1_valor_executado_dag.py`: o `FONTES` passa a ler `mir_teds.fato_plano_acao_posicao` + `mir_teds.dim_plano_acao` (e as fatos de NC, PF e execução necessárias para `classificar_etapa_cadeia`), `mir_convenios.fato_convenio_posicao` + `dim_convenio` + `dim_convenente` + `dim_localidade`, e a origem do recurso via `dim_convenio`/`dim_plano_acao`.
+- `dags/indicadores/mir/i1_valor_executado_dag.py`: o `FONTES` lê `mir_teds.dim_plano_acao`, `fato_plano_acao_posicao`, `fato_credito_descentralizado` e `dim_acao_orcamentaria`, e `mir_convenios.dim_convenio`, `fato_convenio_posicao`, `dim_convenente` e `dim_localidade`. A etapa da cadeia usa as quantidades de PF, NC e NE da posição do plano; o programa de governo do TED é o maior código de programa entre as NCs do plano, a mesma regra do gold antigo. Na saída `i1_ted_por_instrumento`, `n_linhas_resumo` virou `qtd_nes` (decisão do usuário em 2026-09-29).
 - `plugins/indicadores/i1_valor_executado.py`: ajuste dos nomes de colunas; a lógica de cálculo não muda.
-- **Critério de aceite:** os 25 testes de `tests/test_plugins/test_indicadores_i1.py` passam, incluindo a comparação com os CSVs validados pela BI (`fixtures/i1/*.csv`). O ajuste dos testes se limita ao formato das entradas; os valores esperados só mudam onde o modelo novo cobre cenários que o antigo perdia (decisão do usuário em 2026-09-29), por exemplo o empenhado dos planos de TED 4407 e 2932, cujas linhas de NE a cascata antiga não ligava. Cada valor que mudar é listado no PR com a causa.
+- **Critério de aceite:** os testes de `tests/test_plugins/test_indicadores_i1.py` passam (29 depois da migração), incluindo a comparação com os CSVs validados pela BI (`fixtures/i1/*.csv`). O ajuste dos testes se limita ao formato das entradas; os valores esperados só mudam onde o modelo novo cobre cenários que o antigo perdia (decisão do usuário em 2026-09-29), por exemplo o empenhado dos planos de TED 4407 e 2932, cujas linhas de NE a cascata antiga não ligava. Cada valor que mudar é listado no PR com a causa.
 
 ## 10. Remoção (substituição direta)
 
 Na etapa final, depois da paridade comprovada, são removidos:
 
-- `siconv_dbt/silver/*` (25 modelos) e `siconv_dbt/gold/*`;
-- `empenhos_ted_dbt/silver/*`, `empenhos_ted_dbt/views/*` e `empenhos_ted_dbt/gold/*`;
-- `emendas_dbt/silver/*` e `emendas_dbt/gold/*`;
-- os blocos correspondentes em `schema.yml` e as tabelas órfãs no banco (`drop table` explícito, listado no plano).
+- `siconv_dbt/silver/*` (25 modelos) e `siconv_dbt/gold/*` (2);
+- `empenhos_ted_dbt/silver/*` (5), `empenhos_ted_dbt/views/*` (1) e `empenhos_ted_dbt/gold/*` (2);
+- `emendas_dbt/gold/*` (3) e, de `emendas_dbt/silver/`, `emendas_orcamento_execucao`, `emendas_partidos` e `instrumentos_emendas`. O `planos_partidos` (transferências especiais, fora do escopo pelo §1) fica;
+- os blocos correspondentes em `schema.yml`, as análises de paridade e os testes dos modelos antigos.
+
+As tabelas órfãs não são apagadas pelo dbt: o usuário roda `docs/mir-drop-legado.sql` (41 objetos, sem `cascade`) em produção depois de migrar os painéis (decisão do usuário em 2026-09-29). O guia para a equipe dos painéis está em `docs/mir-guia-migracao-power-bi.md`.
 
 A bronze desses domínios e `dados_abertos_dbt/silver/parlamentares_historico` permanecem.
 
@@ -204,13 +206,13 @@ A bronze desses domínios e `dados_abertos_dbt/silver/parlamentares_historico` p
 2. Mart `mir_convenios` (silver de convênio + gold) com paridade contra `resumo_convenios`/`resumo_termos_fomento`.
 3. Mart `mir_teds` com paridade contra `ted_resumo_orcamentario`.
 4. Mart `mir_emendas` com paridade contra os golds de emendas e o teste de consistência entre marts.
-5. Migração do I1, remoção dos modelos e tabelas antigos e atualização do `dbt_project.yml`.
+5. Migração do I1, remoção dos modelos e tabelas antigos e atualização do `dbt_project.yml`. O dbt_project.yml não precisou mudar: os blocos dos domínios antigos continuam configurando a bronze.
 
 Cada etapa só avança com `dbt build` verde para os modelos da etapa.
 
 ## 13. Riscos
 
 - **Divergência de números na paridade:** alguns resultados atuais têm efeitos colaterais conhecidos (inflação por grão no TED, `union distinct` em `convenios_consolidados`). Toda diferença encontrada é classificada como *bug antigo corrigido* ou *regressão*, e só a segunda bloqueia a etapa. As diferenças aceitas são registradas no PR.
-- **Painéis Power BI existentes** que leem os golds antigos quebram na remoção (etapa 5). A lista dos painéis afetados precisa ser confirmada com a equipe antes da etapa 5.
+- **Painéis Power BI existentes** que leem os golds antigos continuam abrindo depois do deploy, com dados parados, até a migração; o guia `docs/mir-guia-migracao-power-bi.md` mapeia cada tabela antiga para o mart. O script de `drop` falha sem apagar nada se algum objeto ainda depender das tabelas.
 - **Join por nome do parlamentar** continua sujeito a grafias divergentes, como hoje. O modelo não piora nem resolve esse ponto.
 - **Reinscrição de restos a pagar** (regra do usuário, generalizada em 2026-09-29). O saldo não pago de uma NE reaparece como inscrito no exercício seguinte: a reinscrição é sempre o mesmo dinheiro (inscrição anterior menos pagamentos e cancelamentos; confirmado nos 164 casos do dump). `execucao_ne.reinscricao_rap` marca essas linhas. As fatos e posições somam RAP inscrito acumulado só com `reinscricao_rap = false` (remove R$ 12,2 mi de dupla contagem no dump); o saldo de RAP de um exercício usa todas as inscrições daquele ano. O teste de aviso `execucao_ne_reinscricao_rap_saldo` acusa reinscrição maior que o saldo.
