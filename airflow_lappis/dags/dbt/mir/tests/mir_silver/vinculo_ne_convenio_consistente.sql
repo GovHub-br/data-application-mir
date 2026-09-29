@@ -1,16 +1,23 @@
 -- Falha se o vinculo NE -> convenio violar suas regras:
--- * nr_convenio so pode vir preenchido quando ha exatamente um candidato;
--- * NE ambigua (mais de um candidato) nao pode escolher um convenio;
+-- * candidato unico sempre vira o convenio da NE;
+-- * NE com varios candidatos so escolhe convenio pelo desempate de processo;
+-- * fonte_vinculo so existe quando ha convenio escolhido;
 -- * todo nr_convenio precisa existir no cadastro do SICONV.
-select ne_ccor, 'nr_convenio sem candidato unico' as problema
+select ne_ccor, 'candidato unico sem nr_convenio' as problema
 from {{ ref("vinculo_ne_convenio") }}
 where qtd_convenios = 1 and nr_convenio is null
 
 union all
 
-select ne_ccor, 'ambigua com convenio escolhido' as problema
+select ne_ccor, 'escolha sem desempate por processo' as problema
 from {{ ref("vinculo_ne_convenio") }}
-where qtd_convenios > 1 and nr_convenio is not null
+where qtd_convenios > 1 and nr_convenio is not null and not desempate_processo
+
+union all
+
+select ne_ccor, 'fonte em NE ambigua' as problema
+from {{ ref("vinculo_ne_convenio") }}
+where nr_convenio is null and fonte_vinculo is not null
 
 union all
 

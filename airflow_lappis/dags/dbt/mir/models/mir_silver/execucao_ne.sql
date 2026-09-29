@@ -79,25 +79,27 @@ select
         when em.codigo_emenda is not null then 'Emenda' else 'Recurso próprio'
     end as origem_recurso,
 
-    -- Instrumento: TED tem precedencia; convenio so quando unico
+    -- Instrumento: TED tem precedencia; senao o convenio escolhido em vinculo_ne_convenio
     case
         when t.ne_ccor is not null
         then 'TED'
-        when c.qtd_convenios = 1
+        when c.nr_convenio is not null
         then 'SICONV'
         else 'Não identificado'
     end as sistema_instrumento,
     case
         when t.ne_ccor is not null
         then t.id_plano_acao::text
-        when c.qtd_convenios = 1
+        when c.nr_convenio is not null
         then c.nr_convenio
     end as nr_instrumento,
     t.num_transf,
     case
         when t.ne_ccor is not null
         then 'ted: ' || t.metodo_ted
-        when c.qtd_convenios = 1
+        when c.nr_convenio is not null and c.desempate_processo
+        then 'convenio: ' || c.fonte_vinculo || ' (desempate por processo)'
+        when c.nr_convenio is not null
         then 'convenio: ' || c.fonte_vinculo
         when c.qtd_convenios > 1
         then 'ambiguo'
