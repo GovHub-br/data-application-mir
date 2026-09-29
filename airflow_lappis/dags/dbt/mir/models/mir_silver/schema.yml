@@ -365,6 +365,18 @@ models:
           - accepted_values:
               values: [1, 2, 3]
               quote: false
+      - name: localizador_gasto
+        description: "Localizador do gasto da NE (tg_emendas); um por NE."
+        tests:
+          - not_null
+      - name: localizador_descricao
+        description: "Descricao do localizador."
+      - name: regiao
+        description: "Regiao do localizador (ou NACIONAL)."
+      - name: uf
+        description: "UF do localizador (ou NACIONAL)."
+      - name: uf_nome
+        description: "Nome da UF do localizador."
 
   - name: ted_ne_transferencia
     description: >
