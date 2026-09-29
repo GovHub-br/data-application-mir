@@ -30,8 +30,10 @@ models:
       Vinculo de cada nota de empenho (NE) do ppa_tesouro a um convenio / termo de
       fomento do SICONV, no grao da NE. Testa TODAS as linhas da NE (o
       ne_info_complementar varia entre linhas da mesma NE, em geral com
-      placeholders como NAO SE APLICA) e aceita apenas numeros que existem no
-      cadastro de convenios. Contem apenas NEs com pelo menos um candidato valido.
+      placeholders como NAO SE APLICA), aceita numeros numericos e alfanumericos
+      (formato adotado a partir de 2026, ex.: 7AACWU) e so aceita numeros que
+      existem no cadastro de convenios. Com mais de um candidato, desempata pelo
+      numero de processo. Contem apenas NEs com pelo menos um candidato valido.
     columns:
       - name: ne_ccor
         description: "Numero completo da nota de empenho."
@@ -39,19 +41,24 @@ models:
           - unique
           - not_null
       - name: qtd_convenios
-        description: "Quantidade de convenios distintos encontrados para a NE. Maior que 1 = ambigua."
+        description: "Quantidade de convenios distintos encontrados para a NE."
         tests:
           - not_null
       - name: nr_convenio
-        description: "Convenio vinculado; nulo quando a NE e ambigua."
+        description: >
+          Convenio vinculado: o candidato unico, ou o unico candidato cujo
+          nr_processo aparece em alguma linha da NE. Nulo quando a NE e ambigua.
       - name: fonte_vinculo
         description: >
-          Campo de onde veio o vinculo, pela prioridade: info_complementar (numero
-          puro em ne_info_complementar), descricao (regex em ne_ccor_descricao),
-          observacao (regex em doc_observacao).
+          Campo de onde veio o convenio escolhido, pela prioridade:
+          info_complementar, descricao, observacao. Nulo quando a NE e ambigua.
         tests:
           - accepted_values:
               values: ["info_complementar", "descricao", "observacao"]
+      - name: desempate_processo
+        description: "Verdadeiro quando havia mais de um candidato e o numero de processo decidiu."
+        tests:
+          - not_null
 
   - name: execucao_ne
     description: >
@@ -98,14 +105,18 @@ models:
           - accepted_values:
               values: ["TED", "SICONV", "Não identificado"]
       - name: nr_instrumento
-        description: "id_plano_acao (TED) ou nr_convenio (SICONV). Nulo quando Não identificado."
+        description: >
+          id_plano_acao (TED) ou nr_convenio (SICONV), como texto. Nulo quando Não
+          identificado. Os dois sistemas compartilham a coluna: a chave do
+          instrumento e (sistema_instrumento, nr_instrumento), nunca nr_instrumento
+          sozinho.
       - name: num_transf
         description: "Numero de transferencia do TED, quando houver."
       - name: metodo_vinculo
         description: >
           Como o instrumento foi encontrado: 'ted: <metodos da cascata>',
-          'convenio: <campo>', 'ambiguo' (mais de um convenio candidato) ou
-          'nao_encontrado'.
+          'convenio: <campo>', 'convenio: <campo> (desempate por processo)',
+          'ambiguo' (varios convenios candidatos sem desempate) ou 'nao_encontrado'.
         tests:
           - not_null
       - name: despesas_empenhadas
