@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: vinculo_ne_ted
+    description: >
+      Vinculo de cada nota de empenho (NE) do ppa_tesouro ao plano de acao de TED,
+      no grao da NE. Consolida a cascata de extracao de num_transf de
+      empenhos_por_plano_acao (metodos validados um a um); contem apenas NEs com
+      plano de acao encontrado. A cascata migra para mir_silver na etapa 3.
+    columns:
+      - name: ne_ccor
+        description: "Numero completo da nota de empenho (UG + gestao + ano + NE + sequencial)."
+        tests:
+          - unique
+          - not_null
+      - name: id_plano_acao
+        description: "Plano de acao de TED (TransfereGov) ao qual a NE pertence."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('planos_acao_ted')
+              field: id_plano_acao
+      - name: num_transf
+        description: "Numero de transferencia extraido da NE e usado para achar o plano."
+      - name: metodo_ted
+        description: "Metodo(s) da cascata que produziram o vinculo, separados por virgula."
