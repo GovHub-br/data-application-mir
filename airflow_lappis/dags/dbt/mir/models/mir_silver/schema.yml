@@ -332,7 +332,7 @@ models:
     description: >
       NEs de emenda, uma linha por NE: a emenda (tg_emendas) e o parlamentar
       autor com o partido vigente na data de emissao da NE, pelas prioridades do
-      emendas_partidos (1 = filiacao vigente; 2 = nome encontrado fora do
+      antigo emendas_partidos (1 = filiacao vigente; 2 = nome encontrado fora do
       periodo, filiacao mais proxima; 3 = nome nao encontrado).
     columns:
       - name: ne_ccor

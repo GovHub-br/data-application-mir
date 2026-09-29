@@ -539,7 +539,7 @@ linhas de ao menos 2 modelos: `select count(*) from analytics.siconv_dbt.conveni
 | Clientes de API existentes | `airflow_lappis/plugins/` |
 | DAGs de ingestão de exemplo | `airflow_lappis/dags/data_ingest/siafi/` |
 | Bronze com datas/valores | `models/siconv_dbt/bronze/proposta.sql` |
-| Silver com joins | `models/siconv_dbt/silver/proposta_convenio.sql` |
+| Silver com regra de negócio | `models/mir_silver/convenio_mir.sql` |
 | schema.yml completo | `models/emendas_dbt/bronze/schema.yml` |
 | Backfill com Param | `dags/data_ingest/siafi/nota_empenho_siafi_ingest_dag.py` |
 | CONTRIBUTING | `.github/CONTRIBUTING.md` |

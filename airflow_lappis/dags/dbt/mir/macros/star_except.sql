@@ -3,7 +3,7 @@
   (não introspecta o banco — `adapter.get_columns_in_relation` não funciona aqui porque
   as CTEs da cascata de métodos são efêmeras, não relações materializadas). Usado para
   evitar repetir manualmente a lista de colunas em cada CTE da cascata de extração de
-  identificadores em empenhos_por_plano_acao.sql.
+  identificadores em mir_silver/ted_ne_transferencia.sql.
 #}
 {% macro star_except(columns, except_columns=[], prefix='') %}
 {%- set filtered = [] -%}
