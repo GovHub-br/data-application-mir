@@ -67,21 +67,14 @@ def _posicao(sk_plano_acao, firmado=Decimal("1000.00"), bruto=0, anulado=0,
     }
 
 
-def _ne(sk_plano_acao, sk_acao_orcamentaria, empenhado):
-    """Linha de mir_teds.fato_execucao_orcamentaria (só as colunas usadas)."""
-    return {
-        "sk_plano_acao": sk_plano_acao,
-        "sk_acao_orcamentaria": sk_acao_orcamentaria,
-        "despesas_empenhadas": empenhado,
-    }
+def _nc(sk_plano_acao, ptres):
+    """Linha de mir_teds.fato_credito_descentralizado (só as colunas usadas)."""
+    return {"sk_plano_acao": sk_plano_acao, "ptres": ptres}
 
 
-def _acao(sk_acao_orcamentaria, codigo_programa):
+def _acao(ptres, codigo_programa):
     """Linha de mir_teds.dim_acao_orcamentaria (só as colunas usadas)."""
-    return {
-        "sk_acao_orcamentaria": sk_acao_orcamentaria,
-        "codigo_programa": codigo_programa,
-    }
+    return {"ptres": ptres, "codigo_programa": codigo_programa}
 
 
 def _convenio(nr, assinatura="2024-03-01", vigencia=None, situacao="Em execução",
@@ -258,19 +251,19 @@ def test_ted_aceita_flags_em_texto_como_no_csv_original() -> None:
     assert ted["forma_execucao_2n"] == "particulares"
 
 
-def test_ted_programa_governo_e_o_de_maior_empenhado() -> None:
-    """Decisão 8: programa com maior empenhado nas NEs; empate, menor código."""
+def test_ted_programa_governo_e_o_maior_programa_das_ncs() -> None:
+    """Decisão 8: max(programa) das NCs do plano, como no gold antigo."""
     planos = [_plano(1), _plano(2), _plano(3)]
-    acoes = [_acao(10, "5804"), _acao(20, "5802"), _acao(30, "5804"), _acao(-1, None)]
-    execucao = [
-        _ne(1, 10, 100), _ne(1, 20, 300), _ne(1, 30, 50),
-        _ne(2, 10, 100), _ne(2, 20, 100),
-        _ne(3, -1, 500),
+    acoes = [_acao("172001", "5802"), _acao("172002", "5804")]
+    creditos = [
+        _nc(1, "172001"), _nc(1, "172002"), _nc(1, "172001"),
+        _nc(2, "172001"),
+        _nc(3, "-9"),
     ]
 
-    teds = calcular_teds(planos, [], execucao, acoes)
+    teds = calcular_teds(planos, [], creditos, acoes)
 
-    assert [t["programa_governo"] for t in teds] == ["5802", "5802", ""]
+    assert [t["programa_governo"] for t in teds] == ["5804", "5802", ""]
 
 
 def test_ted_etapa_cadeia_vazia_quando_fora_da_definicao_b() -> None:
@@ -527,7 +520,7 @@ def test_calcular_i1_devolve_as_seis_saidas() -> None:
     saidas = calcular_i1(
         planos=[_plano(1, execucao_descentralizada=True)],
         posicao_planos=[_posicao(1, bruto=10, qtd_pf=1)],
-        execucao_teds=[],
+        creditos_teds=[],
         acoes_teds=[],
         **_fontes_convenios([_convenio(1)]),
     )

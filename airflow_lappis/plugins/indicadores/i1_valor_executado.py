@@ -11,7 +11,7 @@ do script original; os dados vêm dos data marts ``mir_teds`` e
 Fontes (tabelas do dbt):
     mir_teds.dim_plano_acao              → cadastro dos TEDs e origem do recurso
     mir_teds.fato_plano_acao_posicao     → valores por TED e quantidades de PF/NC/NE
-    mir_teds.fato_execucao_orcamentaria  → NEs por TED (programa de governo)
+    mir_teds.fato_credito_descentralizado → NCs por TED (programa de governo)
     mir_teds.dim_acao_orcamentaria       → programa de cada PTRES
     mir_convenios.dim_convenio           → cadastro dos convênios/fomentos
     mir_convenios.fato_convenio_posicao  → valores por convênio
@@ -39,8 +39,9 @@ Decisões metodológicas (resumo; o detalhe está no script original):
  7. Etapa da cadeia sob a Definição B (TED = flag descentralizada OU tem NC),
     pelas quantidades de PF, NC e NE da posição; TEDs fora dela ficam com
     ``etapa_cadeia`` vazia.
- 8. Programa de governo do TED: o programa com maior empenhado nas NEs do
-    plano (empate: menor código); vazio se o plano não tem NE.
+ 8. Programa de governo do TED: o maior código de programa entre as NCs do
+    plano (PTRES da NC → dim_acao_orcamentaria), como no gold antigo; vazio
+    se o plano não tem NC.
 """
 
 from collections import defaultdict
@@ -150,37 +151,31 @@ def classificar_etapa_cadeia(
 # Bloco 1 — TEDs: valor por instrumento, SEM território
 # ---------------------------------------------------------------------------
 def _programa_por_plano(
-    execucao_teds: list[dict], acoes_teds: list[dict]
+    creditos_teds: list[dict], acoes_teds: list[dict]
 ) -> dict[Any, str]:
-    """Programa de governo com maior empenhado nas NEs de cada plano."""
-    programa_da_acao = {
-        a.get("sk_acao_orcamentaria"): _txt(a.get("codigo_programa")) for a in acoes_teds
+    """Maior código de programa entre as NCs de cada plano (regra do gold antigo)."""
+    programa_do_ptres = {
+        _txt(a.get("ptres")): _txt(a.get("codigo_programa")) for a in acoes_teds
     }
-    empenhado: dict[tuple, float] = defaultdict(float)
-    for r in execucao_teds:
-        programa = programa_da_acao.get(r.get("sk_acao_orcamentaria"), "")
-        if programa:
-            chave = (r.get("sk_plano_acao"), programa)
-            empenhado[chave] += _num(r.get("despesas_empenhadas"))
-
     escolhido: dict[Any, str] = {}
-    for (sk_plano, programa), _valor in sorted(
-        empenhado.items(), key=lambda x: (-x[1], x[0][1])
-    ):
-        escolhido.setdefault(sk_plano, programa)
+    for r in creditos_teds:
+        programa = programa_do_ptres.get(_txt(r.get("ptres")), "")
+        sk_plano = r.get("sk_plano_acao")
+        if programa and programa > escolhido.get(sk_plano, ""):
+            escolhido[sk_plano] = programa
     return escolhido
 
 
 def calcular_teds(
     planos: list[dict],
     posicao_planos: list[dict],
-    execucao_teds: list[dict],
+    creditos_teds: list[dict],
     acoes_teds: list[dict],
     etapa_por_plano: dict[str, str] | None = None,
 ) -> list[dict]:
     etapa_por_plano = etapa_por_plano or {}
     posicao = _por_chave(posicao_planos, "sk_plano_acao")
-    programa_por_plano = _programa_por_plano(execucao_teds, acoes_teds)
+    programa_por_plano = _programa_por_plano(creditos_teds, acoes_teds)
 
     teds = []
     for p in _membros(planos, "sk_plano_acao"):
@@ -417,7 +412,7 @@ def calcular_carteira(teds: list[dict], convenios: list[dict]) -> list[dict]:
 def calcular_i1(
     planos: list[dict],
     posicao_planos: list[dict],
-    execucao_teds: list[dict],
+    creditos_teds: list[dict],
     acoes_teds: list[dict],
     convenios: list[dict],
     posicao_convenios: list[dict],
@@ -426,7 +421,7 @@ def calcular_i1(
 ) -> dict[str, list[dict]]:
     """Calcula as seis saídas do I1 a partir das tabelas dos marts."""
     etapas = classificar_etapa_cadeia(planos, posicao_planos)
-    teds = calcular_teds(planos, posicao_planos, execucao_teds, acoes_teds, etapas)
+    teds = calcular_teds(planos, posicao_planos, creditos_teds, acoes_teds, etapas)
     convenios_i1 = calcular_convenios(
         convenios, posicao_convenios, convenentes, localidades
     )
