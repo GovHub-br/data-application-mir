@@ -169,7 +169,7 @@ Instrumentos do SICONV fora do universo `convenio_mir`: 24 convênios de outros 
 
 - `dags/indicadores/mir/i1_valor_executado_dag.py`: o `FONTES` passa a ler `mir_teds.fato_plano_acao_posicao` + `mir_teds.dim_plano_acao` (e as fatos de NC, PF e execução necessárias para `classificar_etapa_cadeia`), `mir_convenios.fato_convenio_posicao` + `dim_convenio` + `dim_convenente` + `dim_localidade`, e a origem do recurso via `dim_convenio`/`dim_plano_acao`.
 - `plugins/indicadores/i1_valor_executado.py`: ajuste dos nomes de colunas; a lógica de cálculo não muda.
-- **Critério de aceite:** os 25 testes de `tests/test_plugins/test_indicadores_i1.py` passam, incluindo a comparação com os CSVs validados pela BI (`fixtures/i1/*.csv`). O ajuste dos testes se limita ao formato das entradas; os valores esperados não mudam.
+- **Critério de aceite:** os 25 testes de `tests/test_plugins/test_indicadores_i1.py` passam, incluindo a comparação com os CSVs validados pela BI (`fixtures/i1/*.csv`). O ajuste dos testes se limita ao formato das entradas; os valores esperados só mudam onde o modelo novo cobre cenários que o antigo perdia (decisão do usuário em 2026-09-29), por exemplo o empenhado dos planos de TED 4407 e 2932, cujas linhas de NE a cascata antiga não ligava. Cada valor que mudar é listado no PR com a causa.
 
 ## 10. Remoção (substituição direta)
 
