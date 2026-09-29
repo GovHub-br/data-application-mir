@@ -8,7 +8,13 @@
 -- A fonte de 2026 traz cada movimento duas vezes (ORIGEM e DESTINO, mesmo
 -- valor): fica so a ORIGEM. As NCs anteriores a 2026 vem sem data: usam 1 de
 -- janeiro do ano do numero da NC, marcadas com data_estimada.
+-- As NCs internas do MIR (os dois lados na lista de UGs do MIR, ex.: a
+-- Setorial Financeira 238012 repassando a 810008) ficam fora antes de qualquer
+-- ligacao: o mesmo credito chega ao executor pela NC seguinte, que ja traz o
+-- numero da transferencia, e seria contado duas vezes.
 with
+    mir as (select ug_codigo from {{ ref("ugs_mir") }}),
+
     nc as (
         select
             t.*,
@@ -19,7 +25,12 @@ with
                 )
             )[1] as processo
         from {{ ref("nc_tesouro_mir") }} as t
-        where coalesce(t.dc, 'ORIGEM') = 'ORIGEM'
+        where
+            coalesce(t.dc, 'ORIGEM') = 'ORIGEM'
+            and not (
+                left(t.nc, 6) in (select ug_codigo from mir)
+                and t.favorecido_doc in (select ug_codigo from mir)
+            )
     ),
 
     direto as (
@@ -64,13 +75,6 @@ with
         from direto as d
         left join
             por_processo as p on p.processo = d.processo and d.num_transf_direto is null
-    ),
-
-    planos as (
-        select distinct on (id_plano_acao) id_plano_acao, sq_instrumento
-        from {{ ref("planos_acao_ted") }}
-        where sq_instrumento is not null
-        order by id_plano_acao, dt_ingest desc
     )
 
 select
@@ -108,7 +112,9 @@ select
     l.metodo_vinculo,
     pl.id_plano_acao,
     case
-        when left(l.nc, 2) = '81' then l.favorecido_doc else left(l.nc, 6)
+        when left(l.nc, 6) in (select ug_codigo from mir)
+        then l.favorecido_doc
+        else left(l.nc, 6)
     end as ug_executora_codigo,
     l.ptres,
     l.nc_natureza_despesa as natureza_despesa,
@@ -116,5 +122,5 @@ select
     l.processo,
     l.valor_celula as valor
 from ligado as l
-left join planos as pl on pl.sq_instrumento = l.num_transf
+left join {{ ref("ted_plano_instrumento") }} as pl on pl.num_transf = l.num_transf
 where l.num_transf is not null

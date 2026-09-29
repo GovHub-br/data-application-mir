@@ -29,7 +29,7 @@ with
 
 select
     p.id_plano_acao,
-    p.sq_instrumento as num_transf,
+    i.num_transf,
     p.aa_instrumento as ano_instrumento,
     p.aa_ano_plano_acao as ano,
     p.tx_situacao_plano_acao as situacao,
@@ -73,5 +73,6 @@ select
     end as origem_recurso,
     coalesce(o.tem_emenda and o.tem_proprio, false) as complemento_proprio
 from planos as p
+inner join {{ ref("ted_plano_instrumento") }} as i on i.id_plano_acao = p.id_plano_acao
 left join programas as g on g.id_programa = p.id_programa
 left join origem as o on o.id_plano_acao = p.id_plano_acao
