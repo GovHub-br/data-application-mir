@@ -49,6 +49,9 @@ models:
     mir_silver:
       +materialized: table
       +schema: mir_silver
+    mir_convenios:
+      +materialized: table
+      +schema: mir_convenios
 
 
 

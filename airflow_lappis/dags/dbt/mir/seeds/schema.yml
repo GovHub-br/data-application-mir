@@ -12,3 +12,15 @@ seeds:
       column_types:
         sigla_origem: text
         sigla_canonica: text
+  - name: uf_regiao
+    description: "Unidades da federacao com nome e regiao; alimenta dim_localidade."
+    config:
+      column_types:
+        uf: text
+        nome_uf: text
+        regiao: text
+    columns:
+      - name: uf
+        tests:
+          - unique
+          - not_null
