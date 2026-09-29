@@ -1,12 +1,8 @@
 {{ config(materialized="table") }}
 
--- NEs de emenda, uma linha por NE: a emenda (tg_emendas) e o parlamentar autor
--- com o partido vigente na data de emissao da NE. O parlamentar e achado pelo
--- nome em parlamentares_historico, com as prioridades do emendas_partidos:
--- 1 = filiacao vigente na data de emissao; 2 = nome encontrado, mas nenhuma
--- filiacao cobre a data (fica a mais proxima); 3 = nome nao encontrado
--- (parlamentar nulo). Filiacao sem data de fim vale como aberta (infinity),
--- sem depender da data de hoje.
+-- NEs de emenda, uma linha por NE: a emenda (tg_emendas), o localizador do
+-- gasto e o parlamentar autor com o partido vigente na data de emissao da NE
+-- (regra na macro parlamentar_na_data).
 with
     nes as (
         select
@@ -22,57 +18,45 @@ with
         group by ne_ccor
     ),
 
+    -- Cada NE tem um autor e um localizador no tg_emendas
     autores as (
         select distinct
+            on (ne_ccor)
             ne_ccor,
             autor_emendas_orcamento_descricao as emenda_descricao,
             autor_emendas_orcamento_nome as autor_nome,
-            {{ name_formater("autor_emendas_orcamento_nome") }} as chave_join_nome
+            localizador_gasto,
+            localizador_gasto_descricao as localizador_descricao,
+            regiao_pt as regiao,
+            uf_pt as uf,
+            uf_pt_descricao as uf_nome
         from {{ ref("tg_emendas") }}
+        order by ne_ccor, autor_emendas_orcamento_descricao
     ),
 
-    candidatos as (
-        select
-            n.ne_ccor,
-            n.codigo_emenda,
-            n.data_emissao_ne,
-            a.emenda_descricao,
-            a.autor_nome,
-            p.id_parlamentar,
-            p.cargo_parlamentar,
-            p.sigla_partido,
-            case
-                when p.id_parlamentar is null
-                then 3
-                when
-                    n.data_emissao_ne >= p.data_filiacao::date
-                    and n.data_emissao_ne
-                    <= coalesce(p.data_desfiliacao::date, 'infinity'::date)
-                then 1
-                else 2
-            end as prioridade_match,
-            least(
-                abs(n.data_emissao_ne - p.data_filiacao::date),
-                abs(n.data_emissao_ne - p.data_desfiliacao::date)
-            ) as distancia_dias
+    origem as (
+        select n.ne_ccor as chave, a.autor_nome, n.data_emissao_ne as data_referencia
         from nes as n
         inner join autores as a on a.ne_ccor = n.ne_ccor
-        left join
-            {{ ref("parlamentares_historico") }} as p
-            on p.chave_join_nome = a.chave_join_nome
-    )
+    ),
 
-select distinct
-    on (ne_ccor)
-    ne_ccor,
-    codigo_emenda,
-    emenda_descricao,
-    autor_nome,
-    data_emissao_ne,
-    id_parlamentar,
-    cargo_parlamentar,
-    sigla_partido,
-    prioridade_match
-from candidatos
-order by
-    ne_ccor, prioridade_match, distancia_dias nulls last, id_parlamentar, sigla_partido
+    parlamentar as ({{ parlamentar_na_data("origem") }})
+
+select
+    n.ne_ccor,
+    n.codigo_emenda,
+    a.emenda_descricao,
+    a.autor_nome,
+    n.data_emissao_ne,
+    p.id_parlamentar,
+    p.cargo_parlamentar,
+    p.sigla_partido,
+    p.prioridade_match,
+    a.localizador_gasto,
+    a.localizador_descricao,
+    a.regiao,
+    a.uf,
+    a.uf_nome
+from nes as n
+inner join autores as a on a.ne_ccor = n.ne_ccor
+inner join parlamentar as p on p.chave = n.ne_ccor
