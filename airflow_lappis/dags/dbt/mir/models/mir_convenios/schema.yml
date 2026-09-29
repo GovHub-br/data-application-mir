@@ -14,3 +14,51 @@ models:
         description: "Dia."
       - name: ano_mes
         description: "Ano e mes (AAAA-MM), para eixos mensais no Power BI."
+
+  - name: dim_unidade_gestora
+    description: "UG responsavel das NEs (macro compartilhada dim_unidade_gestora)."
+    columns:
+      - name: sk_unidade_gestora
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: codigo_ug
+        tests: [unique, not_null]
+
+  - name: dim_acao_orcamentaria
+    description: "Classificacao programatica no grao do PTRES (macro compartilhada)."
+    columns:
+      - name: sk_acao_orcamentaria
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: ptres
+        tests: [unique, not_null]
+
+  - name: dim_natureza_despesa
+    description: "Natureza de despesa, GND e modalidade de aplicacao (macro compartilhada)."
+    columns:
+      - name: sk_natureza_despesa
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: natureza_despesa
+        tests: [unique, not_null]
+
+  - name: dim_fonte_recurso
+    description: "Fonte de recursos detalhada (macro compartilhada)."
+    columns:
+      - name: sk_fonte_recurso
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: codigo_fonte
+        tests: [unique, not_null]
+
+  - name: dim_emenda
+    description: "Emenda parlamentar: codigo, ano, numero e autor (macro compartilhada)."
+    columns:
+      - name: sk_emenda
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: codigo_emenda
+        tests: [unique, not_null]
+
+  - name: dim_parlamentar
+    description: >
+      Parlamentar x cargo x partido (SCD2), com valido_de e valido_ate. A fato
+      aponta para o partido vigente na data de emissao da NE (mir_silver.emenda_ne).
+    columns:
+      - name: sk_parlamentar
+        tests: [unique, not_null, membro_nao_identificado]
