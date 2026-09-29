@@ -10,6 +10,46 @@
 with
     mir as (select nr_convenio from {{ ref("convenio_mir") }}),
 
+    -- O SICONV publica o CPF mascarado (***12345***): o documento de pessoa
+    -- fisica fica como veio, e a chave do fornecedor PF leva o nome, porque os
+    -- 5 digitos visiveis nao identificam a pessoa sozinhos. CPF sem mascara e
+    -- mascarado no mesmo formato. Documento sem formato de CPF ou CNPJ fica
+    -- sem tipo e sem chave (fornecedor Nao identificado no gold).
+    pagamentos as (
+        select
+            p.*,
+            case
+                when p.fornecedor_documento ~ '^\d{14}$'
+                then 'PJ'
+                when p.fornecedor_documento ~ '^\*{3}\d{5}\*{3}$'
+                then 'PF'
+            end as fornecedor_tipo
+        from
+            (
+                select
+                    nr_convenio,
+                    nr_mov_fin,
+                    data_pag,
+                    vl_pago,
+                    nr_dl,
+                    case
+                        when identif_fornecedor ~ '\*'
+                        then upper(trim(identif_fornecedor))
+                        when
+                            regexp_replace(identif_fornecedor, '\D', '', 'g') ~ '^\d{11}$'
+                        then
+                            '***' || substr(
+                                regexp_replace(identif_fornecedor, '\D', '', 'g'), 4, 5
+                            )
+                            || '***'
+                        else nullif(regexp_replace(identif_fornecedor, '\D', '', 'g'), '')
+                    end as fornecedor_documento,
+                    nullif(trim(nome_fornecedor), '') as fornecedor_nome
+                from {{ ref("pagamento") }}
+                where nr_convenio in (select nr_convenio from mir)
+            ) as p
+    ),
+
     movimentos as (
         select
             nr_convenio,
@@ -20,6 +60,8 @@ with
             null::numeric as valor_bloqueado,
             null::text as fornecedor_documento,
             null::text as fornecedor_nome,
+            null::text as fornecedor_tipo,
+            null::text as fornecedor_chave,
             nr_siafi as documento_referencia
         from {{ ref("desembolso") }}
         where nr_convenio in (select nr_convenio from mir)
@@ -37,6 +79,8 @@ with
             null::numeric as valor_bloqueado,
             null::text as fornecedor_documento,
             null::text as fornecedor_nome,
+            null::text as fornecedor_tipo,
+            null::text as fornecedor_chave,
             null::text as documento_referencia
         from {{ ref("ingresso_contrapartida") }}
         where nr_convenio in (select nr_convenio from mir)
@@ -61,6 +105,8 @@ with
             vl_bloqueado as valor_bloqueado,
             null::text as fornecedor_documento,
             null::text as fornecedor_nome,
+            null::text as fornecedor_tipo,
+            null::text as fornecedor_chave,
             nr_ob as documento_referencia
         -- O desbloqueio nao tem chave na origem e traz linhas identicas
         -- repetidas: remove as repeticoes e usa a linha inteira como chave
@@ -80,11 +126,17 @@ with
             data_pag as data_movimento,
             vl_pago as valor,
             null::numeric as valor_bloqueado,
-            regexp_replace(identif_fornecedor, '\D', '', 'g') as fornecedor_documento,
-            nome_fornecedor as fornecedor_nome,
+            fornecedor_documento,
+            fornecedor_nome,
+            fornecedor_tipo,
+            case
+                when fornecedor_tipo = 'PJ'
+                then fornecedor_documento
+                when fornecedor_tipo = 'PF'
+                then fornecedor_documento || '|' || coalesce(fornecedor_nome, '')
+            end as fornecedor_chave,
             nr_dl as documento_referencia
-        from {{ ref("pagamento") }}
-        where nr_convenio in (select nr_convenio from mir)
+        from pagamentos
 
         union all
 
@@ -97,6 +149,8 @@ with
             null::numeric as valor_bloqueado,
             null::text as fornecedor_documento,
             null::text as fornecedor_nome,
+            null::text as fornecedor_tipo,
+            null::text as fornecedor_chave,
             null::text as documento_referencia
         from {{ ref("pagamento_tributo") }}
         where nr_convenio in (select nr_convenio from mir)
@@ -111,5 +165,7 @@ select
     m.valor_bloqueado,
     m.fornecedor_documento,
     m.fornecedor_nome,
+    m.fornecedor_tipo,
+    m.fornecedor_chave,
     m.documento_referencia
 from movimentos as m

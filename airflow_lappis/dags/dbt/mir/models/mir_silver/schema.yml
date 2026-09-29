@@ -219,7 +219,18 @@ models:
       - name: valor_bloqueado
         description: "Valor que permanece bloqueado apos o desbloqueio. Preenchido so em desbloqueio."
       - name: fornecedor_documento
-        description: "CPF/CNPJ do fornecedor (so digitos). Preenchido so em pagamento a fornecedor."
+        description: >
+          CNPJ do fornecedor (14 digitos) ou CPF mascarado como o SICONV publica
+          (***12345***). Preenchido so em pagamento a fornecedor.
+      - name: fornecedor_tipo
+        description: "PJ (CNPJ), PF (CPF mascarado) ou nulo quando o documento nao tem formato valido."
+        tests:
+          - accepted_values:
+              values: ["PF", "PJ"]
+      - name: fornecedor_chave
+        description: >
+          Chave do fornecedor: o CNPJ para PJ; documento mascarado + '|' + nome
+          para PF (os digitos visiveis colidem entre pessoas). Nula sem tipo.
       - name: documento_referencia
         description: "Documento de origem: numero SIAFI do desembolso, OB do desbloqueio ou DL do pagamento."
 
@@ -309,3 +320,9 @@ models:
         description: "Menor data de fim entre as metas do convenio. Meta expirada = esta data anterior a data de referencia."
       - name: data_ultimo_desembolso
         description: "Data do ultimo desembolso informada pelo SICONV (dt_ult_desembolso). Dias sem desembolso = data de referencia menos esta data."
+      - name: qtd_empenhos_siconv
+        description: "Quantidade de empenhos registrados no SICONV para o convenio."
+      - name: valor_empenhado_siconv
+        description: >
+          Soma dos empenhos registrados no SICONV (historico completo). O nucleo
+          execucao_ne so cobre os exercicios do relatorio do Tesouro.
