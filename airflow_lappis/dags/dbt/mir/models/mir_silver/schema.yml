@@ -516,3 +516,38 @@ models:
         description: "sq_instrumento do plano. Nulo em planos ainda nao firmados."
         tests:
           - unique
+
+  - name: emenda_dotacao
+    description: >
+      Dotacao das emendas, uma linha por movimento do relatorio do Tesouro
+      (lancamentos positivos e negativos; a soma e a dotacao do periodo), com o
+      parlamentar autor vigente na data do movimento.
+    columns:
+      - name: id_movimento
+        tests:
+          - unique
+          - not_null
+      - name: codigo_emenda
+        tests:
+          - not_null
+      - name: data_movimento
+        tests:
+          - not_null
+      - name: prioridade_match
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3]
+              quote: false
+
+  - name: emenda_instrumento
+    description: >
+      Instrumentos que executam as emendas (registrados nas NEs de emenda):
+      tipo (Convênio, Fomento, Colaboração, Parceria, TED, Convênio de outro
+      órgão), objeto, situacao e executor.
+    columns:
+      - name: tipo_instrumento
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Convênio", "Fomento", "Colaboração", "Parceria", "TED", "Convênio de outro órgão"]
