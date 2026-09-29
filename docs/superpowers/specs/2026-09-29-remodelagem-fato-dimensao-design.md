@@ -43,6 +43,7 @@ A bronze não muda.
 - **Datas:** cada fato se liga à `dim_tempo` só pela data do próprio evento (relacionamento ativo único no Power BI). Datas de assinatura e vigência são atributos da dimensão do instrumento.
 - **Parlamentar em SCD2:** `dim_parlamentar` tem uma linha por parlamentar × cargo × partido (`valido_de` = primeira filiação, `valido_ate` = última desfiliação, nulo se aberta). A fato recebe o partido vigente na data de emissão da NE (`mir_silver.emenda_ne`), preservando as prioridades 1/2/3 do `emendas_partidos` atual; o fim de filiação em aberto é tratado como `infinity`, sem `current_date`.
 - **LGPD:** CPF de pessoa física aparece mascarado nas dimensões de favorecido/fornecedor. O SICONV já publica o CPF mascarado (`***12345***`), então a chave do fornecedor PF é documento mascarado + nome (os 5 dígitos visíveis sozinhos colidem entre pessoas); CPF que chegue sem máscara é mascarado no mesmo formato.
+- **Nomes de modelo:** o dbt exige nomes de modelo únicos no projeto. O mart de Convênios (o primeiro) usa os nomes limpos; nos marts de TEDs e Emendas, o arquivo leva o prefixo do mart (`teds_dim_tempo`, `emendas_dim_tempo`) e `{{ config(alias="dim_tempo") }}`, então a tabela no banco tem sempre o nome limpo (`mir_teds.dim_tempo`).
 - **Dimensões repetidas entre marts** (tempo, UG, ação/PTRES, natureza, fonte, parlamentar, emenda) são geradas por **macros** dbt compartilhadas. A regra fica em um lugar e cada mart materializa a sua cópia, então os marts são independentes no Power BI.
 - **Seed:** `seeds/uf_regiao.csv` (UF → nome da UF e região) alimenta `dim_localidade`. O nome do município e o código IBGE já vêm da proposta, então o cadastro completo de municípios não é necessário.
 
@@ -57,8 +58,9 @@ A bronze não muda.
 | `convenio_evento` | evento | `tipo_evento` (mudança de situação, termo aditivo, prorrogação de ofício, solicitação de alteração, solicitação de rendimento), recorte do MIR | `historico_situacao`, `termo_aditivo`, `prorroga_oficio`, `solicitacao_alteracao`, `solicitacao_rendimento_aplicacao` |
 | `convenio_contagens` | instrumento | quantidades e valores de metas, licitações e empenhos registrados no SICONV, data de fim da primeira meta, data do último desembolso | `meta_crono_fisico`, `licitacao`, `empenho`, `desembolso` |
 | `plano_acao_ted` | plano de ação | plano + atributos do programa; `num_transf`; `origem_recurso` | `planos_acao_ted`, `programas_ted`, `execucao_ne` |
-| `ted_credito_nc` | movimento de NC | reconstrução da NC SIAFI (`LPAD(ug,6)+LPAD(gestao,5)+ano+'NC'+LPAD(seq,6)`); ponte `num_transf` → plano; sinal/tipo pelo evento (Recebido · Devolvido · Anulado) | `nc_tesouro_mir`, `pf_ptres`, `notas_de_credito` |
-| `ted_programacao_pf` | movimento de PF | união `pf_tesouro` + `pf_transfere`; tipo pela `pf_acao` (Transferência · Devolução · Cancelamento) | `pf_tesouro`, `pf_transfere`, `planos_acao_ted` |
+| `ted_credito_nc` | movimento de NC | uma linha por movimento: a fonte de 2026 traz cada movimento duas vezes (ORIGEM e DESTINO, mesmo valor) e fica só a ORIGEM; tipo pelo evento (Recebido · Devolvido · Anulado; código antigo 300300/300301/300302 ou texto novo); `num_transf` em três etapas: campo `nc_transferencia`, número do TED no texto da NC (mesma ideia da cascata das NEs; "TED 979720", "TERMO DE EXECUCAO DESCENTRALIZADA N º 08/2025 (977688)") e herança pelo número de processo de outra NC do mesmo processo com um único TED; plano pelo `sq_instrumento`; NC anterior a 2026 vem sem data e usa 1º de janeiro do ano do número da NC, com `data_estimada = true` (decisão do usuário em 2026-09-29) | `nc_tesouro_mir`, `planos_acao_ted` |
+| `ted_programacao_pf` | movimento de PF | tipo pela `pf_acao` (Transferência · Devolução); plano pela inscrição (`pf_inscricao` = `sq_instrumento`). O casamento antigo com o TransfereGov pelo número da PF sem a UG colide entre UGs (15 linhas no plano errado, 72 sem plano) e é abandonado | `pf_tesouro`, `planos_acao_ted` |
+| `ted_ne_transferencia` | linha de empenho | cascata de extração de `num_transf` das NEs, movida de `empenhos_por_plano_acao` sem mudar o resultado; `vinculo_ne_ted` passa a ler daqui e resolve o plano pelo `sq_instrumento` | `ppa_tesouro` |
 | `emenda_dotacao` | emenda × PTRES × natureza × localizador × mês | dotação inicial e atualizada | `tg_emendas_dotacao` |
 | `emenda_ne` | NE de emenda | emenda (código, descrição, autor) e parlamentar autor com o partido vigente na data de emissão da NE (prioridades 1/2/3 do `emendas_partidos`) | `tg_emendas`, `execucao_ne`, `parlamentares_historico` (via `ref`) |
 
@@ -124,7 +126,17 @@ Substitui `ted_resumo_orcamentario` e `ted_empenhos_plano_acao`.
 
 A posição tem **uma linha por plano**. Isso corrige o problema atual do grão plano × `num_transf`, em que o `valor_firmado` aparecia em uma só linha e inflava os totais somados.
 
-Limitação conhecida: o vínculo NE → plano depende do `num_transf` na descrição do empenho (hoje, 30 de 118 planos). NEs sem plano aparecem como `Não identificado`, sem ser descartadas.
+Limitação conhecida: o vínculo NE → plano depende do `num_transf` na descrição do empenho (hoje, 49 de 120 planos). NEs sem plano aparecem como `Não identificado` no núcleo, sem ser descartadas.
+
+Correções em relação ao gold antigo (levantadas em 2026-09-29; todas as diferenças da paridade são "bug antigo corrigido"):
+
+- **Convênios contados como TED:** das 345 linhas de `ted_resumo_orcamentario`, 245 não têm plano; 234 delas são números de convênios e termos de fomento que a cascata pegou como transferência (R$ 88 mi empenhados). Ficam fora do mart de TEDs.
+- **NC de 2026 em dobro:** a fonte nova traz ORIGEM e DESTINO de cada movimento; o gold antigo somava os dois.
+- **Tipo da NC:** o gold antigo tratava anulação (300302 e o texto novo) como crédito recebido e só reconhecia devolução pelos códigos antigos. Com as duas correções, o crédito recebido pelos planos cai de R$ 339,5 mi para R$ 206,6 mi, com R$ 38,3 mi anulados e R$ 18,5 mi devolvidos (antes de contar as NCs recuperadas pelo texto e pelo processo).
+- **PF no plano errado:** ver `ted_programacao_pf`.
+- NCs sem número de transferência e sem TED no texto ou no processo (em geral descentralização interna do MIR para termos de fomento) ficam fora do mart; um teste de aviso conta as que citam TED sem número.
+
+O indicador I1 não muda: do resumo ele usa só os valores de empenho, que são os mesmos; de NC e PF, só a presença por plano.
 
 ## 8. Gold: mart de Emendas (`mir_emendas`)
 
