@@ -24,3 +24,31 @@ models:
         description: "Numero de transferencia extraido da NE e usado para achar o plano."
       - name: metodo_ted
         description: "Metodo(s) da cascata que produziram o vinculo, separados por virgula."
+
+  - name: vinculo_ne_convenio
+    description: >
+      Vinculo de cada nota de empenho (NE) do ppa_tesouro a um convenio / termo de
+      fomento do SICONV, no grao da NE. Testa TODAS as linhas da NE (o
+      ne_info_complementar varia entre linhas da mesma NE, em geral com
+      placeholders como NAO SE APLICA) e aceita apenas numeros que existem no
+      cadastro de convenios. Contem apenas NEs com pelo menos um candidato valido.
+    columns:
+      - name: ne_ccor
+        description: "Numero completo da nota de empenho."
+        tests:
+          - unique
+          - not_null
+      - name: qtd_convenios
+        description: "Quantidade de convenios distintos encontrados para a NE. Maior que 1 = ambigua."
+        tests:
+          - not_null
+      - name: nr_convenio
+        description: "Convenio vinculado; nulo quando a NE e ambigua."
+      - name: fonte_vinculo
+        description: >
+          Campo de onde veio o vinculo, pela prioridade: info_complementar (numero
+          puro em ne_info_complementar), descricao (regex em ne_ccor_descricao),
+          observacao (regex em doc_observacao).
+        tests:
+          - accepted_values:
+              values: ["info_complementar", "descricao", "observacao"]
