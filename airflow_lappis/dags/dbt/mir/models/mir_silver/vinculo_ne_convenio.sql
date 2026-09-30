@@ -4,8 +4,11 @@
 -- Mesma regra de convenio do antigo numero_transferencia, mas aplicada a
 -- TODAS as linhas de cada NE do ppa_tesouro (e nao so as de emendas): o
 -- ne_info_complementar varia entre linhas da mesma NE. Aceita os numeros
--- numericos e os alfanumericos adotados a partir de 2026 (ex.: 7AACWU). So
--- contam candidatos que existem no cadastro de convenios. Com mais de um
+-- numericos e os alfanumericos adotados a partir de 2026 (ex.: 7AACWU).
+-- Fontes de candidatos, por prioridade: ne_info_complementar, rotulo explicito
+-- "NUM. TRANSFERENCIA"/"SICONV" (descricao ou observacao), CONVENIO/FOMENTO na
+-- descricao e na observacao (regex em macros/mir_silver/regex_vinculo.sql).
+-- So contam candidatos que existem no cadastro de convenios. Com mais de um
 -- candidato, desempata pelo numero de processo: vence o convenio cujo
 -- nr_processo aparece em alguma linha da NE. Sem desempate = NE ambigua.
 with
@@ -20,12 +23,6 @@ with
         where ne_ccor <> '-9'
     ),
 
-    padrao as (
-        select
-            '(?:CONVENIO|FOMENTO|FOMENO)\s*(?:N[°º]?)?\s*\m(\d{6}|\d[0-9A-Z]{5})\M'::text
-            as regex_convenio
-    ),
-
     candidatos as (
         select
             ne_ccor,
@@ -38,26 +35,50 @@ with
         union all
 
         select
-            e.ne_ccor,
+            ne_ccor,
             2 as prioridade,
-            'descricao' as fonte,
+            'rotulo' as fonte,
             upper(
-                (regexp_match(e.ne_ccor_descricao, p.regex_convenio, 'i'))[1]
+                (
+                    regexp_match(
+                        ne_ccor_descricao, {{ regex_rotulo_transferencia() }}, 'i'
+                    )
+                )[1]
             ) as nr_candidato
-        from empenhos as e
-        cross join padrao as p
+        from empenhos
 
         union all
 
         select
-            e.ne_ccor,
+            ne_ccor,
+            2 as prioridade,
+            'rotulo' as fonte,
+            upper(
+                (regexp_match(doc_observacao, {{ regex_rotulo_transferencia() }}, 'i'))[1]
+            ) as nr_candidato
+        from empenhos
+
+        union all
+
+        select
+            ne_ccor,
             3 as prioridade,
+            'descricao' as fonte,
+            upper(
+                (regexp_match(ne_ccor_descricao, {{ regex_convenio() }}, 'i'))[1]
+            ) as nr_candidato
+        from empenhos
+
+        union all
+
+        select
+            ne_ccor,
+            4 as prioridade,
             'observacao' as fonte,
             upper(
-                (regexp_match(e.doc_observacao, p.regex_convenio, 'i'))[1]
+                (regexp_match(doc_observacao, {{ regex_convenio() }}, 'i'))[1]
             ) as nr_candidato
-        from empenhos as e
-        cross join padrao as p
+        from empenhos
     ),
 
     convenios as (select distinct nr_convenio, nr_processo from {{ ref("convenio") }}),
