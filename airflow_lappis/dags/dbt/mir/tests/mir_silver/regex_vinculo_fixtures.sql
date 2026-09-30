@@ -1,5 +1,8 @@
+-- depends_on: {{ ref("vinculo_ne_convenio") }}
 -- Falha se alguma regex de vinculo NE -> instrumento deixar de extrair o
--- numero esperado de textos reais conhecidos do ppa_tesouro.
+-- numero esperado de textos reais conhecidos do ppa_tesouro. O depends_on
+-- acima prende o teste ao modelo que usa as regex: sem um ref, o cosmos nao
+-- agenda o teste.
 with
     casos(regex, texto, esperado) as (
         values
