@@ -52,10 +52,12 @@ models:
       - name: fonte_vinculo
         description: >
           Campo de onde veio o convenio escolhido, pela prioridade:
-          info_complementar, descricao, observacao. Nulo quando a NE e ambigua.
+          info_complementar, rotulo (numero depois de "NUM. TRANSFERENCIA" ou
+          "SICONV" na descricao ou na observacao), descricao, observacao. Nulo
+          quando a NE e ambigua.
         tests:
           - accepted_values:
-              values: ["info_complementar", "descricao", "observacao"]
+              values: ["info_complementar", "rotulo", "descricao", "observacao"]
       - name: desempate_processo
         description: "Verdadeiro quando havia mais de um candidato e o numero de processo decidiu."
         tests:
