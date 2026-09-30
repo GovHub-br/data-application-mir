@@ -1,7 +1,7 @@
 {{ config(severity="warn") }}
 
--- Cobertura do vinculo emenda -> instrumento. Linha de base em 2026-09-29: 7 de
--- 221 NEs de emenda (3,2%) sem instrumento (execucao direta ou numero do
+-- Cobertura do vinculo emenda -> instrumento. Linha de base em 2026-09-29: 5 de
+-- 221 NEs de emenda (2,3%) sem instrumento (execucao direta ou numero do
 -- instrumento ausente dos textos da NE). Aviso (nao bloqueia a DAG) se a
 -- fracao passar de 10%: indica regressao na extracao do vinculo ou um novo
 -- formato de numero de instrumento.
