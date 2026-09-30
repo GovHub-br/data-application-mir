@@ -9,11 +9,16 @@ Diferente do I2, este indicador NÃO lê a saída do I1: reprocessa as mesmas
 tabelas-fonte do I1 (mesmo universo e filtros), porque precisa do texto do
 objeto/justificativa, que a saída do I1 não carrega.
 
-Fontes (tabelas do dbt, iguais às do I1):
-    siafi_dbt.planos_acao_ted           → objeto + justificativa do TED
-    siafi_dbt.ted_resumo_orcamentario   → programa de governo (join)
-    siconv_dbt.resumo_convenios         → objeto do convênio/fomento
-    emendas.instrumentos_emendas        → marcação de origem emenda do TED
+Fontes (tabelas dos marts, as mesmas do I1):
+    mir_teds.dim_plano_acao              → objeto, justificativa e origem do TED
+    mir_teds.fato_credito_descentralizado → NCs por TED (programa de governo)
+    mir_teds.dim_acao_orcamentaria       → programa de cada PTRES
+    mir_convenios.dim_convenio           → objeto, modalidade e origem do convênio
+    mir_convenios.fato_convenio_posicao  → liga o convênio ao convenente
+    mir_convenios.dim_convenente         → nome do convenente
+
+O membro -1 ("Não identificado") das dimensões não entra no universo. O
+programa de governo do TED usa a regra do I1 (programa_por_plano_ted).
 
 AVISO DE VALIDAÇÃO: ao contrário do I1 e do I2, este módulo não foi validado
 por regressão ponta-a-ponta contra dado real — os textos de objeto/
@@ -46,12 +51,16 @@ import re
 import unicodedata
 from collections import defaultdict
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Iterable
+
+from indicadores.i1_valor_executado import programa_por_plano_ted
 
 ANO_CORTE = 2023
 SITUACOES_EXCLUIDAS_CONVENIO = {"Cancelado", "Convênio Anulado", "Convenio Anulado"}
 SITUACOES_EXCLUIDAS_TED = {"REJEITADO"}
 GRUPOS = ["pessoas_negras", "quilombolas", "indigenas", "terreiro", "ciganos"]
+MEMBRO_NAO_IDENTIFICADO = "-1"
+ORIGEM_EMENDA = "Emenda"
 
 
 # ---------------------------------------------------------------------------
@@ -71,12 +80,27 @@ def _ano(valor: Any) -> int | None:
 
 
 def _ano_instrumento(r: dict) -> int | None:
-    """Ano de referência: data_assinatura, com fallback para inicio_vigencia."""
-    for campo in ("data_assinatura", "inicio_vigencia"):
+    """Ano de referência: data_assinatura, com fallback para o início da vigência."""
+    for campo in ("data_assinatura", "data_inicio_vigencia"):
         ano = _ano(r.get(campo))
         if ano is not None:
             return ano
     return None
+
+
+def _por_chave(linhas: Iterable[dict], campo: str) -> dict[Any, dict]:
+    return {r.get(campo): r for r in linhas}
+
+
+def _membros(linhas: Iterable[dict], campo_sk: str) -> list[dict]:
+    """Linhas da dimensão sem o membro -1 (Não identificado)."""
+    return [r for r in linhas if _txt(r.get(campo_sk)) != MEMBRO_NAO_IDENTIFICADO]
+
+
+def _origem(linha: dict) -> str:
+    if _txt(linha.get("origem_recurso")) == ORIGEM_EMENDA:
+        return "emenda"
+    return "orcamento_regular"
 
 
 # ---------------------------------------------------------------------------
@@ -150,40 +174,25 @@ def classificar(*textos: str) -> dict[str, int]:
 # Bloco 1 — TEDs
 # ---------------------------------------------------------------------------
 def montar_instrumentos_ted(
-    planos: list[dict], resumo: list[dict], instrumentos_emendas: list[dict]
+    planos: list[dict], creditos_teds: list[dict], acoes_teds: list[dict]
 ) -> list[dict]:
-    teds_de_emenda = {
-        _txt(r.get("numero_instrumento"))
-        for r in instrumentos_emendas
-        if _txt(r.get("tipo_instrumento")).upper() == "TED"
-        and _txt(r.get("numero_instrumento"))
-    }
-
-    programa_por_plano: dict[str, str] = {}
-    for r in resumo:
-        pid = _txt(r.get("plano_acao"))
-        if pid and pid not in programa_por_plano and _txt(r.get("programa_governo")):
-            programa_por_plano[pid] = _txt(r.get("programa_governo"))
+    programa_por_plano = programa_por_plano_ted(creditos_teds, acoes_teds)
 
     instrumentos = []
-    for p in planos:
-        if _txt(p.get("tx_situacao_plano_acao")) in SITUACOES_EXCLUIDAS_TED:
+    for p in _membros(planos, "sk_plano_acao"):
+        if _txt(p.get("situacao")) in SITUACOES_EXCLUIDAS_TED:
             continue
 
-        pid = _txt(p.get("id_plano_acao"))
-        sq = _txt(p.get("sq_instrumento"))
-        cats = classificar(
-            p.get("tx_objeto_plano_acao", ""), p.get("tx_justificativa_plano_acao", "")
-        )
+        cats = classificar(p.get("objeto") or "", p.get("justificativa") or "")
         instrumentos.append({
             "tipo": "TED",
             "instrumento": "TED",
-            "id_instrumento": pid,
-            "origem": "emenda" if sq in teds_de_emenda else "orcamento_regular",
-            "ano": _txt(p.get("aa_ano_plano_acao")),
-            "programa_governo": programa_por_plano.get(pid, ""),
+            "id_instrumento": _txt(p.get("id_plano_acao")),
+            "origem": _origem(p),
+            "ano": _txt(p.get("ano")),
+            "programa_governo": programa_por_plano.get(p.get("sk_plano_acao"), ""),
             "sigla_executor": _txt(p.get("sigla_unidade_descentralizada")),
-            "tx_objeto": _txt(p.get("tx_objeto_plano_acao"))[:200],
+            "tx_objeto": _txt(p.get("objeto"))[:200],
             **cats,
         })
     return instrumentos
@@ -193,25 +202,35 @@ def montar_instrumentos_ted(
 # Bloco 2 — Convênios e Termos (mesmo universo do I1)
 # ---------------------------------------------------------------------------
 def montar_instrumentos_convenio(
-    gold_convenios: list[dict], ano_corte: int = ANO_CORTE
+    convenios: list[dict],
+    posicao_convenios: list[dict],
+    convenentes: list[dict],
+    ano_corte: int = ANO_CORTE,
 ) -> list[dict]:
+    posicao = _por_chave(posicao_convenios, "sk_convenio")
+    convenente_por_sk = _por_chave(
+        _membros(convenentes, "sk_convenente"), "sk_convenente"
+    )
+
     instrumentos = []
-    for r in gold_convenios:
+    for r in _membros(convenios, "sk_convenio"):
         ano = _ano_instrumento(r)
         if ano is None or ano < ano_corte:
             continue
-        if _txt(r.get("situacao_atual")) in SITUACOES_EXCLUIDAS_CONVENIO:
+        if _txt(r.get("situacao")) in SITUACOES_EXCLUIDAS_CONVENIO:
             continue
 
-        cats = classificar(r.get("objeto", ""))
+        pos = posicao.get(r.get("sk_convenio"), {})
+        convenente = convenente_por_sk.get(pos.get("sk_convenente"), {})
+        cats = classificar(r.get("objeto") or "")
         instrumentos.append({
             "tipo": "Convenio_Fomento",
-            "instrumento": _txt(r.get("modalidade_instrumento")),
+            "instrumento": _txt(r.get("modalidade")),
             "id_instrumento": _txt(r.get("nr_convenio")),
-            "origem": "emenda" if _txt(r.get("parlamentares")) else "orcamento_regular",
+            "origem": _origem(r),
             "ano": ano,
-            "programa_governo": "",  # não disponível no gold_convenios (decisão 5)
-            "sigla_executor": _txt(r.get("nome_convenente")),
+            "programa_governo": "",  # convênio não tem programa estruturado (decisão 5)
+            "sigla_executor": _txt(convenente.get("convenente_nome")),
             "tx_objeto": _txt(r.get("objeto"))[:200],
             **cats,
         })
@@ -303,13 +322,17 @@ def calcular_resumo(instrumentos: list[dict]) -> list[dict]:
 # ---------------------------------------------------------------------------
 def calcular_i3(
     planos: list[dict],
-    resumo: list[dict],
-    instrumentos_emendas: list[dict],
-    gold_convenios: list[dict],
+    creditos_teds: list[dict],
+    acoes_teds: list[dict],
+    convenios: list[dict],
+    posicao_convenios: list[dict],
+    convenentes: list[dict],
 ) -> dict[str, list[dict]]:
-    """Calcula as quatro saídas do I3 a partir das tabelas-fonte."""
-    instrumentos_ted = montar_instrumentos_ted(planos, resumo, instrumentos_emendas)
-    instrumentos_convenio = montar_instrumentos_convenio(gold_convenios)
+    """Calcula as quatro saídas do I3 a partir das tabelas dos marts."""
+    instrumentos_ted = montar_instrumentos_ted(planos, creditos_teds, acoes_teds)
+    instrumentos_convenio = montar_instrumentos_convenio(
+        convenios, posicao_convenios, convenentes
+    )
     todos = instrumentos_ted + instrumentos_convenio
     return {
         "i3_publico_alvo_instrumentos": todos,

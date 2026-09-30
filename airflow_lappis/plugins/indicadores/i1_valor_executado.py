@@ -150,10 +150,13 @@ def classificar_etapa_cadeia(
 # ---------------------------------------------------------------------------
 # Bloco 1 — TEDs: valor por instrumento, SEM território
 # ---------------------------------------------------------------------------
-def _programa_por_plano(
+def programa_por_plano_ted(
     creditos_teds: list[dict], acoes_teds: list[dict]
 ) -> dict[Any, str]:
-    """Maior código de programa entre as NCs de cada plano (regra do gold antigo)."""
+    """Maior código de programa entre as NCs de cada plano (regra do gold antigo).
+
+    Usada também pelo I3.
+    """
     programa_do_ptres = {
         _txt(a.get("ptres")): _txt(a.get("codigo_programa")) for a in acoes_teds
     }
@@ -175,7 +178,7 @@ def calcular_teds(
 ) -> list[dict]:
     etapa_por_plano = etapa_por_plano or {}
     posicao = _por_chave(posicao_planos, "sk_plano_acao")
-    programa_por_plano = _programa_por_plano(creditos_teds, acoes_teds)
+    programa_por_plano = programa_por_plano_ted(creditos_teds, acoes_teds)
 
     teds = []
     for p in _membros(planos, "sk_plano_acao"):

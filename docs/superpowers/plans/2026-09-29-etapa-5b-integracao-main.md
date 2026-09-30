@@ -1183,3 +1183,27 @@ git commit -m "docs(dbt/mir): spec e guia com os indicadores da main e a heranca
 - Revisão final independente da etapa 5b.
 - Descrição do PR.
 - Rodar `docs/mir-drop-legado.sql` em produção, depois do deploy e da migração dos painéis. Agora nenhum indicador depende das tabelas antigas.
+
+## Resultado da paridade do I3 (2026-09-29)
+
+Comparação do I3 antigo (plugin da `origin/main` sobre `planos_acao_ted`, `ted_resumo_orcamentario`, `instrumentos_emendas` e `resumo_convenios`) contra o novo (marts), no dump local.
+
+| Saída | Antigo | Novo |
+|---|---|---|
+| `i3_publico_alvo_instrumentos` | 531 | 342 |
+| `i3_publico_alvo_resumo` | 5 | 5 |
+| `i3_ted_publico_alvo_grupos` | 590 | 590 |
+| `i3_convenio_publico_alvo_grupos` | 2.065 | 1.120 |
+
+| Resumo (tipo) | Total | Leitura estrita | Leitura ampla |
+|---|---|---|---|
+| TED | 118 → 118 | 110 → 110 | 117 → 117 |
+| Convenio_Fomento | 413 → 224 | 261 → 142 | 314 → 171 |
+| CONVENIO | 47 → 28 | 25 → 14 | 42 → 25 |
+| TERMO DE FOMENTO | 366 → 196 | 236 → 128 | 272 → 146 |
+| TOTAL | 531 → 342 | 371 → 252 | 431 → 288 |
+
+**Diferenças por causa:**
+- **Convênios repetidos no gold antigo:** 188 convênios apareciam repetidos no `resumo_convenios`, com 189 linhas a mais. O I3 antigo contava cada repetição como instrumento, e isso explica toda a queda nos convênios e termos. Os percentuais de leitura estrita e ampla mudam pouco.
+- **Origem Emenda pela NE (25):** os mesmos 23 convênios e 2 TEDs (4407, 5808) da paridade do I1.
+- Por instrumento, tipo, ano, programa, executor, objeto, todas as categorias e as duas leituras: 0 diferenças.
