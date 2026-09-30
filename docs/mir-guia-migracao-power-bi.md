@@ -72,9 +72,11 @@ muda**.
   emenda são "Emenda" mesmo sem parlamentar registrado no SICONV.
 - **TEDs:** o vínculo das NEs, NCs e PFs com o plano cobre casos que o modelo
   antigo perdia e não conta mais as NCs internas do MIR (238012 → 810008).
-- **Indicador I1** (`indicadores.i1_*`): passa a ler os marts. Na saída
-  `i1_ted_por_instrumento`, a coluna `n_linhas_resumo` virou `qtd_nes`
-  (quantidade de NEs do plano).
+- **Indicadores** (`indicadores.i1_*`, `i2_*`, `i3_*`, `i9_*`): o I1 e o I3
+  passam a ler os marts e mudam pelos mesmos motivos acima (convênios sem
+  repetição, origem pela NE). O I2 e o I9 leem as saídas do I1 e acompanham
+  essas mudanças. Na saída `i1_ted_por_instrumento`, a coluna
+  `n_linhas_resumo` virou `qtd_nes` (quantidade de NEs do plano).
 
 ## Ordem sugerida
 

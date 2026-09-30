@@ -18,7 +18,7 @@ A bronze não muda.
 
 - Contratos (`contratos_dbt`), PPA (`ppa_dbt`) e dados abertos (`dados_abertos_dbt`) continuam como estão. O `ppa_tesouro` (bronze) é só insumo.
 - Transferências especiais / "emendas PIX" do TransfereGov (`planos_acoes`, `executor`, `empenhos_especiais`, `ordens_bancarias` etc.). O mart de Emendas cobre só as emendas do SIAFI.
-- Indicadores I2, I3, I7 e I9: estão documentados, mas não existem no código desta branch. Quando forem implementados, já leem o novo gold.
+- Indicadores I2, I7 e I9 (vieram da main no rebase de 2026-09-29): não mudam. I2 e I9 leem as saídas do I1 (schema `indicadores`), cujas colunas usadas não mudaram, e o I7 lê só a bronze. O I3 lia o gold antigo e passou a ler os marts (§9).
 
 ## 2. Conceitos de negócio que orientam o modelo
 
@@ -51,7 +51,7 @@ A bronze não muda.
 
 | Modelo | Grão | Regras que concentra | Fontes (bronze) |
 |---|---|---|---|
-| `execucao_ne` | linha do `ppa_tesouro` (NE × mês × PTRES × natureza × fonte × PO) | **núcleo**: `codigo_emenda` (via `tg_emendas.ne_ccor`; nulo = recurso próprio); `sistema_instrumento` (SICONV · TED · Não identificado), `nr_instrumento` e `metodo_vinculo` (`info_complementar` · `descricao` · `observacao` · `nao_encontrado`), usando as regex hoje em `numero_transferencia` e `empenhos_por_plano_acao` | `ppa_tesouro`, `tg_emendas`, `num_transf`↔plano |
+| `execucao_ne` | linha do `ppa_tesouro` (NE × mês × PTRES × natureza × fonte × PO) | **núcleo**: `codigo_emenda` (via `tg_emendas.ne_ccor`; nulo = recurso próprio); `sistema_instrumento` (SICONV · TED · Não identificado), `nr_instrumento` e `metodo_vinculo` (`info_complementar` · `rotulo` · `descricao` · `observacao` · `empenho de origem` · `nao_encontrado`), usando as regex hoje em `numero_transferencia` e `empenhos_por_plano_acao`; NE da rotina de transferência de saldo (NSSALDO) sem instrumento próprio herda o da NE citada em "EMPENHO DE ORIGEM" (um nível; cenário do PR #68) | `ppa_tesouro`, `tg_emendas`, `num_transf`↔plano |
 | `convenio_mir` (o nome `convenio` já é do modelo bronze) | instrumento (`nr_convenio`) | recorte do MIR (UG emitente 810008 ou com NE da UG 810008, regra atual de `convenios_consolidados`); atributos 1:1 da proposta (modalidade, objeto, proponente, município); UGs responsáveis agregadas; `origem_recurso` = Emenda se alguma NE do instrumento em `execucao_ne` tem `codigo_emenda`; Recurso próprio se tem NE e nenhuma é de emenda; **Não identificada** se o instrumento não tem NE no núcleo (418 dos 643 convênios, todos assinados entre 2008 e 2022, antes do período do relatório do Tesouro; decisão do usuário em 2026-09-29); `complemento_proprio` = true quando um instrumento de Emenda também tem NEs de recurso próprio | `convenio`, `proposta`, `execucao_ne` |
 | `convenio_movimento_financeiro` | movimento | união de desembolso, ingresso de contrapartida, desbloqueio, pagamento e pagamento de tributo, com `tipo_movimento`, recortada aos convênios do MIR; tipo (PF/PJ) e chave do fornecedor | `desembolso`, `ingresso_contrapartida`, `desbloqueio`, `pagamento`, `pagamento_tributo` |
 | `convenio_cronograma` | parcela × mês | responsável (Concedente/Convenente/Rendimento), recorte do MIR | `cronograma_desembolso` |
@@ -167,11 +167,12 @@ O instrumento de cada emenda é registrado na NE (`execucao_ne.sistema_instrumen
 
 Instrumentos do SICONV fora do universo `convenio_mir`: 24 convênios de outros órgãos (FUNAD, UFRJ, UFRGS, UFSM, UERJ, AGU, Ministério das Mulheres) aparecem no núcleo por NEs de outras UGs no relatório do MIR (145 linhas, R$ 13,7 mi empenhados, R$ 0,9 mi de emenda). Ficam fora do mart de Convênios; no mart de Emendas entram na `dim_instrumento_executor` com tipo "Convênio de outro órgão" (decisão do usuário em 2026-09-29).
 
-## 9. Migração do indicador I1
+## 9. Migração dos indicadores I1 e I3
 
 - `dags/indicadores/mir/i1_valor_executado_dag.py`: o `FONTES` lê `mir_teds.dim_plano_acao`, `fato_plano_acao_posicao`, `fato_credito_descentralizado` e `dim_acao_orcamentaria`, e `mir_convenios.dim_convenio`, `fato_convenio_posicao`, `dim_convenente` e `dim_localidade`. A etapa da cadeia usa as quantidades de PF, NC e NE da posição do plano; o programa de governo do TED é o maior código de programa entre as NCs do plano, a mesma regra do gold antigo. Na saída `i1_ted_por_instrumento`, `n_linhas_resumo` virou `qtd_nes` (decisão do usuário em 2026-09-29).
 - `plugins/indicadores/i1_valor_executado.py`: ajuste dos nomes de colunas; a lógica de cálculo não muda.
 - **Critério de aceite:** os testes de `tests/test_plugins/test_indicadores_i1.py` passam (30 depois da migração), incluindo a comparação com os CSVs validados pela BI (`fixtures/i1/*.csv`). O ajuste dos testes se limita ao formato das entradas; os valores esperados só mudam onde o modelo novo cobre cenários que o antigo perdia (decisão do usuário em 2026-09-29), por exemplo o empenhado dos planos de TED 4407 e 2932, cujas linhas de NE a cascata antiga não ligava. Cada valor que mudar é listado no PR com a causa.
+- `dags/indicadores/mir/i3_publico_alvo_dag.py` e `plugins/indicadores/i3_publico_alvo.py` (vieram da main): o I3 lê `mir_teds.dim_plano_acao`, `fato_credito_descentralizado` e `dim_acao_orcamentaria`, e `mir_convenios.dim_convenio`, `fato_convenio_posicao` e `dim_convenente`. A classificação não muda; o programa de governo do TED usa a regra do I1 (`programa_por_plano_ted`).
 
 ## 10. Remoção (substituição direta)
 

@@ -1207,3 +1207,16 @@ Comparação do I3 antigo (plugin da `origin/main` sobre `planos_acao_ted`, `ted
 - **Convênios repetidos no gold antigo:** 188 convênios apareciam repetidos no `resumo_convenios`, com 189 linhas a mais. O I3 antigo contava cada repetição como instrumento, e isso explica toda a queda nos convênios e termos. Os percentuais de leitura estrita e ampla mudam pouco.
 - **Origem Emenda pela NE (25):** os mesmos 23 convênios e 2 TEDs (4407, 5808) da paridade do I1.
 - Por instrumento, tipo, ano, programa, executor, objeto, todas as categorias e as duas leituras: 0 diferenças.
+
+## Resultado do vínculo (2026-09-29)
+
+- **Rótulo NUM. TRANSFERENCIA/SICONV (Tarefa 1):**
+  - O `vinculo_ne_convenio` ficou idêntico por md5, com 299 NEs: as 4 NEs com rótulo já tinham o mesmo convênio pela `info_complementar`.
+  - O teste de fixture cobre 12 textos reais.
+  - Fora do plano: o `accepted_values` de `fonte_vinculo` ganhou `rotulo`.
+- **Herança pela NE de origem (Tarefa 2):** de 22.247 linhas do `execucao_ne`, mudaram 4:
+  - são as NEs 230002000012024NE800001 e 230002000012024NE800002, agora `SICONV` 965655 com `empenho de origem: convenio: info_complementar`;
+  - nenhuma linha entrou nem saiu, e os totais das emendas não mudaram (empenhado 55.822.240,37, pago 22.537.602,51, RAP inscrito acumulável 23.136.594,77);
+  - as NEs de emenda sem instrumento passaram de 7 para 5.
+- **Build final dos marts:** PASS=440 WARN=1 (complemento próprio) ERROR=0.
+- **Testes dos indicadores:** as suítes I1, I2, I3, I7 e I9 somam 105 testes, todos passando.
