@@ -128,8 +128,11 @@ models:
       - name: metodo_vinculo
         description: >
           Como o instrumento foi encontrado: 'ted: <metodos da cascata>',
-          'convenio: <campo>', 'convenio: <campo> (desempate por processo)',
-          'ambiguo' (varios convenios candidatos sem desempate) ou 'nao_encontrado'.
+          'convenio: <fonte>', 'convenio: <fonte> (desempate por processo)',
+          'empenho de origem: ted: ...' ou 'empenho de origem: convenio: ...'
+          (NE da rotina de transferencia de saldo, que herda o instrumento da NE
+          citada em "EMPENHO DE ORIGEM"), 'ambiguo' (varios convenios candidatos
+          sem desempate) ou 'nao_encontrado'.
         tests:
           - not_null
       - name: despesas_empenhadas
