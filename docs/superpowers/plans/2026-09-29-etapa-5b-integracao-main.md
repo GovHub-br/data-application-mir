@@ -1220,3 +1220,35 @@ Comparação do I3 antigo (plugin da `origin/main` sobre `planos_acao_ted`, `ted
   - as NEs de emenda sem instrumento passaram de 7 para 5.
 - **Build final dos marts:** PASS=440 WARN=1 (complemento próprio) ERROR=0.
 - **Testes dos indicadores:** as suítes I1, I2, I3, I7 e I9 somam 105 testes, todos passando.
+
+## Revisão final da etapa 5b (2026-09-29)
+
+A revisão não achou nada crítico. O revisor reimplementou a lógica do `numero_transferencia` da `origin/main` e comparou NE por NE com o `execucao_ne`. As diferenças são as regras que a etapa 5 já tinha adotado:
+- descarte de `info_complementar` que não é número de convênio, como 7214 e 1800;
+- números alfanuméricos de 2026;
+- desempate por processo;
+- o caso da NE 004076, descrito abaixo.
+
+Todas as NEs NSSALDO concordam.
+
+**Correções aplicadas:**
+- **`regex_vinculo_fixtures`:** ganhou `depends_on` para `vinculo_ne_convenio`. Sem um `ref`, o cosmos não agendava o teste.
+- **`execucao_ne_heranca_empenho_origem`:** passou a checar só as NEs sem vínculo próprio (`nao_encontrado`, `ambiguo` ou herdado), e só as origens com instrumento próprio. Antes, ele falharia em dados corretos:
+  - numa NSSALDO com instrumento próprio diferente do da origem;
+  - numa cadeia NSSALDO → NSSALDO.
+
+  A regressão continua detectada: com a herança desfeita, o teste acusa as 2 NEs.
+
+**Diferenças conhecidas em relação ao modelo da Luana (PR #68), para decidir com ela:**
+- **NE 153164152382025NE004076:**
+  - O texto cita "SICONV 978310/25" e o `doc_observacao` cita "TED 978244". A lógica da Luana leva a NE ao convênio 978310.
+  - O núcleo leva ao TED do plano 4407 (`num_transf` 978244), porque TED tem precedência sobre convênio (regra da etapa 5).
+  - A NE é de emenda (202543530024). É por ela que o TED 4407 passou a origem "emenda" no I1 e no I3.
+- **NSSALDO com candidatos próprios ambíguos:**
+  - O núcleo herda o instrumento da origem, e o rótulo "ambiguo" some do `metodo_vinculo`.
+  - Na lógica da Luana, o número da própria NE vencia (o `max` entre as linhas).
+  - Não há NE assim hoje.
+- **Rótulo:**
+  - A regex nova pega a primeira ocorrência e exige fim de palavra (`\M`); a antiga (`.*` guloso) pegava a última.
+  - Nas 25 NEs com rótulo, o número é o mesmo nas duas.
+  - Como nas outras fontes, um número de rótulo diferente do `info_complementar` que também exista no cadastro torna a NE ambígua, em vez de vencer. Não há caso hoje (nenhuma NE tem `fonte_vinculo = 'rotulo'`).
