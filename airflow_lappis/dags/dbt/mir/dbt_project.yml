@@ -24,7 +24,7 @@ vars:
 
 models:
   mir: 
-    +database: analytics
+    +database: "{{ env_var('DB_DW_DBNAME_MIR', 'analytics') }}"
     metadata:
       +materialized: incremental
       +schema: metadata
