@@ -4,7 +4,7 @@ with
 
     -- Lado SIAFI: valores mensais de empenhado/liquidado/pago/restos a pagar
     -- por contrato. Exclui linhas com mes_lancamento nulo: são contratos
-    -- Ativos sem nenhum estágio SIAFI correspondente (originadas do full
+    -- sem nenhum estágio SIAFI correspondente (originadas do full
     -- join final de contratos_estagios), sem mês para casar na série.
     siafi as (
         select
@@ -91,21 +91,25 @@ with
     ),
 
     -- 3) Left join final com contratos para os dados cadastrais (número,
-    -- fornecedor, órgão, vigência etc).
+    -- fornecedor, órgão, vigência etc). Os valores vêm com 0 nos meses sem
+    -- movimento de um dos lados (incluindo os meses de preenchimento da
+    -- série), para os gráficos de linha não terem lacunas.
     final as (
         select
             sc.contrato_id,
             sc.mes_referencia,
-            sc.valor_empenhado,
-            sc.valor_liquidado,
-            sc.valor_pago,
-            sc.restos_a_pagar,
-            sc.restos_a_pagar_pago,
+            coalesce(sc.valor_empenhado, 0) as valor_empenhado,
+            coalesce(sc.valor_liquidado, 0) as valor_liquidado,
+            coalesce(sc.valor_pago, 0) as valor_pago,
+            coalesce(sc.restos_a_pagar, 0) as restos_a_pagar,
+            coalesce(sc.restos_a_pagar_pago, 0) as restos_a_pagar_pago,
             sc.estrategias_match,
-            sc.valor_cronograma,
-            sc.valor_faturas_pagas,
-            sc.valor_faturas_pendentes,
-            sc.saldo_contratual_disponivel,
+            coalesce(sc.valor_cronograma, 0) as valor_cronograma,
+            coalesce(sc.valor_faturas_pagas, 0) as valor_faturas_pagas,
+            coalesce(sc.valor_faturas_pendentes, 0) as valor_faturas_pendentes,
+            coalesce(
+                sc.saldo_contratual_disponivel, 0
+            ) as saldo_contratual_disponivel,
             ct.numero as numero_contrato,
             ct.situacao as situacao_contrato,
             ct.fornecedor_nome,

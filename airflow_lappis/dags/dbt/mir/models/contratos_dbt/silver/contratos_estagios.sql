@@ -186,6 +186,70 @@ with
         from resultado_3
     ),
 
+    contratos_casados_siafi as (
+        select contrato_id from resultado_1
+        union
+        select contrato_id from resultado_2
+        union
+        select contrato_id from resultado_3
+    ),
+
+    -- ------------------------------------------------------------------
+    -- Fallback compras_gov: para contratos sem nenhum estágio casado com o
+    -- SIAFI, usa os empenhos que a API de contratos vincula ao contrato
+    -- (mesma regra de contratos_empenhos: uma fonte só por contrato, para
+    -- não contar em dobro a transferência de saldo entre UGs). A API não traz as datas de liquidação
+    -- e pagamento, então os valores do exercício vão para o mês de emissão
+    -- da NE, e os restos a pagar (inscrito e pago) para janeiro do ano
+    -- seguinte, quando a inscrição acontece. "liquidado" no compras_gov é
+    -- o liquidado a pagar; o liquidado total é liquidado + pago.
+    -- ------------------------------------------------------------------
+    empenhos_compras_gov as (
+        select e.*
+        from {{ ref("empenhos") }} as e
+        where e.nota_empenho is not null
+            and not exists (
+                select 1
+                from contratos_casados_siafi as c
+                where c.contrato_id = e.contrato_id
+            )
+    ),
+
+    estagios_compras_gov as (
+        select
+            contrato_id,
+            date_trunc('month', data_emissao)::date as mes_lancamento,
+            empenhado as valor_empenhado,
+            liquidado + pago as valor_liquidado,
+            pago as valor_pago,
+            0::numeric as restos_a_pagar,
+            0::numeric as restos_a_pagar_pago,
+            'compras_gov' as estrategia_match,
+            dt_ingest
+        from empenhos_compras_gov
+        union all
+        select
+            contrato_id,
+            make_date(extract(year from data_emissao)::integer + 1, 1, 1) as mes_lancamento,
+            0::numeric as valor_empenhado,
+            0::numeric as valor_liquidado,
+            0::numeric as valor_pago,
+            rpinscrito as restos_a_pagar,
+            rppago as restos_a_pagar_pago,
+            'compras_gov' as estrategia_match,
+            dt_ingest
+        from empenhos_compras_gov
+        where rpinscrito <> 0 or rppago <> 0
+    ),
+
+    resultado_com_compras_gov as (
+        select *
+        from resultado_final
+        union all
+        select *
+        from estagios_compras_gov
+    ),
+
     -- Agregação mensal por contrato: soma dos estágios de despesa de todos
     -- os empenhos casados com o mesmo contrato no mesmo mês.
     agregado_mensal as (
@@ -199,11 +263,11 @@ with
             sum(restos_a_pagar_pago) as restos_a_pagar_pago,
             array_agg(distinct estrategia_match) as estrategias_match,
             max(dt_ingest) as dt_ingest
-        from resultado_final
+        from resultado_com_compras_gov
         group by contrato_id, mes_lancamento
     ),
 
-    contratos_ativos as (
+    contratos_base as (
         select
             id,
             numero,
@@ -242,5 +306,5 @@ select
     ca.vigencia_fim,
     greatest(am.dt_ingest, ca.dt_ingest_contratos) as dt_ingest
 from agregado_mensal as am
-full join contratos_ativos as ca on am.contrato_id = ca.id
-where ca.situacao = 'Ativo'
+full join contratos_base as ca on am.contrato_id = ca.id
+where ca.id is not null

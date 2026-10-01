@@ -74,7 +74,7 @@ models:
       - name: numero_contrato
         description: "Número oficial do contrato."
       - name: situacao_contrato
-        description: "Situação atual do contrato (ex: Ativo)."
+        description: "Situação atual do contrato ('Ativo' ou 'Inativo')."
       - name: fornecedor_nome
         description: "Nome ou razão social do fornecedor contratado."
       - name: fornecedor_cnpj_cpf_idgener
