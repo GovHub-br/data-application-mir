@@ -109,7 +109,6 @@ with
             end as vigencia_fim,
             (dt_ingest || '-03:00')::timestamptz as dt_ingest
         from {{ source("compras_gov", "contratos") }}
-        where lower(trim(situacao)) is distinct from 'inativo'
     )  
 
 select *

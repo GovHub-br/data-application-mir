@@ -154,6 +154,7 @@ with
             despesas_empenhadas,
             despesas_liquidadas,
             despesas_pagas,
+            restos_a_pagar_pagos,
             dt_ingest,
             estrategia_match
         from resultado_1
@@ -171,6 +172,7 @@ with
             despesas_empenhadas,
             despesas_liquidadas,
             despesas_pagas,
+            restos_a_pagar_pagos,
             dt_ingest,
             estrategia_match
         from resultado_2
@@ -188,6 +190,7 @@ with
             despesas_empenhadas,
             despesas_liquidadas,
             despesas_pagas,
+            restos_a_pagar_pagos,
             dt_ingest,
             estrategia_match
         from resultado_3
@@ -205,12 +208,60 @@ with
             despesas_empenhadas,
             despesas_liquidadas,
             despesas_pagas,
+            restos_a_pagar_pagos,
             dt_ingest,
             estrategia_match
         from resultado_4
     ),
 
-    contratos_ativos as (
+    -- ------------------------------------------------------------------
+    -- Fallback compras_gov: para contratos sem nenhuma NE casada com o
+    -- SIAFI (ex.: NEs emitidas por UG fora do recorte de empenhos_tesouro),
+    -- usa os empenhos que a API de contratos vincula ao contrato. O vínculo
+    -- NE -> contrato vem direto da API, sem cascata. Cada contrato usa uma
+    -- fonte só: misturar as duas conta em dobro a transferência de saldo
+    -- entre UGs, em que o compras_gov mostra o valor na NE de origem e o
+    -- SIAFI na NE de destino. No compras_gov, empenhado =
+    -- aliquidar + liquidado + pago, ou seja, "liquidado" é o liquidado a
+    -- pagar; o equivalente ao despesas_liquidadas do SIAFI é liquidado +
+    -- pago. Como no SIAFI, despesas_* são do exercício; o RAP pago vai em
+    -- restos_a_pagar_pagos (rppago).
+    -- ------------------------------------------------------------------
+    empenhos_compras_gov as (
+        select
+            e.contrato_id,
+            e.unidade_gestora || e.gestao || upper(e.nota_empenho) as ne_ccor,
+            upper(e.nota_empenho) as ne_transformed,
+            null::text as ne_num_processo,
+            e.informacao_complementar as ne_info_complementar,
+            split_part(e.naturezadespesa, ' - ', 1) as natureza_despesa,
+            nullif(substring(e.naturezadespesa from ' - (.*)$'), '') as natureza_despesa_descricao,
+            regexp_replace(e.credor_obj_cnpj_cpf_idgener, '[^0-9]', '', 'g') as ne_ccor_favorecido,
+            extract(year from e.data_emissao)::integer as ne_ccor_ano_emissao,
+            e.empenhado as despesas_empenhadas,
+            e.liquidado + e.pago as despesas_liquidadas,
+            e.pago as despesas_pagas,
+            e.rppago as restos_a_pagar_pagos,
+            e.dt_ingest,
+            'compras_gov' as estrategia_match
+        from {{ ref("empenhos") }} as e
+        where e.nota_empenho is not null
+            and not exists (
+                select 1
+                from resultado_final as rf
+                where rf.contrato_id = e.contrato_id
+            )
+    ),
+
+    resultado_com_compras_gov as (
+        select *
+        from resultado_final
+        union all
+        select *
+        from empenhos_compras_gov
+    ),
+
+    contratos_base as (
         select
             id,
             numero,
@@ -241,6 +292,7 @@ select
     rf.despesas_empenhadas,
     rf.despesas_liquidadas,
     rf.despesas_pagas,
+    rf.restos_a_pagar_pagos,
     rf.estrategia_match,
     ca.numero as numero_contrato,
     ca.situacao as situacao_contrato,
@@ -253,6 +305,6 @@ select
     ca.vigencia_inicio,
     ca.vigencia_fim,
     greatest(rf.dt_ingest, ca.dt_ingest_contratos) as dt_ingest
-from resultado_final as rf
-full join contratos_ativos as ca on rf.contrato_id = ca.id
-where ca.situacao = 'Ativo'
+from resultado_com_compras_gov as rf
+full join contratos_base as ca on rf.contrato_id = ca.id
+where ca.id is not null

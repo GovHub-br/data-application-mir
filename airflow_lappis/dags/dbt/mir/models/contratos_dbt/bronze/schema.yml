@@ -2,13 +2,13 @@ version: 2
 
 models:
   # ----------------------------------------------------------------------------
-  # Contratos (ativos)
+  # Contratos (ativos e inativos)
   # ----------------------------------------------------------------------------
   - name: contratos
     description: >
-      Camada bronze dos contratos ativos do Compras GOV, ingeridos via API para o
-      schema compras_gov do postgres_mir. Contém contratos cuja situacao é distinta
-      de 'Inativo'. Realiza conversão de tipos, normalização de valores monetários
+      Camada bronze dos contratos do Compras GOV, ingeridos via API para o
+      schema compras_gov do postgres_mir. Contém contratos ativos e inativos,
+      distinguidos pela coluna situacao. Realiza conversão de tipos, normalização de valores monetários
       (formato brasileiro), validação de datas e limpeza de CPF/CNPJ e processo.
     meta:
       tags:
@@ -17,7 +17,7 @@ models:
       - name: id
         description: "Identificador único do contrato."
       - name: situacao
-        description: "Situação do contrato (para este modelo, distinta de 'Inativo')."
+        description: "Situação do contrato ('Ativo' ou 'Inativo')."
       - name: fornecedor_cnpj_cpf_idgener
         description: "CNPJ/CPF/identificador do fornecedor, sem caracteres especiais."
       - name: num_parcelas
@@ -71,8 +71,8 @@ models:
     description: >
       Camada bronze dos contratos inativos do Compras GOV. Mesma estrutura do modelo
       de contratos, filtrando situacao igual a 'Inativo'. Ativos e inativos são
-      ingeridos na mesma tabela raw (compras_gov.contratos) e separados na bronze
-      pela coluna situacao.
+      ingeridos na mesma tabela raw (compras_gov.contratos); o modelo contratos
+      traz os dois e este é o recorte só dos inativos.
     meta:
       tags:
         - bronze
@@ -309,8 +309,11 @@ models:
   - name: empenhos_tesouro
     description: >
       Camada bronze dos empenhos do Tesouro Gerencial (SIAFI), lidos de
-      source('siafi', 'ne_tesouro') e filtrados para as Unidades Gestoras do MIR
-      (230002 e 810008), identificadas pelos 6 primeiros dígitos de ne_ccor. Realiza
+      source('siafi', 'ne_tesouro_ppa') (relatório de notas de empenho por programa
+      PPA), só no grão de empenho (ne_ccor <> '-9'). Mantém as NEs das Unidades
+      Gestoras do MIR (230002 e 810008), identificadas pelos 6 primeiros dígitos de
+      ne_ccor, e as NEs de qualquer UG que a API de contratos (compras_gov.empenhos)
+      vincula a um contrato do MIR. Realiza
       limpeza do número do processo, padronização do favorecido para caixa alta e
       conversão dos valores financeiros (formato brasileiro) para numeric(15,2) via
       macro parse_financial_value. Registros com ano de emissão inválido (não numérico

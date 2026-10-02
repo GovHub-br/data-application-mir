@@ -261,10 +261,10 @@ models:
            implementação.
 
       Os 4 resultados parciais são unidos (union) e, ao final, um full join
-      com contratos mantém: (a) todo empenho casado a um contrato Ativo, e
-      (b) todo contrato Ativo, mesmo sem nenhum empenho correspondente
-      (colunas de empenho nulas nesse caso). Contratos não-Ativos são
-      excluídos do resultado final.
+      com contratos mantém: (a) todo empenho casado a um contrato, e (b) todo
+      contrato, mesmo sem nenhum empenho correspondente (colunas de empenho
+      nulas nesse caso). Entram contratos ativos e inativos; empenhos sem
+      contrato correspondente são excluídos do resultado final.
 
       O grão do resultado replica o grão bruto de empenhos_tesouro (pode
       haver múltiplas linhas por NE, uma por natureza de despesa/fonte de
@@ -281,7 +281,7 @@ models:
       - name: contrato_id
         description: >
           Identificador do contrato casado com o empenho (via alguma das 4
-          estratégias) ou do contrato Ativo sem empenho correspondente.
+          estratégias) ou do contrato sem empenho correspondente.
         tests:
           - not_null
       - name: ne
@@ -316,12 +316,19 @@ models:
         description: "Valor liquidado."
       - name: despesas_pagas
         description: "Valor pago."
+      - name: restos_a_pagar_pagos
+        description: >
+          Valor pago em restos a pagar (RAP), nos anos seguintes ao de
+          emissão da NE. No fallback compras_gov vem do rppago da API.
       - name: estrategia_match
         description: >
           Estratégia da cascata que resolveu o cruzamento deste empenho:
           'ne_cnpj_cpf', 'processo_unico', 'cnpj_cpf_unico',
-          'info_complementar_unico', ou nulo quando a linha veio de um
-          contrato Ativo sem nenhum empenho correspondente (originada do
+          'info_complementar_unico'; 'compras_gov' quando o contrato não
+          casou nenhuma NE com o SIAFI e os valores vêm do fallback com os
+          empenhos da API de contratos (liquidado = liquidado + pago do
+          compras_gov); ou nulo quando a linha veio de um contrato sem
+          nenhum empenho correspondente (originada do
           full join final).
       - name: numero_contrato
         description: >
@@ -329,8 +336,8 @@ models:
           não há contrato correspondente.
       - name: situacao_contrato
         description: >
-          Situação cadastral do contrato (sempre 'Ativo' neste model, dado
-          o filtro do full join final).
+          Situação cadastral do contrato ('Ativo' ou 'Inativo'), propagada
+          de contratos.situacao.
       - name: fornecedor_nome
         description: "Nome do fornecedor, propagado de contratos.fornecedor_nome."
       - name: fornecedor_cnpj_cpf_idgener
@@ -370,6 +377,10 @@ models:
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
           nome_tabela: 'contratos_dbt.contratos_empenhos'
+          nome_coluna: 'restos_a_pagar_pagos'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'contratos_dbt.contratos_empenhos'
           nome_coluna: 'vigencia_inicio'
           tipo_esperado: 'date'
       - verificacao_tipagem:
@@ -405,10 +416,10 @@ models:
       Os 3 resultados parciais são unidos (union) e agregados por
       contrato_id + mes_lancamento (soma de valor_empenhado, valor_liquidado,
       valor_pago, restos_a_pagar e restos_a_pagar_pago). Ao final, um full
-      join com contratos mantém: (a) todo mês/contrato casado a um contrato
-      Ativo, e (b) todo contrato Ativo, mesmo sem nenhum estágio
-      correspondente (colunas de valores nulas nesse caso). Contratos
-      não-Ativos são excluídos do resultado final.
+      join com contratos mantém: (a) todo mês/contrato casado a um contrato,
+      e (b) todo contrato, mesmo sem nenhum estágio correspondente (colunas
+      de valores nulas nesse caso). Entram contratos ativos e inativos;
+      estágios sem contrato correspondente são excluídos do resultado final.
 
       Percentual de estágios não resolvidos por nenhuma das 3 estratégias:
       <PREENCHER com o número real, obtido rodando a query documentada no
@@ -420,7 +431,7 @@ models:
       - name: contrato_id
         description: >
           Identificador do contrato casado com o estágio (via alguma das 3
-          estratégias) ou do contrato Ativo sem estágio correspondente.
+          estratégias) ou do contrato sem estágio correspondente.
         tests:
           - not_null
       - name: mes_lancamento
@@ -444,8 +455,12 @@ models:
         description: >
           Lista das estratégias da cascata que resolveram os estágios
           agregados neste contrato/mês: 'ne_cnpj_cpf', 'cnpj_cpf_processo',
-          'cnpj_cpf_info_complementar', ou nulo quando a linha veio de um
-          contrato Ativo sem nenhum estágio correspondente (originada do
+          'cnpj_cpf_info_complementar'; 'compras_gov' quando o contrato não
+          casou nenhum estágio com o SIAFI e os valores vêm do fallback com
+          os empenhos da API de contratos (valores do exercício no mês de
+          emissão da NE, restos a pagar em janeiro do ano seguinte); ou nulo
+          quando a linha veio de um contrato sem nenhum estágio
+          correspondente (originada do
           full join final).
       - name: numero_contrato
         description: >
@@ -453,8 +468,8 @@ models:
           há contrato correspondente.
       - name: situacao_contrato
         description: >
-          Situação cadastral do contrato (sempre 'Ativo' neste model, dado o
-          filtro do full join final).
+          Situação cadastral do contrato ('Ativo' ou 'Inativo'), propagada
+          de contratos.situacao.
       - name: fornecedor_nome
         description: "Nome do fornecedor, propagado de contratos.fornecedor_nome."
       - name: fornecedor_cnpj_cpf_idgener

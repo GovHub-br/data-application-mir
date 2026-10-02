@@ -23,10 +23,13 @@ models:
         description: "Valor total liquidado do contrato."
 
       - name: total_despesas_pagas
-        description: "Valor total efetivamente pago do contrato."
+        description: >
+          Valor total efetivamente pago do contrato: o pago no exercício mais
+          o pago em restos a pagar (RAP) nos anos seguintes ao de emissão das
+          NEs.
 
       - name: pendente_baixa
-        description: "Indica se o valor pago é diferente do valor global ('Sim' ou 'Não')."
+        description: "Indica se o valor pago total (exercício + RAP) é diferente do valor global ('Sim' ou 'Não')."
 
       - name: continuado
         description: "Indica se o contrato é continuado com base no prazo de vigência e parcelas."
@@ -154,12 +157,13 @@ models:
 
       A agregação é feita por contrato (contrato_id, numero_contrato,
       fornecedor_cnpj_cpf_idgener, fornecedor_tipo, fornecedor_nome), somando
-      cronograma, faturas (pagas + pendentes), saldo disponível, empenhado,
-      liquidado e pago de todos os meses de contratos_comparativo_mensal.
+      cronograma, faturas (pagas + pendentes), empenhado, liquidado e pago
+      (exercício + RAP) de todos os meses de contratos_comparativo_mensal.
 
-      O indicador orcamento_a_executar soma o valor de cronograma apenas nos
-      meses em que não houve faturamento (pago ou pendente) para o contrato,
-      representando o orçamento previsto que ainda não foi faturado.
+      Os indicadores cruzam o Compras GOV com o SIAFI: total_saldo_disponivel
+      é o cronograma ainda não empenhado (total_cronograma - total_empenhado)
+      e orcamento_a_executar é o empenhado ainda não pago (total_empenhado -
+      total_pago).
     meta:
       tags:
         - gold
@@ -186,7 +190,7 @@ models:
         tests:
           - not_null
       - name: total_saldo_disponivel
-        description: "Soma do saldo contratual disponível (cronograma - faturas pagas - faturas pendentes) em todos os meses do contrato."
+        description: "Saldo do cronograma ainda não empenhado: total_cronograma - total_empenhado. Zero para contratos sem cronograma (pagamento único). Fica negativo quando o empenhado passa o cronograma."
         tests:
           - not_null
       - name: total_empenhado
@@ -198,11 +202,11 @@ models:
         tests:
           - not_null
       - name: total_pago
-        description: "Soma do valor pago (lado SIAFI) em todos os meses do contrato."
+        description: "Soma do valor pago (lado SIAFI) em todos os meses do contrato: o pago no exercício mais o pago em restos a pagar (RAP)."
         tests:
           - not_null
       - name: orcamento_a_executar
-        description: "Soma do valor de cronograma nos meses em que não houve faturamento (pago ou pendente) para o contrato."
+        description: "Empenhado ainda não pago: total_empenhado - total_pago (o pago inclui o RAP)."
         tests:
           - not_null
       - name: dt_ingest

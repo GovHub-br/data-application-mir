@@ -6,7 +6,9 @@ with valores_pagos_contratos as (
         contrato_id as id, 
         coalesce(sum(despesas_empenhadas), 0) as despesas_empenhadas,
         coalesce(sum(despesas_liquidadas), 0) as despesas_liquidadas,
-        coalesce(sum(despesas_pagas), 0) as despesas_pagas, 
+        -- Pago total: o do exercício mais o de restos a pagar (RAP).
+        coalesce(sum(despesas_pagas), 0)
+        + coalesce(sum(restos_a_pagar_pagos), 0) as despesas_pagas,
         max(dt_ingest) as dt_ingest_vpc
     from {{ ref("contratos_empenhos") }}
     where contrato_id is not null
