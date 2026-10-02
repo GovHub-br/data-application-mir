@@ -1,8 +1,7 @@
-{{ config(materialized="table") }}
-
--- Uma agenda pode estar vinculada ao MIR em qualquer nível do PPA (programa,
--- objetivo, entrega, meta, indicador...), não só via agenda_programa. Por isso a
--- dimensão reúne os códigos de todas as tabelas agenda_* já filtradas pelo MIR.
+-- Falha se uma agenda vinculada ao MIR em qualquer tabela agenda_*_filtrado_mir
+-- não aparecer na dimensão agenda_filtrado_mir. Antes a dimensão só olhava
+-- agenda_programa e perdia agendas vinculadas apenas a entregas, metas ou
+-- indicadores (ex.: 576 "Igualdade Racial: Enfrentamento à violência...").
 {% set vinculos_agenda = [
     "agenda_programa_filtrado_mir",
     "agenda_objetivo_geral_filtrado_mir",
@@ -21,13 +20,9 @@
 ] %}
 
 with
-    agenda as (
-        select *
-        from {{ ref("agenda") }}
-    ),
-    agendas_mir as (
+    vinculos as (
         {% for vinculo in vinculos_agenda %}
-            select codigo_agenda, ano_ppa
+            select '{{ vinculo }}' as tabela, codigo_agenda, ano_ppa
             from {{ ref(vinculo) }}
             {% if not loop.last %}
                 union
@@ -35,8 +30,9 @@ with
         {% endfor %}
     )
 
-select agenda.*
-from agenda
-inner join agendas_mir
-    on agenda.codigo = agendas_mir.codigo_agenda
-    and agenda.ano_ppa = agendas_mir.ano_ppa
+select vinculos.*
+from vinculos
+left join {{ ref("agenda_filtrado_mir") }} as agenda
+    on agenda.codigo = vinculos.codigo_agenda
+    and agenda.ano_ppa = vinculos.ano_ppa
+where agenda.codigo is null
