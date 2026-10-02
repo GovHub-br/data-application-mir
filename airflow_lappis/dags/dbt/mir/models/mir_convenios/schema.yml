@@ -1,0 +1,241 @@
+version: 2
+
+models:
+  - name: dim_tempo
+    description: "Calendario diario de 2000 a 2040; sk_tempo = AAAAMMDD; -1 = sem data."
+    columns:
+      - name: sk_tempo
+        description: "Data como AAAAMMDD (bigint); -1 = Nao identificado."
+        tests:
+          - unique
+          - not_null
+          - membro_nao_identificado
+      - name: data
+        description: "Dia."
+      - name: ano_mes
+        description: "Ano e mes (AAAA-MM), para eixos mensais no Power BI."
+
+  - name: dim_unidade_gestora
+    description: "UG responsavel das NEs (macro compartilhada dim_unidade_gestora)."
+    columns:
+      - name: sk_unidade_gestora
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: codigo_ug
+        tests: [unique, not_null]
+
+  - name: dim_acao_orcamentaria
+    description: "Classificacao programatica no grao do PTRES (macro compartilhada)."
+    columns:
+      - name: sk_acao_orcamentaria
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: ptres
+        tests: [unique, not_null]
+
+  - name: dim_natureza_despesa
+    description: "Natureza de despesa, GND e modalidade de aplicacao (macro compartilhada)."
+    columns:
+      - name: sk_natureza_despesa
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: natureza_despesa
+        tests: [unique, not_null]
+
+  - name: dim_fonte_recurso
+    description: "Fonte de recursos detalhada (macro compartilhada)."
+    columns:
+      - name: sk_fonte_recurso
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: codigo_fonte
+        tests: [unique, not_null]
+
+  - name: dim_emenda
+    description: "Emenda parlamentar: codigo, ano, numero e autor (macro compartilhada)."
+    columns:
+      - name: sk_emenda
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: codigo_emenda
+        tests: [unique, not_null]
+
+  - name: dim_parlamentar
+    description: >
+      Parlamentar x cargo x partido (SCD2), com valido_de e valido_ate. A fato
+      aponta para o partido vigente na data de emissao da NE (mir_silver.emenda_ne).
+      As janelas podem se sobrepor entre partidos do mesmo parlamentar (a origem
+      traz filiacoes sobrepostas): para filtrar por data, use a fato, nao a
+      dimensao.
+    columns:
+      - name: sk_parlamentar
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: dim_convenio
+    description: >
+      Convenios, termos de fomento, colaboracao e parceria do MIR: modalidade,
+      origem do recurso, situacao, marcacoes e datas. vigente e meta_expirada
+      sao calculados contra data_referencia (data da carga).
+    columns:
+      - name: sk_convenio
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: nr_convenio
+        tests: [unique, not_null]
+      - name: origem_recurso
+        description: "Emenda, Recurso próprio ou Não identificada (sem NE no relatorio do Tesouro)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Emenda", "Recurso próprio", "Não identificada"]
+      - name: complemento_proprio
+        description: "Instrumento de Emenda que tambem recebeu NE de recurso proprio (complemento ate o minimo legal)."
+      - name: data_referencia
+        description: "Data da carga, usada para calcular vigente e meta_expirada."
+      - name: vigente
+        description: "data_fim_vigencia >= data_referencia."
+      - name: meta_expirada
+        description: "Alguma meta com fim anterior a data_referencia."
+
+  - name: dim_convenente
+    description: "Convenente (proponente) pelo CNPJ."
+    columns:
+      - name: sk_convenente
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: convenente_documento
+        tests: [unique, not_null]
+
+  - name: dim_localidade
+    description: "Municipio IBGE do convenente, com UF e regiao; linha so com UF quando falta o municipio."
+    columns:
+      - name: sk_localidade
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: chave_localidade
+        tests: [unique, not_null]
+      - name: uf
+        tests:
+          - relationships:
+              to: ref('uf_regiao')
+              field: uf
+
+  - name: dim_fornecedor
+    description: >
+      Fornecedores pagos pelos convenios. CPF aparece mascarado como o SICONV
+      publica; a chave de PF e documento mascarado + nome.
+    columns:
+      - name: sk_fornecedor
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: fornecedor_chave
+        tests: [unique, not_null]
+      - name: fornecedor_tipo
+        tests:
+          - accepted_values:
+              values: ["PF", "PJ", "Não identificado"]
+
+  - name: fato_execucao_orcamentaria
+    description: >
+      Execucao orcamentaria (SIAFI) dos convenios do MIR, no grao da linha do
+      relatorio do Tesouro. Some restos_a_pagar_inscritos_acumulavel entre
+      exercicios; restos_a_pagar_inscritos inclui as reinscricoes (saldo do
+      mesmo dinheiro) e so serve para o saldo de um exercicio.
+    columns:
+      - name: id_execucao_ne
+        tests: [unique, not_null]
+      - name: sk_convenio
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_convenio'), field: sk_convenio}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_tempo'), field: sk_tempo}
+      - name: sk_unidade_gestora
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_unidade_gestora'), field: sk_unidade_gestora}
+      - name: sk_acao_orcamentaria
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_acao_orcamentaria'), field: sk_acao_orcamentaria}
+      - name: sk_natureza_despesa
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_natureza_despesa'), field: sk_natureza_despesa}
+      - name: sk_fonte_recurso
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_fonte_recurso'), field: sk_fonte_recurso}
+      - name: sk_emenda
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_emenda'), field: sk_emenda}
+      - name: sk_parlamentar
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_parlamentar'), field: sk_parlamentar}
+
+  - name: fato_fluxo_financeiro
+    description: >
+      Movimentos financeiros dos convenios; tipo_movimento degenerado. Pagamentos
+      sem documento valido na origem (2.586 em 2026-09-29, R$ 7,9 mi) ficam com
+      fornecedor -1.
+    columns:
+      - name: id_movimento
+        tests: [unique, not_null]
+      - name: sk_convenio
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_convenio'), field: sk_convenio}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_tempo'), field: sk_tempo}
+      - name: sk_fornecedor
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_fornecedor'), field: sk_fornecedor}
+
+  - name: fato_cronograma_desembolso
+    description: "Parcelas previstas de desembolso; responsavel degenerado."
+    columns:
+      - name: id_parcela
+        tests: [unique, not_null]
+      - name: sk_convenio
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_convenio'), field: sk_convenio}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_tempo'), field: sk_tempo}
+
+  - name: fato_evento_convenio
+    description: "Eventos administrativos dos convenios; tipo_evento e situacao degenerados."
+    columns:
+      - name: id_evento
+        tests: [unique, not_null]
+      - name: sk_convenio
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_convenio'), field: sk_convenio}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_tempo'), field: sk_tempo}
+
+  - name: fato_convenio_posicao
+    description: >
+      Posicao acumulada por convenio (snapshot), uma linha por convenio.
+      valor_empenhado_siconv e o empenhado registrado no SICONV (historico
+      completo); despesas_* e restos_a_pagar_* vem das NEs do relatorio do
+      Tesouro e sao nulos quando o convenio nao tem NE nesse periodo.
+    columns:
+      - name: sk_convenio
+        tests:
+          - unique
+          - not_null
+          - relationships: {to: ref('dim_convenio'), field: sk_convenio}
+      - name: sk_convenente
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_convenente'), field: sk_convenente}
+      - name: sk_localidade
+        tests:
+          - not_null
+          - relationships: {to: ref('dim_localidade'), field: sk_localidade}
+      - name: restos_a_pagar_inscritos_acumulavel
+        description: "RAP inscrito sem as reinscricoes (somavel entre exercicios)."

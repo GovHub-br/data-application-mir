@@ -11,13 +11,14 @@ SCHEMA_SAIDA = "indicadores"
 
 # Tabelas dbt lidas pelo indicador -> nome do argumento de calcular_i1
 FONTES = {
-    "planos": ("siafi_dbt", "planos_acao_ted"),
-    "resumo": ("siafi_dbt", "ted_resumo_orcamentario"),
-    "pf": ("siafi_dbt", "pf_unificado_planos_acao"),
-    "nc": ("siafi_dbt", "nc_plano_acao"),
-    "ne": ("siafi_dbt", "ted_empenhos_plano_acao"),
-    "gold_convenios": ("siconv_dbt", "resumo_convenios"),
-    "instrumentos_emendas": ("emendas", "instrumentos_emendas"),
+    "planos": ("mir_teds", "dim_plano_acao"),
+    "posicao_planos": ("mir_teds", "fato_plano_acao_posicao"),
+    "creditos_teds": ("mir_teds", "fato_credito_descentralizado"),
+    "acoes_teds": ("mir_teds", "dim_acao_orcamentaria"),
+    "convenios": ("mir_convenios", "dim_convenio"),
+    "posicao_convenios": ("mir_convenios", "fato_convenio_posicao"),
+    "convenentes": ("mir_convenios", "dim_convenente"),
+    "localidades": ("mir_convenios", "dim_localidade"),
 }
 
 
@@ -36,7 +37,7 @@ FONTES = {
 def i1_valor_executado_dag() -> None:
     """I1 — Valor Executado por Instrumento.
 
-    Lê as tabelas dbt (TED, convênios, emendas), aplica a metodologia do BI
+    Lê os data marts mir_teds e mir_convenios, aplica a metodologia do BI
     (plugins/indicadores/i1_valor_executado.py) e grava as seis saídas do
     indicador no schema ``indicadores``, recalculadas do zero a cada execução.
     """

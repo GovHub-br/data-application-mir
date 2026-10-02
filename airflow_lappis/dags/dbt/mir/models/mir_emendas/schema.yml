@@ -1,0 +1,173 @@
+version: 2
+
+models:
+  - name: emendas_dim_tempo
+    description: "Calendario diario de 2000 a 2040 (macro compartilhada); sk_tempo = AAAAMMDD; -1 = sem data."
+    columns:
+      - name: sk_tempo
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: emendas_dim_unidade_gestora
+    description: "UG responsavel das NEs (macro compartilhada)."
+    columns:
+      - name: sk_unidade_gestora
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: emendas_dim_acao_orcamentaria
+    description: "Classificacao programatica no grao do PTRES (macro compartilhada; NEs e dotacao)."
+    columns:
+      - name: sk_acao_orcamentaria
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: emendas_dim_natureza_despesa
+    description: "Natureza de despesa, GND e modalidade de aplicacao (macro compartilhada; NEs e dotacao)."
+    columns:
+      - name: sk_natureza_despesa
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: emendas_dim_fonte_recurso
+    description: "Fonte de recursos detalhada (macro compartilhada; NEs e dotacao)."
+    columns:
+      - name: sk_fonte_recurso
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: emendas_dim_emenda
+    description: "Emenda parlamentar: codigo, ano, numero e autor (macro compartilhada; NEs e dotacao)."
+    columns:
+      - name: sk_emenda
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: codigo_emenda
+        tests: [unique, not_null]
+
+  - name: emendas_dim_parlamentar
+    description: >
+      Parlamentar x cargo x partido (SCD2, macro compartilhada). As janelas
+      podem se sobrepor entre partidos do mesmo parlamentar: para filtrar por
+      data, use a fato, nao a dimensao.
+    columns:
+      - name: sk_parlamentar
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: emendas_dim_instrumento_executor
+    description: >
+      Instrumentos que executam as emendas: Convênio, Fomento, Colaboração,
+      Parceria, TED ou Convênio de outro órgão; -1 = Execução direta / não
+      identificado.
+    columns:
+      - name: sk_instrumento_executor
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: tipo_instrumento
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Convênio", "Fomento", "Colaboração", "Parceria", "TED", "Convênio de outro órgão", "Execução direta / não identificado"]
+
+  - name: emendas_dim_favorecido
+    description: "Favorecidos das NEs de emenda (CPF mascarado; chave pelo documento completo)."
+    columns:
+      - name: sk_favorecido
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: emendas_dim_localidade
+    description: >
+      Localizador do gasto das emendas: regiao e UF. A UF fica nula quando o
+      gasto e regional ou NACIONAL (a regiao continua preenchida).
+    columns:
+      - name: sk_localidade
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: localizador_gasto
+        tests: [unique, not_null]
+
+  - name: emendas_fato_execucao_orcamentaria
+    description: >
+      Execucao orcamentaria (SIAFI) das emendas, no grao da linha do relatorio
+      do Tesouro, de qualquer instrumento. Some restos_a_pagar_inscritos_acumulavel
+      entre exercicios; restos_a_pagar_inscritos inclui as reinscricoes.
+    columns:
+      - name: id_execucao_ne
+        tests: [unique, not_null]
+      - name: sk_emenda
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_emenda'), field: sk_emenda}
+      - name: sk_parlamentar
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_parlamentar'), field: sk_parlamentar}
+      - name: sk_instrumento_executor
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_instrumento_executor'), field: sk_instrumento_executor}
+      - name: sk_favorecido
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_favorecido'), field: sk_favorecido}
+      - name: sk_localidade
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_localidade'), field: sk_localidade}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_tempo'), field: sk_tempo}
+      - name: sk_unidade_gestora
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_unidade_gestora'), field: sk_unidade_gestora}
+      - name: sk_acao_orcamentaria
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_acao_orcamentaria'), field: sk_acao_orcamentaria}
+      - name: sk_natureza_despesa
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_natureza_despesa'), field: sk_natureza_despesa}
+      - name: sk_fonte_recurso
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_fonte_recurso'), field: sk_fonte_recurso}
+
+  - name: emendas_fato_dotacao
+    description: "Dotacao das emendas, um movimento por linha (lancamentos positivos e negativos)."
+    columns:
+      - name: id_movimento
+        tests: [unique, not_null]
+      - name: sk_emenda
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_emenda'), field: sk_emenda}
+      - name: sk_parlamentar
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_parlamentar'), field: sk_parlamentar}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_tempo'), field: sk_tempo}
+      - name: sk_acao_orcamentaria
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_acao_orcamentaria'), field: sk_acao_orcamentaria}
+      - name: sk_natureza_despesa
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_natureza_despesa'), field: sk_natureza_despesa}
+      - name: sk_fonte_recurso
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_fonte_recurso'), field: sk_fonte_recurso}
+      - name: sk_localidade
+        tests:
+          - not_null
+          - relationships: {to: ref('emendas_dim_localidade'), field: sk_localidade}
+
+  - name: emendas_fato_emenda_posicao
+    description: >
+      Posicao acumulada por emenda (snapshot): dotacao, execucao das NEs de
+      emenda e quantidades. Execucao 0 quando a emenda so tem dotacao.
+    columns:
+      - name: sk_emenda
+        tests:
+          - unique
+          - not_null
+          - relationships: {to: ref('emendas_dim_emenda'), field: sk_emenda}

@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from cosmos import DbtDag, ProjectConfig, ProfileConfig, ExecutionConfig
+from cosmos import DbtDag, ProjectConfig, ProfileConfig, ExecutionConfig, RenderConfig
 from cosmos.constants import DBT_LOG_PATH_ENVVAR
 
 dbt_log_path = "/tmp/dbt_logs" # NOSONAR
@@ -19,6 +19,11 @@ my_cosmos_dag = DbtDag(
     execution_config=ExecutionConfig(
         dbt_executable_path=f"{os.environ['AIRFLOW_REPO_BASE']}/.local/bin/dbt",
     ),
+    # Testes que leem mais de um modelo (ex.: reconciliacoes de mir_silver) viram
+    # tarefas proprias, executadas depois de todos os modelos que eles leem. Sem
+    # isso, o cosmos os roda junto com o primeiro pai, antes dos demais serem
+    # reconstruidos, e a falha pula todos os modelos seguintes.
+    render_config=RenderConfig(should_detach_multiple_parents_tests=True),
     # Expressãp cron para agendar a execução do DAG diariamente às 01:00
     # Futuralmente isso pode ser substituído por um cronograma mais específico
     # com dependências entre os DAGs

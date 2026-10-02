@@ -1,0 +1,166 @@
+version: 2
+
+models:
+  - name: teds_dim_tempo
+    description: "Calendario diario de 2000 a 2040 (macro compartilhada); sk_tempo = AAAAMMDD; -1 = sem data."
+    columns:
+      - name: sk_tempo
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: teds_dim_unidade_gestora
+    description: "UG responsavel das NEs (macro compartilhada)."
+    columns:
+      - name: sk_unidade_gestora
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: teds_dim_acao_orcamentaria
+    description: "Classificacao programatica no grao do PTRES (macro compartilhada)."
+    columns:
+      - name: sk_acao_orcamentaria
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: teds_dim_natureza_despesa
+    description: "Natureza de despesa, GND e modalidade de aplicacao (macro compartilhada)."
+    columns:
+      - name: sk_natureza_despesa
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: teds_dim_fonte_recurso
+    description: "Fonte de recursos detalhada (macro compartilhada)."
+    columns:
+      - name: sk_fonte_recurso
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: teds_dim_emenda
+    description: "Emenda parlamentar (macro compartilhada)."
+    columns:
+      - name: sk_emenda
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: teds_dim_parlamentar
+    description: >
+      Parlamentar x cargo x partido (SCD2, macro compartilhada). As janelas
+      podem se sobrepor entre partidos do mesmo parlamentar: para filtrar por
+      data, use a fato, nao a dimensao.
+    columns:
+      - name: sk_parlamentar
+        tests: [unique, not_null, membro_nao_identificado]
+
+  - name: teds_dim_plano_acao
+    description: >
+      Planos de acao de TED do MIR (TransfereGov): plano, programa, origem do
+      recurso e vigencia. vigente e calculado contra data_referencia (data da
+      carga).
+    columns:
+      - name: sk_plano_acao
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: id_plano_acao
+        tests: [unique, not_null]
+      - name: origem_recurso
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Emenda", "Recurso próprio", "Não identificada"]
+
+  - name: teds_dim_unidade_executora
+    description: "UGs que executam os TEDs (lado que nao e o MIR nas NCs e PFs)."
+    columns:
+      - name: sk_unidade_executora
+        tests: [unique, not_null, membro_nao_identificado]
+      - name: ug_executora_codigo
+        tests: [unique, not_null]
+
+  - name: teds_fato_credito_descentralizado
+    description: >
+      Credito descentralizado (NC) dos TEDs; tipo (Recebido, Devolvido,
+      Anulado) degenerado. data_estimada marca as NCs anteriores a 2026, que
+      vem sem data (1 de janeiro do ano da NC).
+    columns:
+      - name: id_movimento
+        tests: [unique, not_null]
+      - name: sk_plano_acao
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_plano_acao'), field: sk_plano_acao}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_tempo'), field: sk_tempo}
+      - name: sk_unidade_executora
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_unidade_executora'), field: sk_unidade_executora}
+
+  - name: teds_fato_programacao_financeira
+    description: "Programacao financeira (PF) dos TEDs; tipo (Transferência, Devolução) degenerado."
+    columns:
+      - name: id_movimento
+        tests: [unique, not_null]
+      - name: sk_plano_acao
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_plano_acao'), field: sk_plano_acao}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_tempo'), field: sk_tempo}
+      - name: sk_unidade_executora
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_unidade_executora'), field: sk_unidade_executora}
+
+  - name: teds_fato_execucao_orcamentaria
+    description: >
+      Execucao orcamentaria (SIAFI) dos TEDs, no grao da linha do relatorio do
+      Tesouro. Some restos_a_pagar_inscritos_acumulavel entre exercicios;
+      restos_a_pagar_inscritos inclui as reinscricoes e so serve para o saldo de
+      um exercicio.
+    columns:
+      - name: id_execucao_ne
+        tests: [unique, not_null]
+      - name: sk_plano_acao
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_plano_acao'), field: sk_plano_acao}
+      - name: sk_tempo
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_tempo'), field: sk_tempo}
+      - name: sk_unidade_gestora
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_unidade_gestora'), field: sk_unidade_gestora}
+      - name: sk_acao_orcamentaria
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_acao_orcamentaria'), field: sk_acao_orcamentaria}
+      - name: sk_natureza_despesa
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_natureza_despesa'), field: sk_natureza_despesa}
+      - name: sk_fonte_recurso
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_fonte_recurso'), field: sk_fonte_recurso}
+      - name: sk_emenda
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_emenda'), field: sk_emenda}
+      - name: sk_parlamentar
+        tests:
+          - not_null
+          - relationships: {to: ref('teds_dim_parlamentar'), field: sk_parlamentar}
+
+  - name: teds_fato_plano_acao_posicao
+    description: >
+      Posicao acumulada por plano de acao (snapshot), uma linha por plano.
+      Credito e financeiro sao 0 sem NC ou PF; as medidas de execucao sao nulas
+      quando o plano nao tem NE ligada.
+    columns:
+      - name: sk_plano_acao
+        tests:
+          - unique
+          - not_null
+          - relationships: {to: ref('teds_dim_plano_acao'), field: sk_plano_acao}
+      - name: restos_a_pagar_inscritos_acumulavel
+        description: "RAP inscrito sem as reinscricoes (somavel entre exercicios)."

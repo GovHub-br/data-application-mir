@@ -9,14 +9,16 @@ from schedule_loader import get_dynamic_schedule
 
 SCHEMA_INDICADORES = "indicadores"
 
-# Tabelas dbt lidas pelo indicador -> nome do argumento de calcular_i3.
+# Tabelas dos marts lidas pelo indicador -> nome do argumento de calcular_i3.
 # Mesmas fontes do I1 (não a saída do I1) — I3 precisa do texto de objeto/
 # justificativa, que a saída do I1 não carrega.
 FONTES = {
-    "planos": ("siafi_dbt", "planos_acao_ted"),
-    "resumo": ("siafi_dbt", "ted_resumo_orcamentario"),
-    "instrumentos_emendas": ("emendas", "instrumentos_emendas"),
-    "gold_convenios": ("siconv_dbt", "resumo_convenios"),
+    "planos": ("mir_teds", "dim_plano_acao"),
+    "creditos_teds": ("mir_teds", "fato_credito_descentralizado"),
+    "acoes_teds": ("mir_teds", "dim_acao_orcamentaria"),
+    "convenios": ("mir_convenios", "dim_convenio"),
+    "posicao_convenios": ("mir_convenios", "fato_convenio_posicao"),
+    "convenentes": ("mir_convenios", "dim_convenente"),
 }
 
 
@@ -36,7 +38,7 @@ FONTES = {
 def i3_publico_alvo_dag() -> None:
     """I3 — Instrumentos com Público-Alvo Racializado.
 
-    Lê as tabelas dbt (TED, convênios, emendas), aplica a metodologia do BI
+    Lê os data marts mir_teds e mir_convenios, aplica a metodologia do BI
     (plugins/indicadores/i3_publico_alvo.py) e grava as quatro saídas do
     indicador no schema ``indicadores``, recalculadas do zero a cada execução.
     """

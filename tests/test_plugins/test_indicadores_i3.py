@@ -2,6 +2,7 @@
 
 Cada teste unitário cobre uma decisão metodológica registrada no script
 original da equipe de BI (i3_publico_alvo.py).
+As entradas têm o formato das tabelas dos marts mir_teds e mir_convenios.
 
 AVISO: diferente do I1 e do I2, não há fixture de regressão ponta-a-ponta
 contra dado bruto real — os textos de objeto/justificativa que alimentam a
@@ -35,34 +36,67 @@ FIXTURES = Path(__file__).parent.parent / "fixtures" / "indicadores" / "i3"
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-def _plano(id_plano_acao, situacao="APROVADO", sq="900", **extra):
+def _sk(id_plano_acao):
+    """Chave do plano diferente do número (como o hash dos marts); -1 é o membro -1."""
+    return -1 if id_plano_acao == -1 else 10_000 + id_plano_acao
+
+
+def _plano(id_plano_acao, situacao="APROVADO", **extra):
+    """Linha de mir_teds.dim_plano_acao."""
     base = {
+        "sk_plano_acao": _sk(id_plano_acao),
         "id_plano_acao": id_plano_acao,
-        "sq_instrumento": sq,
-        "tx_situacao_plano_acao": situacao,
-        "aa_ano_plano_acao": 2024,
+        "situacao": situacao,
+        "ano": 2024,
         "sigla_unidade_descentralizada": "UFX",
-        "tx_objeto_plano_acao": "",
-        "tx_justificativa_plano_acao": "",
+        "origem_recurso": "Recurso próprio",
+        "objeto": "",
+        "justificativa": "",
     }
     base.update(extra)
     return base
+
+
+def _nc(id_plano_acao, ptres):
+    """Linha de mir_teds.fato_credito_descentralizado (só as colunas usadas)."""
+    return {"sk_plano_acao": _sk(id_plano_acao), "ptres": ptres}
+
+
+def _acao(ptres, codigo_programa):
+    """Linha de mir_teds.dim_acao_orcamentaria (só as colunas usadas)."""
+    return {"ptres": ptres, "codigo_programa": codigo_programa}
 
 
 def _convenio(nr, assinatura="2024-03-01", vigencia=None, situacao="Em execução",
-              parlamentares=None, objeto="", **extra):
+              origem="Recurso próprio", objeto="", **extra):
+    """Um convênio com os campos de dim_convenio e o nome do convenente."""
     base = {
         "nr_convenio": nr,
-        "modalidade_instrumento": "CONVENIO",
-        "parlamentares": parlamentares,
+        "modalidade": "CONVENIO",
+        "origem_recurso": origem,
         "data_assinatura": assinatura,
-        "inicio_vigencia": vigencia,
-        "situacao_atual": situacao,
-        "nome_convenente": "Prefeitura",
+        "data_inicio_vigencia": vigencia,
+        "situacao": situacao,
         "objeto": objeto,
+        "convenente_nome": "Prefeitura",
     }
     base.update(extra)
     return base
+
+
+def _fontes_convenios(especificacoes):
+    """Separa os convênios em dim_convenio, posição e dim_convenente, ligados por sk."""
+    fontes = {"convenios": [], "posicao_convenios": [], "convenentes": []}
+    for i, c in enumerate(especificacoes, start=1):
+        fontes["convenios"].append({
+            "sk_convenio": i,
+            **{k: v for k, v in c.items() if k != "convenente_nome"},
+        })
+        fontes["posicao_convenios"].append({"sk_convenio": i, "sk_convenente": 100 + i})
+        fontes["convenentes"].append(
+            {"sk_convenente": 100 + i, "convenente_nome": c["convenente_nome"]}
+        )
+    return fontes
 
 
 # ---------------------------------------------------------------------------
@@ -132,16 +166,23 @@ def test_ted_rejeitado_fica_fora_do_universo() -> None:
     """Decisão 4: mesmo filtro de situação do I1."""
     planos = [_plano(1), _plano(2, situacao="REJEITADO")]
 
-    instrumentos = montar_instrumentos_ted(planos, resumo=[], instrumentos_emendas=[])
+    instrumentos = montar_instrumentos_ted(planos, creditos_teds=[], acoes_teds=[])
 
     assert [i["id_instrumento"] for i in instrumentos] == ["1"]
 
 
-def test_ted_origem_emenda_via_sq_instrumento() -> None:
-    planos = [_plano(1, sq="111"), _plano(2, sq="222")]
-    emendas = [{"tipo_instrumento": "TED", "numero_instrumento": "111"}]
+def test_ted_membro_nao_identificado_fica_fora() -> None:
+    planos = [_plano(1), _plano(-1, situacao="Não identificado")]
 
-    instrumentos = montar_instrumentos_ted(planos, [], emendas)
+    instrumentos = montar_instrumentos_ted(planos, [], [])
+
+    assert [i["id_instrumento"] for i in instrumentos] == ["1"]
+
+
+def test_ted_origem_emenda_pela_origem_recurso() -> None:
+    planos = [_plano(1, origem_recurso="Emenda"), _plano(2)]
+
+    instrumentos = montar_instrumentos_ted(planos, [], [])
 
     assert {i["id_instrumento"]: i["origem"] for i in instrumentos} == {
         "1": "emenda",
@@ -149,20 +190,27 @@ def test_ted_origem_emenda_via_sq_instrumento() -> None:
     }
 
 
-def test_ted_programa_governo_vem_da_primeira_linha_preenchida() -> None:
-    planos = [_plano(1)]
-    resumo = [
-        {"plano_acao": 1, "programa_governo": None},
-        {"plano_acao": 1, "programa_governo": "5804"},
-    ]
+def test_ted_programa_governo_e_o_maior_programa_das_ncs() -> None:
+    """Mesma regra do I1 (e do gold antigo): max(programa) das NCs do plano."""
+    planos = [_plano(1), _plano(2)]
+    acoes = [_acao("172001", "5802"), _acao("172002", "5804")]
+    creditos = [_nc(1, "172001"), _nc(1, "172002")]
 
-    [instr] = montar_instrumentos_ted(planos, resumo, [])
+    instrumentos = montar_instrumentos_ted(planos, creditos, acoes)
 
-    assert instr["programa_governo"] == "5804"
+    assert [i["programa_governo"] for i in instrumentos] == ["5804", ""]
+
+
+def test_ted_classifica_objeto_e_justificativa() -> None:
+    planos = [_plano(1, objeto="Formação", justificativa="Comunidades quilombolas")]
+
+    [instr] = montar_instrumentos_ted(planos, [], [])
+
+    assert instr["quilombolas"] == 1
 
 
 def test_ted_tx_objeto_truncado_em_200_caracteres() -> None:
-    planos = [_plano(1, tx_objeto_plano_acao="x" * 300)]
+    planos = [_plano(1, objeto="x" * 300)]
 
     [instr] = montar_instrumentos_ted(planos, [], [])
 
@@ -174,52 +222,80 @@ def test_ted_tipo_e_instrumento_sempre_ted() -> None:
 
     assert instr["tipo"] == "TED"
     assert instr["instrumento"] == "TED"
-    assert instr["programa_governo"] == ""  # sem linha no resumo
+    assert instr["ano"] == "2024"
+    assert instr["sigla_executor"] == "UFX"
+    assert instr["programa_governo"] == ""  # sem NC
 
 
 # ---------------------------------------------------------------------------
 # Bloco 2 — Convênios: universo e campos (mesmo do I1)
 # ---------------------------------------------------------------------------
 def test_convenio_corte_temporal_2023() -> None:
-    gold = [_convenio(1, assinatura="2022-12-31"), _convenio(2, assinatura="2023-01-01")]
+    fontes = _fontes_convenios([
+        _convenio(1, assinatura="2022-12-31"), _convenio(2, assinatura="2023-01-01"),
+    ])
 
-    instrumentos = montar_instrumentos_convenio(gold)
+    instrumentos = montar_instrumentos_convenio(**fontes)
 
     assert [i["id_instrumento"] for i in instrumentos] == ["2"]
 
 
+def test_convenio_ano_fallback_para_inicio_vigencia() -> None:
+    fontes = _fontes_convenios([_convenio(1, assinatura=None, vigencia="2024-05-10")])
+
+    [instr] = montar_instrumentos_convenio(**fontes)
+
+    assert instr["ano"] == 2024
+
+
 def test_convenio_exclui_cancelado_e_anulado() -> None:
-    gold = [
+    fontes = _fontes_convenios([
         _convenio(1, situacao="Cancelado"),
         _convenio(2, situacao="Convênio Anulado"),
         _convenio(3, situacao="Em execução"),
-    ]
+    ])
 
-    instrumentos = montar_instrumentos_convenio(gold)
+    instrumentos = montar_instrumentos_convenio(**fontes)
 
     assert [i["id_instrumento"] for i in instrumentos] == ["3"]
 
 
-def test_convenio_origem_emenda_quando_ha_parlamentar() -> None:
-    gold = [_convenio(1, parlamentares="Deputado X"), _convenio(2, parlamentares="  ")]
+def test_convenio_origem_emenda_pela_origem_recurso() -> None:
+    fontes = _fontes_convenios([
+        _convenio(1, origem="Emenda"), _convenio(2, origem="Não identificada"),
+    ])
 
-    instrumentos = montar_instrumentos_convenio(gold)
+    instrumentos = montar_instrumentos_convenio(**fontes)
 
-    assert instrumentos[0]["origem"] == "emenda"
-    assert instrumentos[1]["origem"] == "orcamento_regular"
+    assert [i["origem"] for i in instrumentos] == ["emenda", "orcamento_regular"]
 
 
 def test_convenio_sem_programa_governo_decisao_5() -> None:
-    [instr] = montar_instrumentos_convenio([_convenio(1)])
+    [instr] = montar_instrumentos_convenio(**_fontes_convenios([_convenio(1)]))
 
     assert instr["programa_governo"] == ""
     assert instr["tipo"] == "Convenio_Fomento"
+    assert instr["instrumento"] == "CONVENIO"
+    assert instr["sigla_executor"] == "Prefeitura"
+
+
+def test_convenio_membro_nao_identificado_fica_fora() -> None:
+    fontes = _fontes_convenios([_convenio(1)])
+    fontes["convenios"].append({
+        "sk_convenio": -1, "nr_convenio": "-1", "modalidade": "Não identificado",
+        "origem_recurso": "Não identificada", "situacao": "Não identificado",
+        "data_assinatura": "2024-01-01", "data_inicio_vigencia": None, "objeto": None,
+    })
+
+    instrumentos = montar_instrumentos_convenio(**fontes)
+
+    assert [i["id_instrumento"] for i in instrumentos] == ["1"]
 
 
 def test_convenio_classifica_pelo_objeto() -> None:
-    [instr] = montar_instrumentos_convenio(
-        [_convenio(1, objeto="Apoio a povos indígenas")]
-    )
+    fontes = _fontes_convenios([_convenio(1, objeto="Apoio a povos indígenas")])
+
+    [instr] = montar_instrumentos_convenio(**fontes)
 
     assert instr["indigenas"] == 1
     assert instr["leitura_estrita"] == 1
@@ -332,10 +408,10 @@ def test_regressao_montar_grupos_convenio_reproduz_saida_real_da_bi() -> None:
 # ---------------------------------------------------------------------------
 def test_calcular_i3_devolve_as_quatro_saidas() -> None:
     saidas = calcular_i3(
-        planos=[_plano(1, tx_objeto_plano_acao="Apoio a quilombolas")],
-        resumo=[],
-        instrumentos_emendas=[],
-        gold_convenios=[_convenio(1, objeto="Sem menção racial")],
+        planos=[_plano(1, objeto="Apoio a quilombolas")],
+        creditos_teds=[],
+        acoes_teds=[],
+        **_fontes_convenios([_convenio(1, objeto="Sem menção racial")]),
     )
 
     assert set(saidas) == {

@@ -46,6 +46,18 @@ models:
     contratos_dbt:
       +materialized: table
       +schema: contratos_dbt
+    mir_silver:
+      +materialized: table
+      +schema: mir_silver
+    mir_convenios:
+      +materialized: table
+      +schema: mir_convenios
+    mir_teds:
+      +materialized: table
+      +schema: mir_teds
+    mir_emendas:
+      +materialized: table
+      +schema: mir_emendas
 
 
 

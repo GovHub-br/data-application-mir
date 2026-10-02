@@ -53,3 +53,6 @@ Thumbs.db
 /connect.sh
 *.ovpn
 *.p12
+
+# Claude
+/docs

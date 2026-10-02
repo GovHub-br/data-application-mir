@@ -1,0 +1,558 @@
+version: 2
+
+models:
+  - name: vinculo_ne_ted
+    description: >
+      Vinculo de cada nota de empenho (NE) do ppa_tesouro ao plano de acao de TED,
+      no grao da NE. Consolida a cascata de extracao de num_transf de
+      ted_ne_transferencia (metodos validados um a um) e resolve o plano pelo
+      sq_instrumento do TransfereGov; contem apenas NEs com plano de acao
+      encontrado.
+    columns:
+      - name: ne_ccor
+        description: "Numero completo da nota de empenho (UG + gestao + ano + NE + sequencial)."
+        tests:
+          - unique
+          - not_null
+      - name: id_plano_acao
+        description: "Plano de acao de TED (TransfereGov) ao qual a NE pertence."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('planos_acao_ted')
+              field: id_plano_acao
+      - name: num_transf
+        description: "Numero de transferencia extraido da NE e usado para achar o plano."
+      - name: metodo_ted
+        description: "Metodo(s) da cascata que produziram o vinculo, separados por virgula."
+
+  - name: vinculo_ne_convenio
+    description: >
+      Vinculo de cada nota de empenho (NE) do ppa_tesouro a um convenio / termo de
+      fomento do SICONV, no grao da NE. Testa TODAS as linhas da NE (o
+      ne_info_complementar varia entre linhas da mesma NE, em geral com
+      placeholders como NAO SE APLICA), aceita numeros numericos e alfanumericos
+      (formato adotado a partir de 2026, ex.: 7AACWU) e so aceita numeros que
+      existem no cadastro de convenios. Com mais de um candidato, desempata pelo
+      numero de processo. Contem apenas NEs com pelo menos um candidato valido.
+    columns:
+      - name: ne_ccor
+        description: "Numero completo da nota de empenho."
+        tests:
+          - unique
+          - not_null
+      - name: qtd_convenios
+        description: "Quantidade de convenios distintos encontrados para a NE."
+        tests:
+          - not_null
+      - name: nr_convenio
+        description: >
+          Convenio vinculado: o candidato unico, ou o unico candidato cujo
+          nr_processo aparece em alguma linha da NE. Nulo quando a NE e ambigua.
+      - name: fonte_vinculo
+        description: >
+          Campo de onde veio o convenio escolhido, pela prioridade:
+          info_complementar, rotulo (numero depois de "NUM. TRANSFERENCIA" ou
+          "SICONV" na descricao ou na observacao), descricao, observacao. Nulo
+          quando a NE e ambigua.
+        tests:
+          - accepted_values:
+              values: ["info_complementar", "rotulo", "descricao", "observacao"]
+      - name: desempate_processo
+        description: "Verdadeiro quando havia mais de um candidato e o numero de processo decidiu."
+        tests:
+          - not_null
+
+  - name: execucao_ne
+    description: >
+      Nucleo da execucao orcamentaria do MIR: uma linha por linha de empenho do
+      ppa_tesouro (ne_ccor <> '-9'), fonte unica dos valores de empenhado,
+      liquidado, pago e restos a pagar para os tres data marts. Cada linha traz a
+      origem do recurso (Emenda quando a NE esta no tg_emendas) e o instrumento
+      vinculado (TED pela cascata de num_transf, que tem precedencia; senao o
+      convenio escolhido em vinculo_ne_convenio, por candidato unico ou desempate
+      por processo; senao Nao identificado).
+    columns:
+      - name: id_execucao_ne
+        description: "Chave da linha (id_hash do ppa_tesouro)."
+        tests:
+          - unique
+          - not_null
+      - name: ne_ccor
+        description: "Numero completo da nota de empenho."
+        tests:
+          - not_null
+      - name: data_emissao
+        description: >
+          Data de emissao da linha. Para inscricao de restos a pagar (emissao_dia
+          = 000/AAAA) usa 1 de janeiro do ano AAAA.
+        tests:
+          - not_null
+      - name: inscricao_rap
+        description: "Verdadeiro quando a linha e inscricao de restos a pagar (emissao_dia = 000/AAAA)."
+        tests:
+          - not_null
+      - name: reinscricao_rap
+        description: >
+          Verdadeiro na linha de inscricao de restos a pagar de uma NE que ja foi
+          inscrita num exercicio anterior. A reinscricao e o saldo nao pago do mesmo
+          dinheiro (inscricao anterior menos pagamentos e cancelamentos): o RAP
+          inscrito acumulado soma so as linhas com reinscricao_rap = false; o saldo
+          de RAP de um exercicio usa todas as inscricoes daquele ano.
+        tests:
+          - not_null
+      - name: ug_emitente_codigo
+        description: "UG emitente da NE (6 primeiros digitos de ne_ccor)."
+      - name: codigo_emenda
+        description: "Codigo da emenda parlamentar (tg_emendas.autor_emendas_orcamento). Nulo = recurso proprio."
+      - name: origem_recurso
+        description: "Emenda ou Recurso próprio."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Emenda", "Recurso próprio"]
+      - name: sistema_instrumento
+        description: "Sistema do instrumento vinculado: TED (TransfereGov), SICONV ou Não identificado."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["TED", "SICONV", "Não identificado"]
+      - name: nr_instrumento
+        description: >
+          id_plano_acao (TED) ou nr_convenio (SICONV), como texto. Nulo quando Não
+          identificado. Os dois sistemas compartilham a coluna: a chave do
+          instrumento e (sistema_instrumento, nr_instrumento), nunca nr_instrumento
+          sozinho.
+      - name: num_transf
+        description: "Numero de transferencia do TED, quando houver."
+      - name: metodo_vinculo
+        description: >
+          Como o instrumento foi encontrado: 'ted: <metodos da cascata>',
+          'convenio: <fonte>', 'convenio: <fonte> (desempate por processo)',
+          'empenho de origem: ted: ...' ou 'empenho de origem: convenio: ...'
+          (NE da rotina de transferencia de saldo, que herda o instrumento da NE
+          citada em "EMPENHO DE ORIGEM"), 'ambiguo' (varios convenios candidatos
+          sem desempate) ou 'nao_encontrado'.
+        tests:
+          - not_null
+      - name: despesas_empenhadas
+        description: "Valor empenhado na linha."
+      - name: despesas_liquidadas
+        description: "Valor liquidado na linha."
+      - name: despesas_pagas
+        description: "Valor pago na linha."
+      - name: restos_a_pagar_inscritos
+        description: >
+          Restos a pagar inscritos (linhas com inscricao_rap). O saldo nao pago de
+          uma NE reaparece como inscrito no exercicio seguinte; para somar entre
+          exercicios, usar so as linhas com reinscricao_rap = false.
+      - name: restos_a_pagar_pagos
+        description: "Restos a pagar pagos na linha."
+
+  - name: convenio_mir
+    description: >
+      Universo de convenios, termos de fomento, colaboracao e parceria do MIR no
+      SICONV: ug_emitente 810008 ou com NE da UG 810008 vinculada em execucao_ne.
+      Uma linha por instrumento, com os atributos 1:1 da proposta (modalidade,
+      objeto, convenente, municipio) e a origem do recurso derivada das NEs do
+      nucleo.
+    columns:
+      - name: nr_convenio
+        description: "Numero do instrumento no SICONV."
+        tests:
+          - unique
+          - not_null
+      - name: modalidade
+        description: "Modalidade da proposta: CONVENIO, TERMO DE FOMENTO, TERMO DE COLABORACAO ou TERMO DE PARCERIA."
+        tests:
+          - not_null
+      - name: convenente_documento
+        description: "CNPJ do convenente (proponente), so digitos."
+        tests:
+          - not_null
+      - name: cod_municipio_ibge
+        description: "Codigo IBGE do municipio do convenente (7 digitos)."
+      - name: origem_recurso
+        description: >
+          Emenda (alguma NE do instrumento e de emenda), Recurso próprio (tem NE e
+          nenhuma e de emenda) ou Não identificada (sem NE no nucleo; convenios
+          assinados antes do periodo do relatorio do Tesouro).
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Emenda", "Recurso próprio", "Não identificada"]
+      - name: complemento_proprio
+        description: >
+          Verdadeiro quando um instrumento de Emenda tambem recebeu NE de recurso
+          proprio (complemento ate o repasse minimo legal de R$ 200 mil).
+        tests:
+          - not_null
+      - name: ug_responsavel_codigo
+        description: "UGs responsaveis das NEs vinculadas, separadas por virgula e ordenadas pelo codigo."
+      - name: ug_responsavel_nome
+        description: "Nomes das UGs responsaveis, na mesma ordem de ug_responsavel_codigo."
+
+  - name: convenio_movimento_financeiro
+    description: >
+      Movimentos financeiros datados dos convenios do MIR, uma linha por
+      movimento: desembolso federal, contrapartida depositada, desbloqueio,
+      pagamento a fornecedor e pagamento de tributo.
+    columns:
+      - name: id_movimento
+        description: "Chave do movimento: md5 do tipo, do convenio e da chave natural na origem (linha inteira no desbloqueio)."
+        tests:
+          - unique
+          - not_null
+      - name: nr_convenio
+        description: "Convenio do movimento."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('convenio_mir')
+              field: nr_convenio
+      - name: tipo_movimento
+        description: "Tipo do movimento."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Desembolso federal", "Contrapartida depositada", "Desbloqueio", "Pagamento a fornecedor", "Pagamento de tributo"]
+      - name: data_movimento
+        description: "Data do movimento. Nula em pagamentos de tributo sem data na origem."
+      - name: valor
+        description: "Valor do movimento."
+        tests:
+          - not_null
+      - name: valor_bloqueado
+        description: "Valor que permanece bloqueado apos o desbloqueio. Preenchido so em desbloqueio."
+      - name: fornecedor_documento
+        description: >
+          CNPJ do fornecedor (14 digitos) ou CPF mascarado como o SICONV publica
+          (***12345***). Preenchido so em pagamento a fornecedor.
+      - name: fornecedor_tipo
+        description: "PJ (CNPJ), PF (CPF mascarado) ou nulo quando o documento nao tem formato valido."
+        tests:
+          - accepted_values:
+              values: ["PF", "PJ"]
+      - name: fornecedor_chave
+        description: >
+          Chave do fornecedor: o CNPJ para PJ; documento mascarado + '|' + nome
+          para PF (os digitos visiveis colidem entre pessoas). Nula sem tipo.
+      - name: documento_referencia
+        description: "Documento de origem: numero SIAFI do desembolso, OB do desbloqueio ou DL do pagamento."
+
+  - name: convenio_cronograma
+    description: >
+      Parcelas previstas no cronograma de desembolso dos convenios do MIR, uma
+      linha por convenio x parcela x responsavel.
+    columns:
+      - name: id_parcela
+        description: "Chave da parcela: md5 de convenio, numero da parcela e responsavel."
+        tests:
+          - unique
+          - not_null
+      - name: nr_convenio
+        description: "Convenio da parcela."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('convenio_mir')
+              field: nr_convenio
+      - name: responsavel
+        description: "Responsavel pela parcela: Concedente, Convenente ou Rendimento de Aplicação."
+        tests:
+          - not_null
+      - name: data_prevista
+        description: "Primeiro dia do mes previsto para a parcela."
+        tests:
+          - not_null
+      - name: valor_previsto
+        description: "Valor previsto da parcela."
+        tests:
+          - not_null
+
+  - name: convenio_evento
+    description: >
+      Eventos administrativos datados dos convenios do MIR, uma linha por evento:
+      mudanca de situacao, termo aditivo, prorrogacao de oficio, solicitacao de
+      alteracao e solicitacao de uso de rendimento de aplicacao.
+    columns:
+      - name: id_evento
+        description: "Chave do evento: md5 do tipo, do convenio e da chave natural na origem."
+        tests:
+          - unique
+          - not_null
+      - name: nr_convenio
+        description: "Convenio do evento."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('convenio_mir')
+              field: nr_convenio
+      - name: tipo_evento
+        description: "Tipo do evento."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Mudança de situação", "Termo aditivo", "Prorrogação de ofício", "Solicitação de alteração", "Solicitação de rendimento"]
+      - name: data_evento
+        description: "Data do evento (situacao, assinatura do aditivo ou da prorrogacao, ou da solicitacao)."
+      - name: situacao
+        description: "Situacao informada pelo evento (nova situacao do convenio, situacao da prorrogacao ou da solicitacao)."
+      - name: valor
+        description: "Valor global do aditivo ou valor solicitado de rendimento."
+      - name: valor_aprovado
+        description: "Valor aprovado da solicitacao de rendimento."
+      - name: dias
+        description: "Dias na situacao (mudanca de situacao) ou dias prorrogados."
+      - name: data_fim_nova
+        description: "Nova data de fim de vigencia (termo aditivo ou prorrogacao)."
+
+  - name: convenio_contagens
+    description: >
+      Contagens de metas fisicas e licitacoes por convenio do MIR, uma linha por
+      convenio (zero quando nao ha registro), com as datas que o gold ou o BI usa
+      para calcular marcacoes relativas a data de referencia (meta expirada,
+      dias sem desembolso).
+    columns:
+      - name: nr_convenio
+        description: "Convenio."
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('convenio_mir')
+              field: nr_convenio
+      - name: data_fim_primeira_meta
+        description: "Menor data de fim entre as metas do convenio. Meta expirada = esta data anterior a data de referencia."
+      - name: data_ultimo_desembolso
+        description: "Data do ultimo desembolso informada pelo SICONV (dt_ult_desembolso). Dias sem desembolso = data de referencia menos esta data."
+      - name: qtd_empenhos_siconv
+        description: "Quantidade de empenhos registrados no SICONV para o convenio."
+      - name: valor_empenhado_siconv
+        description: >
+          Soma dos empenhos registrados no SICONV (historico completo). O nucleo
+          execucao_ne so cobre os exercicios do relatorio do Tesouro.
+
+  - name: emenda_ne
+    description: >
+      NEs de emenda, uma linha por NE: a emenda (tg_emendas) e o parlamentar
+      autor com o partido vigente na data de emissao da NE, pelas prioridades do
+      antigo emendas_partidos (1 = filiacao vigente; 2 = nome encontrado fora do
+      periodo, filiacao mais proxima; 3 = nome nao encontrado).
+    columns:
+      - name: ne_ccor
+        description: "Numero completo da nota de empenho."
+        tests:
+          - unique
+          - not_null
+      - name: codigo_emenda
+        description: "Codigo da emenda (tg_emendas.autor_emendas_orcamento): ano (4) + autor (4) + numero (4)."
+        tests:
+          - not_null
+      - name: emenda_descricao
+        description: "Texto do autor e numero da emenda, como vem do Tesouro (ex.: FERNANDO MINEIRO / EMENDA 13)."
+      - name: autor_nome
+        description: "Nome do autor extraido da descricao."
+      - name: data_emissao_ne
+        description: "Primeira data de emissao da NE que nao e inscricao de restos a pagar."
+        tests:
+          - not_null
+      - name: id_parlamentar
+        description: "Parlamentar em parlamentares_historico. Nulo quando o nome nao foi encontrado."
+      - name: cargo_parlamentar
+        description: "Deputado ou Senador."
+      - name: sigla_partido
+        description: "Partido do parlamentar na data de emissao da NE."
+      - name: prioridade_match
+        description: "1 = filiacao vigente na data; 2 = filiacao mais proxima; 3 = nome nao encontrado."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3]
+              quote: false
+      - name: localizador_gasto
+        description: "Localizador do gasto da NE (tg_emendas); um por NE."
+        tests:
+          - not_null
+      - name: localizador_descricao
+        description: "Descricao do localizador."
+      - name: regiao
+        description: "Regiao do localizador (ou NACIONAL)."
+      - name: uf
+        description: "UF do localizador (ou NACIONAL)."
+      - name: uf_nome
+        description: "Nome da UF do localizador."
+
+  - name: ted_ne_transferencia
+    description: >
+      Cascata de extracao do numero de transferencia (num_transf) e da NC das
+      linhas de empenho do ppa_tesouro, metodo a metodo (ver o comentario do
+      modelo). Movida de empenhos_por_plano_acao na etapa 3, sem mudar o
+      resultado. Contem so as linhas com num_transf ou NC encontrados, alem das
+      linhas marcadas como sem vinculo.
+    columns:
+      - name: ne_ccor
+        description: "Numero completo da nota de empenho."
+        tests:
+          - not_null
+      - name: num_transf
+        description: "Numero da transferencia extraido (sq_instrumento do plano no TransfereGov)."
+      - name: metodo
+        description: "Metodo da cascata que encontrou o num_transf ou a NC."
+
+  - name: ted_plano_acao
+    description: >
+      Planos de acao de TED do MIR (TransfereGov), uma linha por plano, com o
+      programa achatado e a origem do recurso derivada das NEs do nucleo.
+      num_transf (sq_instrumento) liga NC, PF e NE ao plano.
+    columns:
+      - name: id_plano_acao
+        tests:
+          - unique
+          - not_null
+      - name: num_transf
+        description: "Numero da transferencia no SIAFI (sq_instrumento). Nulo em planos ainda nao firmados."
+      - name: origem_recurso
+        description: "Emenda, Recurso próprio ou Não identificada (plano sem NE vinculada)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Emenda", "Recurso próprio", "Não identificada"]
+      - name: complemento_proprio
+        tests:
+          - not_null
+
+  - name: ted_programacao_pf
+    description: >
+      Programacao financeira dos TEDs, uma linha por linha do relatorio do
+      Tesouro. Plano pela inscricao da PF (= sq_instrumento).
+    columns:
+      - name: id_movimento
+        tests:
+          - unique
+          - not_null
+      - name: tipo
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Transferência", "Devolução"]
+      - name: data_movimento
+        tests:
+          - not_null
+      - name: id_plano_acao
+        description: "Plano da PF. Nulo quando a inscricao nao e de um plano do TransfereGov."
+        tests:
+          - relationships:
+              to: ref('ted_plano_acao')
+              field: id_plano_acao
+      - name: ug_executora_codigo
+        description: "Lado da PF que nao e o MIR: a unidade que executa o TED."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('ted_unidade_executora')
+              field: ug_executora_codigo
+
+  - name: ted_credito_nc
+    description: >
+      Credito descentralizado (NC) dos TEDs, uma linha por movimento (so o lado
+      ORIGEM da fonte de 2026). So NCs ligadas a um TED: pelo campo de
+      transferencia, pelo numero no texto ou pelo processo SEI.
+    columns:
+      - name: id_movimento
+        tests:
+          - unique
+          - not_null
+      - name: tipo
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Recebido", "Devolvido", "Anulado"]
+      - name: data_movimento
+        description: "Data da NC; nas anteriores a 2026 (sem data na fonte), 1 de janeiro do ano do numero da NC."
+        tests:
+          - not_null
+      - name: data_estimada
+        tests:
+          - not_null
+      - name: num_transf
+        tests:
+          - not_null
+      - name: metodo_vinculo
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["campo", "texto", "processo"]
+      - name: id_plano_acao
+        description: "Plano do TED. Nulo quando o numero nao e de um plano do TransfereGov."
+        tests:
+          - relationships:
+              to: ref('ted_plano_acao')
+              field: id_plano_acao
+      - name: ug_executora_codigo
+        tests:
+          - not_null
+          - relationships:
+              to: ref('ted_unidade_executora')
+              field: ug_executora_codigo
+
+  - name: ted_unidade_executora
+    description: "UGs que executam os TEDs (lado que nao e o MIR nas NCs e PFs)."
+    columns:
+      - name: ug_executora_codigo
+        tests:
+          - unique
+          - not_null
+      - name: ug_executora_nome
+        tests:
+          - not_null
+
+  - name: ted_plano_instrumento
+    description: >
+      Ponte unica entre o SIAFI e o TransfereGov: numero da transferencia
+      (sq_instrumento) de cada plano de acao de TED, pela carga mais recente do
+      plano. Lida por todos os modelos de TED.
+    columns:
+      - name: id_plano_acao
+        tests:
+          - unique
+          - not_null
+      - name: num_transf
+        description: "sq_instrumento do plano. Nulo em planos ainda nao firmados."
+        tests:
+          - unique
+
+  - name: emenda_dotacao
+    description: >
+      Dotacao das emendas, uma linha por movimento do relatorio do Tesouro
+      (lancamentos positivos e negativos; a soma e a dotacao do periodo), com o
+      parlamentar autor vigente na data do movimento.
+    columns:
+      - name: id_movimento
+        tests:
+          - unique
+          - not_null
+      - name: codigo_emenda
+        tests:
+          - not_null
+      - name: data_movimento
+        tests:
+          - not_null
+      - name: prioridade_match
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3]
+              quote: false
+
+  - name: emenda_instrumento
+    description: >
+      Instrumentos que executam as emendas (registrados nas NEs de emenda):
+      tipo (Convênio, Fomento, Colaboração, Parceria, TED, Convênio de outro
+      órgão), objeto, situacao e executor.
+    columns:
+      - name: tipo_instrumento
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Convênio", "Fomento", "Colaboração", "Parceria", "TED", "Convênio de outro órgão"]
