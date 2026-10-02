@@ -196,9 +196,10 @@ models:
   - name: agenda_filtrado_mir
     description: >
       Camada silver do PPA/SIOP — agendas transversais (ver bronze `agenda`),
-      restritas às agendas vinculadas a pelo menos um programa do MIR de forma
-      indireta, via `agenda_programa_filtrado_mir` (chave `codigo` = `codigo_agenda` +
-      `ano_ppa`).
+      restritas às agendas vinculadas ao MIR em qualquer nível do PPA: une os
+      `codigo_agenda` de todas as tabelas `agenda_*_filtrado_mir` (programa,
+      objetivos, entregas, metas, indicadores, desagregações, regionalizações e
+      medidas institucionais). Chave `codigo` = `codigo_agenda` + `ano_ppa`.
     meta:
       tags:
         - silver
