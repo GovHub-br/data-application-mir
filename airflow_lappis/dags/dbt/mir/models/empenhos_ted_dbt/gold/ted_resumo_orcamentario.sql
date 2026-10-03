@@ -16,7 +16,8 @@ with
                     partition by pa.id_plano_acao
                     order by pa.dt_ingest desc
                 ) as rn
-            from {{ ref("planos_acao_ted") }} pa
+            -- portal do sistema TED, com a API de dados abertos como reserva
+            from {{ ref("ted_plano_acao_consolidado") }} pa
         ) pa_filtrado
         where rn = 1
     ),
@@ -66,15 +67,18 @@ with
     valores_orcamentos_tb as (
         select
             ltrim(trim(cast(nc_transferencia as text)), '0') as num_transf_canon,
+            -- valor_celula e sempre positivo; o sentido vem do tipo da NC. A
+            -- anulacao desfaz parte da descentralizacao e abate o recebido.
             sum(
                 case
-                    when nc_evento in ('300301', '300307') then 0
-                    else valor_celula
+                    when nc_evento_descricao ~* '^DESC' then valor_celula
+                    when nc_evento_descricao ~* '^ANU' then -valor_celula
+                    else 0
                 end
             ) as orcamento_recebido,
             sum(
                 case
-                    when nc_evento in ('300301', '300307') then valor_celula
+                    when nc_evento_descricao ~* '^DEV' then valor_celula
                     else 0
                 end
             ) as orcamento_devolvido,

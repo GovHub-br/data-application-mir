@@ -35,7 +35,8 @@ with
 					partition by pa.id_plano_acao
 					order by pa.dt_ingest desc
 				) as rn
-			from {{ ref("planos_acao_ted") }} pa
+			-- portal do sistema TED, com a API de dados abertos como reserva
+			from {{ ref("ted_plano_acao_consolidado") }} pa
 		) pa_filtrado
 		where rn = 1
 	)

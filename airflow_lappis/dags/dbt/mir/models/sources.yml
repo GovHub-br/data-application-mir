@@ -42,15 +42,16 @@ sources:
       - name: planos_acao
       - name: programacao_financeira
       - name: notas_de_credito
+      - name: planos_acao_portal
+      - name: teds_gov_br
 
   - name: siafi
     schema: siafi
     tables:
-        - name: ne_tesouro
         - name: ne_tesouro_emendas
         - name: ne_tesouro_ppa
-        - name: nc_tesouro_pos__2026
-        - name: nc_tesouro_pre_2026
+        - name: nc_tesouro_ate_2025
+        - name: nc_tesouro_desde_2026
         - name: pf_tesouro
         - name: programacao_acao_ptres
 

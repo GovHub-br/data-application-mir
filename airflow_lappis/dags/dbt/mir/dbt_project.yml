@@ -46,6 +46,9 @@ models:
     contratos_dbt:
       +materialized: table
       +schema: contratos_dbt
+    mir_silver:
+      +materialized: table
+      +schema: mir_silver
 
 
 

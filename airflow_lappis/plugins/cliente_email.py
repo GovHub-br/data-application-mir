@@ -231,22 +231,37 @@ def _fetch_sorted_attachments(
 
 
 def format_csv(
-    csv_data: str, column_mapping: Optional[Dict[int, str]], skiprows: int
+    csv_data: str,
+    column_mapping: Optional[Dict[int, str]],
+    skiprows: int,
+    sep: str = ",",
+    dtype: Optional[Any] = None,
 ) -> pd.DataFrame:
-    """Formata um arquivo CSV conforme mapeamento de colunas."""
+    """Formata um arquivo CSV conforme mapeamento de colunas.
+
+    dtype=str preserva codigos com zero a esquerda (ex.: programa '0032').
+    """
     if column_mapping:
-        df = pd.read_csv(io.StringIO(csv_data), skiprows=skiprows, header=None)
+        df = pd.read_csv(
+            io.StringIO(csv_data), skiprows=skiprows, header=None, sep=sep, dtype=dtype
+        )
         column_names: List[str] = [
             column_mapping.get(i, f"col_{i}") for i in range(len(df.columns))
         ]
         df.columns = pd.Index(column_names)
     else:
-        df = pd.read_csv(io.StringIO(csv_data), skiprows=skiprows, header=0)
+        df = pd.read_csv(
+            io.StringIO(csv_data), skiprows=skiprows, header=0, sep=sep, dtype=dtype
+        )
     return df
 
 
 def extract_csv_from_zip(
-    zip_payload: bytes, column_mapping: dict, skiprows: int = 0
+    zip_payload: bytes,
+    column_mapping: dict,
+    skiprows: int = 0,
+    sep: str = ",",
+    dtype: Optional[Any] = None,
 ) -> Optional[pd.DataFrame]:
     """Extrai e formata o primeiro arquivo CSV encontrado em um ZIP."""
     with zipfile.ZipFile(io.BytesIO(zip_payload)) as zip_file:
@@ -264,7 +279,9 @@ def extract_csv_from_zip(
                     if not decoded_data.strip():
                         logging.warning("CSV vazio no anexo ZIP: %s", file_name)
                         continue
-                    return format_csv(decoded_data, column_mapping, skiprows)
+                    return format_csv(
+                        decoded_data, column_mapping, skiprows, sep=sep, dtype=dtype
+                    )
                 except EmptyDataError:
                     logging.warning(
                         "CSV sem colunas apos skiprows=%s no arquivo: %s",

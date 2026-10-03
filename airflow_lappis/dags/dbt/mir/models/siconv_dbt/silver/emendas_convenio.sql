@@ -9,9 +9,10 @@ with
         select *
         from {{ ref("convenios_consolidados") }}
     ),
+    -- portal do sistema TED, com a API de dados abertos como reserva
     planos_acao as (
         select *
-        from {{ ref("planos_acao_ted") }}
+        from {{ ref("ted_plano_acao_consolidado") }}
     )
 
 select
