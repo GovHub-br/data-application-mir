@@ -30,49 +30,7 @@
     | list %}
 {% set narrow_passthrough = narrow_columns + ['ne', 'orgao_id'] %}
 
-{% set methods_yaml %}
-- label: "metodo 1"
-  field: ne_ccor_descricao
-  group: 2
-  regex: '(FERENCIA|TED|CRICAO|TRANSF.|TRANF.|TRANSFERENCIA)[\s:.-]*(?<![0-9])([0-9]{6}|1\w{5}|[0-9]{3}\.[0-9]{3})(?![0-9])'
-- label: "metodo 2"
-  field: ne_ccor_descricao
-  group: 2
-  regex: '.*(?:NOTA DE (TRANSFERENCIA|TRANFERENCIA|CREDITO))[:.[:space:]-]*((?=[A-Za-z0-9]*[0-9])[A-Za-z0-9]{6,})'
-- label: "metodo 3"
-  field: ne_ccor_descricao
-  group: 1
-  regex: '.*(?:(?:TED(?:[[:space:]]*[-.N∞øº°∅()]*))[[:space:]]*|(?:SIAFI[[:space:]]+N∫))[[:space:].-]*(?<![0-9])(([0-9]{6})|(1[A-Za-z0-9]{5}))(?![0-9])'
-- label: "metodo 4"
-  field: fonte_recursos_detalhada_descricao
-  group: 1
-  regex: 'TED(?::)?(?:[[:space:]]+[A-Z/]+)?[[:space:]:-]*N?[∞∫ºo]?[[:space:]]*[0-9/]*[[:space:]:;,-]*[ø-]?[[:space:]]*([0-9]{6}|1[A-Z0-9]{5})'
-- label: "metodo 5"
-  field: ne_info_complementar
-  group: 1
-  regex: '^([0-9]{6}|1[A-Za-z0-9]{5})$'
-- label: "metodo 10"
-  field: doc_observacao
-  group: 2
-  regex: '(FERENCIA|TED|CRICAO|TRANSF.|TRANF.|TRANSFERENCIA)[\s:.-]*(?<![0-9])([0-9]{6}|1\w{5}|[0-9]{3}\.[0-9]{3})(?![0-9])'
-- label: "metodo 11"
-  field: ne_ccor_descricao
-  group: 1
-  regex: '\mNT[.: ]*(?<![0-9])([0-9]{6}|1[A-Za-z0-9]{5})(?![0-9])'
-- label: "metodo 14"
-  field: ne_ccor_descricao
-  group: 1
-  regex: 'TRANSFEREGOV\s*(?:N[∞∫øºo°.]{0,2}\s*)?(?<![0-9])([0-9]{6}|1[A-Za-z0-9]{5})(?![0-9])'
-- label: "metodo 15"
-  field: fonte_recursos_detalhada_descricao
-  group: 1
-  regex: 'TRANSFEREGOV\s*(?:N[∞∫øºo°.]{0,2}\s*)?(?<![0-9])([0-9]{6}|1[A-Za-z0-9]{5})(?![0-9])'
-- label: "metodo 16"
-  field: ne_ccor_descricao
-  group: 1
-  regex: 'TED[^()]{0,30}?\((?:SIAFI\s+)?(?<![0-9])([0-9]{6}|1[A-Za-z0-9]{5})(?![0-9])\)'
-{% endset %}
-{% set num_transf_methods = fromyaml(methods_yaml) %}
+{% set num_transf_methods = fromyaml(ted_num_transf_metodos()) %}
 
 with
 base as (
@@ -430,11 +388,149 @@ SELECT
     FROM union_metodo_7_8 ert
     LEFT JOIN ids_agregados_num_ted_normalizado r USING (orgao_id,numero_ted_normalizado)
 ),
-empenhos_restantes_metodo_9 as (
-    select * from empenhos_orgaos_metodo_9 where (nc != '') or (num_transf is not null)
-),
 planos_de_acao as (
     select * from {{ ref("num_transf_n_plano_acao") }} where plano_acao is not null
+),
+
+-- Metodo pagina gov.br, so para as NEs que a cascata nao ligou a um plano: o
+-- numero/ano do TED na numeracao do MIR ("TED Nº 16/2023") resolvido pela
+-- pagina do gov.br (ted_gov_br). Parceiros tambem numeram os proprios TEDs
+-- ("TED 21/2023-ENAP"), entao a NE so e ligada se a UG emitente recebeu credito
+-- (NC) daquele plano, e se os numeros que passam nessa regra levarem a um unico
+-- plano.
+ne_com_plano as (
+    select distinct er.ne_ccor
+    from empenhos_orgaos_metodo_9 er
+    inner join planos_de_acao pa on er.num_transf = cast(pa.num_transf as text)
+),
+
+-- Numero/ano que a pagina liga a um unico plano (a pagina as vezes repete o
+-- numero para TEDs diferentes, ex.: 12/2024)
+pagina_gov_br as (
+    select
+        numero_ted, max(id_plano_acao) as id_plano_acao, max(num_transf) as num_transf
+    from {{ ref("ted_gov_br") }}
+    group by numero_ted
+    having count(*) = 1 and count(id_plano_acao) = 1
+),
+
+citacoes_gov_br as (
+    select distinct
+        e.ne_ccor,
+        lpad((m[1]::integer)::text, 2, '0')
+        || '/'
+        || case when length(m[2]) = 2 then '20' || m[2] else m[2] end as numero_ted
+    from
+        (
+            select distinct
+                ne_ccor,
+                concat_ws(
+                    ' | ', ne_ccor_descricao, doc_observacao, ne_info_complementar
+                ) as texto
+            from {{ ref("ppa_tesouro") }}
+            where ne_ccor <> '-9'
+        ) as e
+    cross join lateral regexp_matches(e.texto, {{ regex_numero_ted() }}, 'gi') as m
+    where m[1]::integer > 0 and e.ne_ccor not in (select ne_ccor from ne_com_plano)
+),
+
+-- UG que recebeu credito de cada plano: o lado da NC que nao e o MIR
+ug_credito as (
+    select distinct
+        id_plano_acao,
+        case
+            when relatorio = 'enviadas' then favorecido_doc else ug_emitente
+        end as ug_executora
+    from {{ ref("nc_plano_acao") }}
+    where id_plano_acao is not null
+),
+
+vinculo_gov_br as (
+    select
+        c.ne_ccor,
+        max(p.num_transf) as num_transf,
+        'pagina gov.br: TED ' || string_agg(distinct c.numero_ted, ', ') as metodo
+    from citacoes_gov_br c
+    inner join pagina_gov_br p using (numero_ted)
+    inner join
+        ug_credito u
+        on u.id_plano_acao = p.id_plano_acao
+        and u.ug_executora = left(c.ne_ccor, 6)
+    group by c.ne_ccor
+    having count(distinct p.id_plano_acao) = 1
+),
+
+empenhos_orgaos_metodo_gov_br as (
+SELECT
+    {{ star_except(narrow_passthrough, ['ne_ccor']) }}, ert.ne_ccor,
+    ert.nc,
+    COALESCE(g.num_transf, ert.num_transf) AS num_transf,
+    COALESCE(g.metodo, ert.metodo) AS metodo,
+    complemento_ted, num_ted, numero_base, ano_raw, ano_normalizado, ano_oficial,
+    numero_instrumento, ert.tipo_instrumento
+    FROM empenhos_orgaos_metodo_9 ert
+    LEFT JOIN vinculo_gov_br g USING (ne_ccor)
+),
+
+-- Metodo empenho de origem, so para as NEs ainda sem plano: a NE gerada pela
+-- rotina de transferencia de saldo (NSSALDO) nao traz o numero do TED, mas cita
+-- o empenho de origem ("EMPENHO DE ORIGEM: 810008/2024NE000092"). A NE de
+-- origem e achada pela UG (6 primeiros caracteres) e pelo ano + NE + sequencial
+-- (12 ultimos); referencia que casa com mais de uma NE nao herda nada. A
+-- heranca vai so um nivel: a origem precisa ter plano pelos metodos acima.
+ne_com_plano_proprio as (
+    select distinct er.ne_ccor, er.num_transf
+    from empenhos_orgaos_metodo_gov_br er
+    inner join planos_de_acao pa on er.num_transf = cast(pa.num_transf as text)
+),
+
+referencia_origem as (
+    select distinct e.ne_ccor, m[1] as ug_origem, m[2] as sufixo_origem
+    from {{ ref("ppa_tesouro") }} e
+    cross join
+        lateral regexp_match(e.ne_ccor_descricao, {{ regex_empenho_origem() }}, 'i') as m
+    where
+        e.ne_ccor <> '-9'
+        and m is not null
+        and e.ne_ccor not in (select ne_ccor from ne_com_plano_proprio)
+),
+
+empenho_origem as (
+    select r.ne_ccor, min(o.ne_ccor) as ne_origem
+    from referencia_origem r
+    inner join
+        (select distinct ne_ccor from {{ ref("ppa_tesouro") }} where ne_ccor <> '-9') o
+        on left(o.ne_ccor, 6) = r.ug_origem
+        and right(o.ne_ccor, 12) = r.sufixo_origem
+        and o.ne_ccor <> r.ne_ccor
+    group by r.ne_ccor
+    having count(distinct o.ne_ccor) = 1
+),
+
+vinculo_empenho_origem as (
+    select
+        eo.ne_ccor,
+        max(p.num_transf) as num_transf,
+        'empenho de origem: ' || max(eo.ne_origem) as metodo
+    from empenho_origem eo
+    inner join ne_com_plano_proprio p on p.ne_ccor = eo.ne_origem
+    group by eo.ne_ccor
+    having count(distinct p.num_transf) = 1
+),
+
+empenhos_orgaos_metodo_origem as (
+SELECT
+    {{ star_except(narrow_passthrough, ['ne_ccor']) }}, ert.ne_ccor,
+    ert.nc,
+    COALESCE(o.num_transf, ert.num_transf) AS num_transf,
+    COALESCE(o.metodo, ert.metodo) AS metodo,
+    complemento_ted, num_ted, numero_base, ano_raw, ano_normalizado, ano_oficial,
+    numero_instrumento, ert.tipo_instrumento
+    FROM empenhos_orgaos_metodo_gov_br ert
+    LEFT JOIN vinculo_empenho_origem o USING (ne_ccor)
+),
+empenhos_restantes_metodo_9 as (
+    select * from empenhos_orgaos_metodo_origem where (nc != '') or (num_transf is not null)
 ),
 result_table as (
     select distinct er.*, pa.plano_acao::integer as plano_acao, pa.num_transf as num_transf_pa

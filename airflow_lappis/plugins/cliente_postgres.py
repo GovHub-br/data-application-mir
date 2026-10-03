@@ -181,6 +181,53 @@ class ClientPostgresDB:
                 _execute(new_conn)
                 new_conn.commit()
 
+    def replace_rows(
+        self,
+        data: List[Dict[str, Any]],
+        table_name: str,
+        delete_where: str,
+        delete_params: Tuple[Any, ...],
+        schema: str = "raw",
+    ) -> int:
+        """
+        Substitui um recorte da tabela: apaga as linhas que casam com
+        delete_where e insere data, numa unica transacao. Para fontes que mandam
+        o retrato completo do recorte a cada carga, em que linhas identicas sao
+        registros distintos e nao podem ser deduplicadas por conteudo.
+        Retorna o numero de linhas apagadas.
+        """
+        if not data:
+            logging.warning(
+                f"[cliente_postgres.py] No data to replace in {schema}.{table_name}"
+            )
+            return 0
+
+        self._validate_identifiers(schema, table_name)
+        column_probe = {col: None for col in self._flatten_data(data)[0].keys()}
+
+        with self._connect() as conn:
+            self.create_table_if_not_exists(
+                column_probe, table_name, schema=schema, conn=conn
+            )
+            self.alter_table(column_probe, table_name, schema=schema, conn=conn)
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    f"DELETE FROM {schema}.{table_name} WHERE {delete_where}",
+                    delete_params,
+                )
+                deleted = cursor.rowcount
+            self.insert_data(data, table_name, schema=schema, conn=conn)
+            conn.commit()
+
+        logging.info(
+            "[cliente_postgres.py] %s.%s: %s linhas apagadas, %s inseridas",
+            schema,
+            table_name,
+            deleted,
+            len(data),
+        )
+        return deleted
+
     def execute_query(self, query: str) -> List[Tuple[Any, ...]]:
         logging.info(f"[cliente_postgres.py] Executing query: {query}")
         with self._connect() as conn:

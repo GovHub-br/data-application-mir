@@ -14,8 +14,8 @@ models:
          composta (nc, ug_emitente). Quando a mesma Nota de Crédito aparece nos dois sistemas,
          o id_plano_acao do TransfereGov é associado ao nc_transferencia do SIAFI.
 
-      2. Via sq_instrumento: lê planos_acao_ted diretamente, onde o campo sq_instrumento
-         já contém o num_transf. Captura planos que ainda não têm NC emitida ou cujas NCs
+      2. Via sq_instrumento: lê ted_plano_acao_consolidado (portal do sistema TED, com a
+         API de dados abertos como reserva), onde o campo sq_instrumento já contém o num_transf. Captura planos que ainda não têm NC emitida ou cujas NCs
          não cruzam pelo caminho 1.
 
       Quando o mesmo num_transf aparece nos dois caminhos com plano_acao distintos,

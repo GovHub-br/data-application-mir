@@ -52,16 +52,11 @@ select
 	t.movimento_liquido_moeda_origem,
 	t.dt_ingest,
 	t.descricao,
-	t.nc_plano_interno_descricao2,
-	t.nc_evento,
-	t.nc_item_detalhamento,
 	t.emissao_dia,
-	t.emissao_mes,
 	t.emissao_ano,
-	t.ro,
 	t.dc,
-	t.total_lista,
-	t.esfera_orcamentaria_codigo,
-	t.esfera_orcamentaria_nome
+	t.relatorio,
+	t.ug_emitente,
+	t.ug_emitente_descricao
 from nc_tesouro t
 left join programa_por_ptres pp on trim(pp.ptres) = trim(t.ptres)

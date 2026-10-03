@@ -69,18 +69,19 @@ Sem configuração → busca apenas o dia atual (agendamento normal).
 ## DAGs que usam este filtro
 
 - `email_tesouro_ppa_ingest_dag` (referência)
-- `email_tesouro_teds_notas_empenhadas_ingest_dag`
 - `email_tesouro_emendas_ingest`
 - `email_programacoes_financeiras_mir_ingest`
 - `email_programacao_acao_por_PTRES_ingest`
-- `email_notas_credito_ingest_mir_pos_2026`
-- `email_notas_credito_ingest_mir_ate_2025` (aplica o intervalo às duas caixas:
-  notas enviadas e recebidas)
+- `email_notas_credito_ingest_mir_pos_2026` e
+  `email_notas_credito_ingest_mir_ate_2025` (aplicam o intervalo às duas
+  caixas: notas enviadas e recebidas)
 
 > **Nota sobre backfills grandes:** as DAGs baseadas em
-> `fetch_and_process_email` (emendas, PFs, notas de crédito, programação por
-> PTRES) concatenam os CSVs de todos os e-mails do intervalo em um único
-> resultado antes de inserir. Para janelas muito largas, prefira dividir o
-> backfill em intervalos menores. As DAGs que ingerem anexo a anexo
-> (`email_tesouro_ppa_ingest_dag`, `email_tesouro_teds_notas_empenhadas_ingest_dag`)
-> processam e liberam cada ZIP individualmente.
+> `fetch_and_process_email` (emendas, PFs, programação por PTRES) concatenam
+> os CSVs de todos os e-mails do intervalo em um único resultado antes de
+> inserir. Para janelas muito largas, prefira dividir o backfill em intervalos
+> menores. As DAGs que ingerem anexo a anexo (`email_tesouro_ppa_ingest_dag` e
+> as de notas de crédito) processam e liberam cada ZIP individualmente.
+>
+> As DAGs de notas de crédito substituem, a cada anexo, as linhas do mesmo
+> relatório e ano: o anexo mais recente do intervalo prevalece.

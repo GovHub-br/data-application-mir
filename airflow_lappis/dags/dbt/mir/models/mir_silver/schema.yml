@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: ted_plano_acao_consolidado
+    description: >
+      Planos de acao de TED do MIR, um por plano, juntando a API de dados abertos
+      (planos_acao_ted) e o portal do sistema TED (planos_acao_portal_ted), com
+      preferencia ao portal: em cada campo vale o valor do portal e a API so
+      preenche o que o portal trouxer nulo. O portal mostra antes a situacao e o
+      numero do instrumento e inclui planos que os dados abertos ainda nao
+      publicaram. Mesmas colunas de planos_acao_ted, mais a UG das unidades (so
+      o portal tem) e a fonte de cada plano.
+    columns:
+      - name: id_plano_acao
+        tests:
+          - unique
+          - not_null
+      - name: sq_instrumento
+        description: "Numero da transferencia (TED). Nulo em planos ainda nao firmados."
+        tests:
+          - unique
+      - name: cd_ug_unidade_descentralizada
+        description: "UG da unidade descentralizada (so no portal)."
+      - name: fonte
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["portal e dados abertos", "só portal", "só dados abertos"]
+
+  - name: ted_gov_br
+    description: >
+      TEDs das páginas de transferências voluntárias do gov.br ligados ao plano
+      de ação: a ponte entre o número/ano do TED (como as NEs citam, ex.:
+      "TED 05/2026") e o número da transferência. Como a página tem erros de
+      digitação, o plano é achado pelo número do título, depois por outro número
+      citado no bloco e, por fim, pelo único plano do mesmo ano com o mesmo valor.
+    columns:
+      - name: id_ted
+        description: "Página + ordem do TED na página (a página às vezes repete o número/ano)."
+        tests:
+          - unique
+          - not_null
+      - name: id_plano_acao
+        description: "Plano de ação ligado. Nulo quando o Transferegov não tem o TED."
+        tests:
+          - unique
+      - name: num_transf
+        description: "sq_instrumento do plano ligado (o número correto da transferência)."
+      - name: num_transf_pagina
+        description: "Número do Transferegov como está no título do TED na página."
+      - name: metodo_vinculo
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["numero da pagina", "numero alternativo", "valor e ano", "sem plano"]
+      - name: valor_confere
+        description: >
+          Se o valor citado na página é o valor do plano. Falso nem sempre é erro
+          (aditivo de valor), mas é o que conferir (ex.: título com o número de
+          outro TED). Nulo sem plano ou sem valor na página.

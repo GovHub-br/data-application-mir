@@ -3,8 +3,10 @@ version: 2
 models:
   - name: empenhos_tesouro_ted
     description: >
-      Tabela da camada bronze contendo informações detalhadas sobre os empenhos do Tesouro Gerencial 
-      vinculados a emendas parlamentares e TEDs. 
+      Tabela da camada bronze contendo informações detalhadas sobre os empenhos do Tesouro Gerencial
+      vinculados a emendas parlamentares e TEDs. Lê de siafi.ne_tesouro_ppa (relatório
+      "Notas de empenhos por programa PPA"), só no grão de empenho (ne_ccor <> '-9').
+      Nenhum modelo dbt a consome: os marts de TEDs leem ppa_tesouro.
       A tabela realiza a limpeza do número do processo, padronização de nomes de favorecidos 
       e conversão de valores financeiros de string para numeric(15,2) via macro.
     columns:
@@ -265,84 +267,77 @@ models:
 
   - name: nc_tesouro_mir
     description: >
-      Modelo da camada bronze que consolida os dados brutos de Notas de Crédito do Tesouro Gerencial (SIAFI), 
-      abrangendo os períodos anteriores e posteriores a 2026. 
-      Realiza a unificação (UNION ALL) das bases históricas e atuais, preenchendo com valores nulos 
-      (ou zero para campos financeiros) as colunas inexistentes em cada tabela original para garantir a integridade do schema. 
-      Também aplica o casamento semântico entre colunas equivalentes de 2025 e 2026
-      (ex.: evento/tipo_nc, UG responsável/emitente, natureza/GND, plano interno/descrição),
-      mantendo um layout único para consumo nas camadas seguintes.
+      Notas de crédito do MIR (Tesouro Gerencial), uma linha por movimento, só NCs
+      entre o MIR e outros órgãos: "enviadas" (emitente MIR) e "recebidas"
+      (favorecido MIR: devoluções e créditos recebidos). Até 2025 vem do
+      lançamento, pelo lado do MIR (filtros Item Informação 15-18 e UG Executora
+      do MIR), com o movimento líquido como valor. A partir de 2026 vem do
+      documento da NC (célula), só o lado DESTINO, com programa e ação pelo PTRES.
     columns:
       - name: programa_governo
-        description: "Somente pré-2026. Código identificador do programa de governo."
+        description: "Programa de governo. A partir de 2026, pelo PTRES (programacao_acao_ptres)."
       - name: programa_governo_descricao
-        description: "Somente pré-2026. Descrição detalhada do programa de governo."
+        description: "Descrição do programa de governo."
       - name: acao_governo
-        description: "Somente pré-2026. Código da ação orçamentária."
+        description: "Ação orçamentária. A partir de 2026, pelo PTRES."
       - name: acao_governo_descricao
-        description: "Somente pré-2026. Descrição da ação orçamentária."
+        description: "Descrição da ação orçamentária."
       - name: nc
-        description: "Comum (pré e pós-2026). Número identificador da Nota de Crédito (NC)."
+        description: "Número da Nota de Crédito (UG + gestão + ano + NC + sequencial)."
+      - name: relatorio
+        description: "enviadas (emitente MIR, favorecido fora do MIR) ou recebidas (emitente fora do MIR, favorecido MIR)."
+      - name: ug_emitente
+        description: "UG emitente da NC (os 6 primeiros dígitos do número)."
+      - name: ug_emitente_descricao
+        description: "Nome da UG emitente. Só a partir de 2026."
       - name: nc_transferencia
-        description: "Comum (pré e pós-2026). Número/identificador de transferência associado à NC."
+        description: "Número da transferência (TED) informado na NC; '-8' quando não há."
       - name: nc_fonte_recursos
-        description: "Comum (pré e pós-2026). Código da fonte de recursos (na pós-2026 vem de fonte_codigo)."
+        description: "Fonte de recursos detalhada."
       - name: nc_fonte_recursos_descricao
-        description: "Comum (pré e pós-2026). Descrição da fonte de recursos (na pós-2026 vem de fonte_nome)."
+        description: "Descrição da fonte de recursos detalhada."
       - name: ptres
-        description: "Comum (pré e pós-2026). Programa de Trabalho Resumido (PTRES)."
+        description: "Programa de Trabalho Resumido (PTRES)."
       - name: nc_evento_descricao
-        description: "Comum (pré e pós-2026). NC - Evento Desc (na pós-2026 mapeado a partir de tipo_nc)."
+        description: >
+          Tipo da operação (DESCENTRALIZACAO, ANULACAO ou DEVOLUCAO DE
+          DESCENTRALIZACAO DE CREDITO). A partir de 2026, o "NC - Operação (Tipo)";
+          até 2025, derivado do sinal e do relatório (uma devolução em enviadas
+          fica como anulação; uma anulação em recebidas, como devolução).
       - name: nc_ug_responsavel
-        description: "Comum (pré e pós-2026). NC - UG Responsável (na pós-2026 mapeado a partir de emitente_codigo)."
+        description: "UG responsável."
       - name: nc_ug_responsavel_descricao
-        description: "Comum (pré e pós-2026). NC - UG Responsável Descrição (na pós-2026 mapeado a partir de emitente_nome)."
+        description: "Nome da UG responsável."
       - name: nc_natureza_despesa
-        description: "Comum (pré e pós-2026). NC - Natureza Despesa (na pós-2026 mapeado a partir de gnd_codigo)."
+        description: "Natureza de despesa."
       - name: nc_natureza_despesa_descricao
-        description: "Comum (pré e pós-2026). NC - Natureza Despesa Descrição (na pós-2026 mapeado a partir de gnd_nome)."
+        description: "Descrição da natureza de despesa."
       - name: nc_plano_interno
-        description: "Comum (pré e pós-2026). NC - Plano Interno (na pós-2026 mapeado a partir de pi_codigo)."
+        description: "Plano interno."
       - name: nc_plano_interno_descricao1
-        description: "Comum (pré e pós-2026). NC - Plano Interno Descrição 1 (na pós-2026 mapeado a partir de pi_nome)."
+        description: "Descrição do plano interno."
       - name: favorecido_doc
-        description: "Comum (pré e pós-2026). Favorecido Doc (na pós-2026 mapeado a partir de favorecido_codigo)."
+        description: "UG favorecida."
       - name: favorecido_doc_descricao
-        description: "Comum (pré e pós-2026). Favorecido Doc Desc (na pós-2026 mapeado a partir de favorecido_nome)."
+        description: "Nome da UG favorecida."
       - name: favorecido_municipio
-        description: "Somente pré-2026. Código do município do favorecido."
+        description: "Código do município do favorecido. Só até 2025."
       - name: favorecido_municipio_descricao
-        description: "Somente pré-2026. Nome do município do favorecido."
+        description: "Município do favorecido. Só até 2025."
       - name: valor_celula
-        description: "Comum (pré e pós-2026). Valor financeiro (na pré-2026 vem de nc_valor_linha; na pós-2026 vem de valor_celula)."
+        description: "Valor do movimento, sempre positivo (o sentido está em nc_evento_descricao)."
       - name: movimento_liquido_moeda_origem
-        description: "Comum (pré e pós-2026). Movimento líquido (na pré-2026 vem de movimento_liquido_moeda_origem; na pós-2026 mapeado a partir de total_lista)."
-      - name: dt_ingest
-        description: "Comum (pré e pós-2026). Timestamp da ingestão (UTC-3)."
+        description: "Valor com sinal do ponto de vista do MIR: descentralização +, anulação e devolução -."
       - name: descricao
-        description: "Somente pós-2026. Descrição geral da NC (campo descricao)."
-      - name: nc_plano_interno_descricao2
-        description: "Somente pré-2026. NC - Plano Interno Descrição 2."
-      - name: nc_evento
-        description: "Somente pré-2026. NC - Evento (sem match na base pós-2026)."
-      - name: nc_item_detalhamento
-        description: "Somente pós-2026. NC Item - Detalhamento (S/N) (sem match na base pré-2026)."
+        description: "Texto da NC. Só a partir de 2026."
       - name: emissao_dia
-        description: "Somente pós-2026. Dia da emissão da NC."
-      - name: emissao_mes
-        description: "Somente pós-2026. Mês da emissão da NC."
+        description: "Data de emissão da NC. Só a partir de 2026."
       - name: emissao_ano
-        description: "Somente pós-2026. Ano da emissão da NC."
-      - name: ro
-        description: "Somente pós-2026. Registro de Operação associado."
+        description: "Ano da NC (do número)."
       - name: dc
-        description: "Somente pós-2026. Indicador de Débito ou Crédito (D/C)."
-      - name: total_lista
-        description: "Somente pós-2026. Valor total da lista de itens."
-      - name: esfera_orcamentaria_codigo
-        description: "Somente pós-2026. Código da esfera orçamentária."
-      - name: esfera_orcamentaria_nome
-        description: "Somente pós-2026. Nome da esfera orçamentária."
+        description: "Lado da célula (DESTINO). Só a partir de 2026."
+      - name: dt_ingest
+        description: "Timestamp da ingestão (UTC-3)."
 
     tests:
       - verificacao_tipagem:
@@ -700,3 +695,70 @@ models:
           nome_tabela: 'siafi_dbt.planos_acao_mir'
           nome_coluna: 'dt_ingest'
           tipo_esperado: 'timestamp with time zone'
+
+  - name: planos_acao_portal_ted
+    description: >
+      Modelo da camada bronze para os Planos de Ação do portal do sistema TED
+      (ted.transferegov.sistema.gov.br, API pública da consulta de planos de
+      ação), com os mesmos nomes e tipos de planos_acao_ted e as colunas que só
+      o portal tem (UG das unidades, unidade descentralizadora, termo assinado).
+      Os nulos que a ingestão grava como o texto 'NaN' viram nulo.
+    columns:
+      - name: id_plano_acao
+        description: "Identificador único do Plano de Ação (o mesmo da API de dados abertos)."
+        tests:
+          - not_null
+      - name: sq_instrumento
+        description: "Número da transferência (TED). Nulo em planos ainda não firmados."
+      - name: tx_situacao_plano_acao
+        description: "Situação do plano no portal (ex.: APROVADO, EM_ANALISE)."
+      - name: cd_ug_unidade_descentralizada
+        description: "UG (código SIAFI) da unidade descentralizada, que recebe o crédito."
+      - name: cd_ug_unidade_responsavel_execucao
+        description: "UG (código SIAFI) da unidade responsável pela execução."
+      - name: id_unidade_descentralizadora
+        description: "Id da unidade descentralizadora no portal (MIR = 308823)."
+      - name: in_termo_execucao_assinado
+        description: "Se o termo de execução já foi assinado."
+      - name: dt_ingest
+        description: "Data/hora (UTC-3) da ingestão."
+
+  - name: teds_gov_br
+    description: >
+      Modelo da camada bronze para os TEDs raspados das páginas de transferências
+      voluntárias do MIR no gov.br (uma subpágina por ano), só do retrato mais
+      recente da ingestão. Cada linha é um bloco de TED da página, com o
+      número/ano, o número da transferência citado e os dados do termo. A página
+      às vezes repete o número/ano para TEDs diferentes, então a linha é
+      identificada por página + ordem.
+    columns:
+      - name: pagina
+        description: "Subpágina do gov.br (ex.: 2023, 2025-1)."
+        tests:
+          - not_null
+      - name: ordem
+        description: "Posição do TED na página."
+        tests:
+          - not_null
+      - name: numero_ted
+        description: "Número/ano do TED (ex.: 05/2026), como as NEs citam."
+        tests:
+          - not_null
+      - name: ano_ted
+        description: "Ano do TED."
+      - name: num_transf
+        description: "Primeiro número do Transferegov citado no bloco (o do título)."
+      - name: num_transf_alternativos
+        description: "Outros números do Transferegov citados no bloco, separados por ';'."
+      - name: processo
+        description: "Número do processo SEI."
+      - name: parceiro
+        description: "Unidade descentralizada, como o texto a nomeia."
+      - name: valor
+        description: "Primeiro valor em R$ citado no bloco (em geral o valor global)."
+      - name: texto
+        description: "Texto do bloco, para conferência."
+      - name: url
+        description: "Endereço da subpágina."
+      - name: dt_ingest
+        description: "Data/hora (UTC-3) da ingestão."

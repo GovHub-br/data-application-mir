@@ -40,12 +40,11 @@ models:
           mais recente no TransfereGov. Representa o compromisso financeiro acordado.
       - name: orcamento_recebido
         description: >
-          Soma dos valores de Notas de Crédito recebidas (eventos que não são 300301/300307),
-          representando o crédito orçamentário efetivamente descentralizado para o MIR.
+          Crédito descentralizado nas Notas de Crédito do TED (descentralizações menos
+          anulações).
       - name: orcamento_devolvido
         description: >
-          Soma dos valores de Notas de Crédito de eventos 300301 e 300307,
-          representando crédito orçamentário devolvido ao órgão concedente.
+          Crédito devolvido nas Notas de Crédito do TED (devoluções de descentralização).
       - name: empenhado
         description: >
           Soma dos valores positivos de despesas_empenhadas — empenhos formalizados,
@@ -85,7 +84,7 @@ models:
       - name: dt_ingest
         description: >
           Timestamp mais recente de ingestão entre todas as fontes que compõem o registro
-          (planos_acao_ted, nc_plano_acao, empenhos_por_plano_acao, pf_unificado).
+          (ted_plano_acao_consolidado, nc_plano_acao, empenhos_por_plano_acao, pf_unificado).
           Indica quando os dados foram atualizados pela última vez (UTC-3).
       - name: sigla_unidade_responsavel_acompanhamento
         description: >

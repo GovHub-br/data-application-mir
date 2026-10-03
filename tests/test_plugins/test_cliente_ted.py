@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from cliente_ted import ClienteTed
+from cliente_ted import ClienteTed, ClienteTedPortal, plano_acao_portal_para_registro
 
 
 @pytest.fixture
@@ -303,3 +303,126 @@ def test_get_all_programas_first_page_none(cliente_ted: ClienteTed) -> None:
 
     assert result == []
     mock_get.assert_called_once_with(limit=1000, offset=0)
+
+
+# ---------------------------------------------------------------------------
+# ClienteTedPortal / plano_acao_portal_para_registro
+# ---------------------------------------------------------------------------
+PLANO_PORTAL = {
+    "id": 6231,
+    "programaFk": 5678,
+    "codigo": "30882320260029-006231",
+    "versao": 20,
+    "unidadeDescentralizadaF": "426 - UFRJ - Universidade Federal do Rio de Janeiro",
+    "cdUnidadeDescentralizadaGestora": "153115",
+    "unidadeResponsavelExecucaoF": "426 - UFRJ - Universidade Federal do Rio de Janeiro",
+    "cdUnidadeResponsavelExecucaoGestora": "153115",
+    "unidadeDescentralizadoraF": "308823 - MIR - Ministério da Igualdade Racial",
+    "unidadeResponsavelAcompanhamentoF": (
+        "309941 - SEPAR - Secretaria de Políticas de Ações Afirmativas"
+    ),
+    "vlTotal": 1521150.01,
+    "vlBeneficiarioEspecifico": 1521150.01,
+    "vlChamamentoPublico": None,
+    "dtInicioVigencia": "2026-07-01",
+    "dtFimVigencia": "2028-01-01",
+    "txObjeto": "Apoio técnico",
+    "txJustificativa": "Justificativa",
+    "inFormaExecucaoDireta": False,
+    "inFormaExecucaoParticulares": False,
+    "inFormaExecucaoDescentralizada": True,
+    "txSituacao": "APROVADO",
+    "aaAno": 2026,
+    "sequencialInstrumento": "7AACRT",
+    "anoInstrumento": 2026,
+    "hasTermoExecucaoAssinado": True,
+}
+
+
+@pytest.fixture
+def cliente_portal() -> ClienteTedPortal:
+    with patch("cliente_base.httpx.Client"):
+        return ClienteTedPortal()
+
+
+def test_plano_acao_portal_para_registro_mapeia_campos() -> None:
+    registro = plano_acao_portal_para_registro(PLANO_PORTAL)
+
+    assert registro["id_plano_acao"] == "6231"
+    assert registro["id_programa"] == "5678"
+    assert registro["sq_instrumento"] == "7AACRT"
+    assert registro["aa_instrumento"] == "2026"
+    assert registro["tx_situacao_plano_acao"] == "APROVADO"
+    assert registro["sigla_unidade_descentralizada"] == "UFRJ"
+    assert registro["unidade_descentralizada"] == "Universidade Federal do Rio de Janeiro"
+    assert registro["cd_ug_unidade_descentralizada"] == "153115"
+    assert registro["id_unidade_descentralizadora"] == "308823"
+    assert registro["sigla_unidade_descentralizadora"] == "MIR"
+    assert registro["sigla_unidade_responsavel_acompanhamento"] == "SEPAR"
+    assert registro["vl_total_plano_acao"] == "1521150.01"
+    assert registro["vl_chamamento_publico"] is None
+    assert registro["in_forma_execucao_descentralizada"] == "true"
+    assert registro["in_forma_execucao_direta"] == "false"
+    assert registro["in_termo_execucao_assinado"] == "true"
+
+
+def test_plano_acao_portal_para_registro_unidade_vazia() -> None:
+    registro = plano_acao_portal_para_registro({"id": 1, "unidadeDescentralizadaF": None})
+
+    assert registro["sigla_unidade_descentralizada"] is None
+    assert registro["unidade_descentralizada"] is None
+    assert registro["sq_instrumento"] is None
+
+
+def test_get_planos_acao_portal_uma_pagina(cliente_portal: ClienteTedPortal) -> None:
+    resposta = {"count": 2, "currentPage": 0, "data": [
+        {"planoAcao": {"id": 1}}, {"planoAcao": {"id": 2}},
+    ]}
+    with patch.object(
+        cliente_portal, "request", return_value=(HTTPStatus.OK, resposta)
+    ) as mock_request:
+        result = cliente_portal.get_planos_acao_by_unidade_descentralizadora("308823")
+
+    assert result == [{"id": 1}, {"id": 2}]
+    mock_request.assert_called_once_with(
+        http.HTTPMethod.GET,
+        "planos-acao?unidadeDescentralizadoraFk=308823&page=0",
+        headers=ClienteTedPortal.BASE_HEADER,
+    )
+
+
+def test_get_planos_acao_portal_segue_paginas(cliente_portal: ClienteTedPortal) -> None:
+    paginas = [
+        (
+            HTTPStatus.OK,
+            {"count": 3, "data": [{"planoAcao": {"id": 1}}, {"planoAcao": {"id": 2}}]},
+        ),
+        (HTTPStatus.OK, {"count": 3, "data": [{"planoAcao": {"id": 3}}]}),
+    ]
+    with patch.object(cliente_portal, "request", side_effect=paginas) as mock_request:
+        result = cliente_portal.get_planos_acao_by_unidade_descentralizadora("308823")
+
+    assert [p["id"] for p in result] == [1, 2, 3]
+    assert mock_request.call_count == 2
+
+
+def test_get_planos_acao_portal_para_quando_pagina_vem_vazia(
+    cliente_portal: ClienteTedPortal,
+) -> None:
+    paginas = [
+        (HTTPStatus.OK, {"count": 5, "data": [{"planoAcao": {"id": 1}}]}),
+        (HTTPStatus.OK, {"count": 5, "data": None}),
+    ]
+    with patch.object(cliente_portal, "request", side_effect=paginas):
+        result = cliente_portal.get_planos_acao_by_unidade_descentralizadora("308823")
+
+    assert result == [{"id": 1}]
+
+
+def test_get_planos_acao_portal_status_nao_ok(cliente_portal: ClienteTedPortal) -> None:
+    with patch.object(
+        cliente_portal, "request", return_value=(HTTPStatus.UNPROCESSABLE_ENTITY, {})
+    ):
+        result = cliente_portal.get_planos_acao_by_unidade_descentralizadora("308823")
+
+    assert result is None

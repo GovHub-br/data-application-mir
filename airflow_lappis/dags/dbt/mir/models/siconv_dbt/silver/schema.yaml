@@ -203,7 +203,7 @@ models:
       Tabela da camada silver que consolida os convênios do SICONV relacionados à
       UG 810008. Inclui (a) todos os convênios cuja `ug_emitente` é 810008 na
       tabela bronze `convenio` e (b) convênios adicionais identificados a partir
-      dos empenhos do Tesouro (`siafi.ne_tesouro`) cujo `ne_ccor` começa com
+      dos empenhos do Tesouro (`ppa_tesouro`, relatório PPA) cujo `ne_ccor` começa com
       '810008' e cujo `ne_info_complementar` corresponde ao `nr_convenio`. As
       UGs responsáveis são consolidadas em atributo (`string_agg`) por convênio,
       garantindo exatamente uma linha por `nr_convenio` — um mesmo convênio pode
