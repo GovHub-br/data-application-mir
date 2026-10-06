@@ -12,3 +12,40 @@ seeds:
       column_types:
         sigla_origem: text
         sigla_canonica: text
+
+  - name: tedinhos_identificados_mir
+    description: >
+      Lista de referência dos instrumentos "Descentralização de Crédito" (tedinho) do MIR
+      levantada manualmente nas páginas de transparência ativa do gov.br (2023 a 2026) —
+      ver issue #507. Um tedinho é uma descentralização entre órgãos federais que NÃO é
+      registrada no TransfereGov como TED: não possui sq_instrumento/num_transf, e por isso
+      fica fora de toda a camada empenhos_ted_dbt, que depende dessa chave. O processo
+      administrativo (SEI) é o único identificador estável publicado para esses instrumentos.
+      Usado por tedinhos_mir.sql para cruzar com empenhos_por_plano_acao via ne_num_processo
+      e medir quanto de execução orçamentária está hoje fora da gold por essa causa.
+    config:
+      column_types:
+        ano_publicacao: integer
+        orgao_parceiro: text
+        processo: text
+        numero_instrumento: text
+        valor_total: numeric
+        objeto_resumo: text
+        observacao: text
+        fonte_url: text
+    columns:
+      - name: processo
+        description: "Número do processo administrativo (SEI) no formato publicado, ex: 21290.002680/2025-14."
+        tests:
+          - unique
+          - not_null
+      - name: numero_instrumento
+        description: >
+          Número sequencial "N/AAAA" do instrumento, quando o MIR publicou um (raro: 2 dos
+          23 casos). Nulo na maioria — a identificação confiável é o processo, não um número.
+      - name: valor_total
+        description: "Valor total do instrumento conforme publicado na página de transparência."
+      - name: observacao
+        description: >
+          Nota de investigação, quando aplicável — ex: processo compartilhado com um TED
+          formal, ou rótulo inconsistente na publicação (ver caso UNIVASF e TED nº1/2026).
