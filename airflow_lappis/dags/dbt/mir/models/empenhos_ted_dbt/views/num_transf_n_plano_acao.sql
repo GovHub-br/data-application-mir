@@ -37,11 +37,13 @@ with
         where rn = 1
     ),
 
+    -- Plano consolidado: portal do sistema TED, com a API de dados abertos como
+    -- reserva (o portal traz antes o numero dos TEDs recem-firmados)
     via_sq_instrumento as (
         select
             sq_instrumento as num_transf,
             id_plano_acao::text as plano_acao
-        from {{ ref("planos_acao_ted") }}
+        from {{ ref("ted_plano_acao_consolidado") }}
         where sq_instrumento is not null
     ),
 

@@ -11,7 +11,16 @@ with
             emissao_mes::text as emissao_mes,
             emissao_dia::text as emissao_dia,
             ne_ccor::text as ne_ccor,
-            regexp_replace(ne_num_processo, '[./-]', '', 'g') as ne_num_processo,
+            -- No relatório PPA só a linha de emissão da NE traz o processo; as
+            -- de liquidação e pagamento vêm com o sentinela '-9'. Propaga o
+            -- processo da NE para todas as linhas dela (cada NE tem no máximo
+            -- um processo real).
+            max(
+                case
+                    when ne_num_processo <> '-9'
+                    then regexp_replace(ne_num_processo, '[./-]', '', 'g')
+                end
+            ) over (partition by ne_ccor) as ne_num_processo,
             ne_info_complementar::text as ne_info_complementar,
             ne_ccor_descricao::text as ne_ccor_descricao,
             doc_observacao::text as doc_observacao,
@@ -29,8 +38,11 @@ with
             {{ parse_financial_value("restos_a_pagar_inscritos") }} as restos_a_pagar_inscritos,
             {{ parse_financial_value("restos_a_pagar_pagos") }} as restos_a_pagar_pagos,
             (dt_ingest || '-03:00')::timestamptz as dt_ingest
-        from {{ source("siafi", "ne_tesouro") }} 
-        where ne_ccor_ano_emissao ~ '^[0-9]{4}$'
+        -- Relatório "Notas de empenhos por programa PPA". O ne_tesouro foi
+        -- abandonado por estar defasado e com buracos. ne_ccor = '-9' é o
+        -- grão de dotação, sem empenho; fica de fora.
+        from {{ source("siafi", "ne_tesouro_ppa") }}
+        where ne_ccor <> '-9' and ne_ccor_ano_emissao ~ '^[0-9]{4}$'
     )
 
 select *

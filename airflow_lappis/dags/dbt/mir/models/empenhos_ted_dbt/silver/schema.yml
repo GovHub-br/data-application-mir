@@ -104,7 +104,7 @@ models:
       - name: vl_total_plano_acao
         description: "Valor total informado para o plano de acao."
       - name: dt_ingest
-        description: "Maior timestamp de ingestao entre pf_unificado e planos_acao_ted."
+        description: "Maior timestamp de ingestao entre pf_unificado e ted_plano_acao_consolidado."
     tests:
       - verificacao_tipagem:
           nome_tabela: 'siafi_dbt.pf_unificado_planos_acao'
@@ -150,7 +150,7 @@ models:
       - name: ptres
         description: "Programa de Trabalho Resumido (PTRES) no SIAFI."
       - name: nc_evento_descricao
-        description: "Descrição do evento (mapeada para Tipo NC na harmonização de layouts)."
+        description: "Tipo da operação (DESCENTRALIZACAO, ANULACAO ou DEVOLUCAO DE DESCENTRALIZACAO DE CREDITO)."
       - name: nc_ug_responsavel
         description: "Código da UG responsável."
       - name: nc_ug_responsavel_descricao
@@ -172,33 +172,23 @@ models:
       - name: favorecido_municipio_descricao
         description: "Descrição do município do favorecido."
       - name: valor_celula
-        description: "Valor financeiro da célula/linha da NC no SIAFI."
+        description: "Valor do movimento, sempre positivo (o sentido está em nc_evento_descricao)."
       - name: movimento_liquido_moeda_origem
-        description: "Movimento líquido na moeda de origem."
+        description: "Valor com sinal do ponto de vista do MIR: descentralização +, anulação e devolução -."
       - name: descricao
         description: "Descrição geral da NC (quando disponível)."
-      - name: nc_plano_interno_descricao2
-        description: "Descrição 2 do plano interno."
-      - name: nc_evento
-        description: "Código do evento contábil (quando disponível)."
-      - name: nc_item_detalhamento
-        description: "Detalhamento da NC (S/N), quando disponível."
       - name: emissao_dia
         description: "Data de emissão da Nota de Crédito (SIAFI, quando disponível)."
-      - name: emissao_mes
-        description: "Mês de emissão da Nota de Crédito (SIAFI, quando disponível)."
       - name: emissao_ano
-        description: "Ano de emissão da Nota de Crédito (SIAFI, quando disponível)."
-      - name: ro
-        description: "Registro de operação associado."
+        description: "Ano da NC (do número)."
       - name: dc
-        description: "Indicador débito/crédito."
-      - name: total_lista
-        description: "Valor total da lista."
-      - name: esfera_orcamentaria_codigo
-        description: "Código da esfera orçamentária."
-      - name: esfera_orcamentaria_nome
-        description: "Nome da esfera orçamentária."
+        description: "Lado da célula (DESTINO). Somente dados pós-2026."
+      - name: relatorio
+        description: "enviadas (emitente MIR) ou recebidas (favorecido MIR)."
+      - name: ug_emitente
+        description: "UG emitente da NC (6 primeiros dígitos do número)."
+      - name: ug_emitente_descricao
+        description: "Nome da UG emitente. Só a partir de 2026."
       - name: dt_ingest
         description: "Timestamp de ingestão do SIAFI (UTC-3)."
     tests:
@@ -229,13 +219,13 @@ models:
           num_transf_n_plano_acao pelo nc_transferencia. Nulo quando a NC não possui
           correspondência no TransfereGov.
       - name: programa_governo
-        description: "Código do programa de governo (SIAFI, somente dados pré-2026; enriquecido por PTRES via nc_unificado)."
+        description: "Código do programa de governo (SIAFI até 2025; pelo PTRES a partir de 2026 e como fallback em nc_unificado)."
       - name: programa_governo_descricao
-        description: "Descrição do programa de governo (SIAFI, somente dados pré-2026; enriquecido por PTRES via nc_unificado)."
+        description: "Descrição do programa de governo (SIAFI até 2025; pelo PTRES a partir de 2026 e como fallback em nc_unificado)."
       - name: acao_governo
-        description: "Código da ação de governo (SIAFI, somente dados pré-2026; enriquecido por PTRES via nc_unificado)."
+        description: "Código da ação de governo (SIAFI até 2025; pelo PTRES a partir de 2026 e como fallback em nc_unificado)."
       - name: acao_governo_descricao
-        description: "Descrição da ação de governo (SIAFI, somente dados pré-2026; enriquecido por PTRES via nc_unificado)."
+        description: "Descrição da ação de governo (SIAFI até 2025; pelo PTRES a partir de 2026 e como fallback em nc_unificado)."
       - name: nc
         description: "Número completo da Nota de Crédito no SIAFI. Primeiros 6 dígitos = UG emitente; últimos 12 = identificador da NC."
       - name: nc_transferencia
@@ -247,21 +237,19 @@ models:
       - name: ptres
         description: "Programa de Trabalho Resumido (PTRES) vinculado à NC no SIAFI."
       - name: nc_evento_descricao
-        description: "Descrição do evento contábil (pré-2026: nc_evento_descricao; pós-2026: tipo_nc)."
+        description: "Tipo da operação (DESCENTRALIZACAO, ANULACAO ou DEVOLUCAO DE DESCENTRALIZACAO DE CREDITO). Pré-2026: derivado do sinal e do relatório; pós-2026: tipo_nc. Usado no gold para classificar orcamento_recebido/devolvido."
       - name: nc_ug_responsavel
-        description: "Código da UG responsável pela NC (pré-2026: nc_ug_responsavel; pós-2026: emitente_codigo)."
+        description: "Código da UG responsável pela NC (pós-2026: ugr_codigo)."
       - name: nc_ug_responsavel_descricao
-        description: "Nome da UG responsável (pré-2026: nc_ug_responsavel_descricao; pós-2026: emitente_nome)."
+        description: "Nome da UG responsável (pós-2026: ugr_nome)."
       - name: nc_natureza_despesa
-        description: "Código da natureza de despesa (pré-2026: nc_natureza_despesa; pós-2026: gnd_codigo)."
+        description: "Código da natureza de despesa."
       - name: nc_natureza_despesa_descricao
-        description: "Descrição da natureza de despesa (pré-2026: nc_natureza_despesa_descricao; pós-2026: gnd_nome)."
+        description: "Descrição da natureza de despesa."
       - name: nc_plano_interno
         description: "Código do plano interno da NC (pré-2026: nc_plano_interno; pós-2026: pi_codigo)."
       - name: nc_plano_interno_descricao1
         description: "Descrição principal do plano interno (pré-2026: nc_plano_interno_descricao1; pós-2026: pi_nome)."
-      - name: nc_plano_interno_descricao2
-        description: "Descrição secundária do plano interno. Somente dados pré-2026; nulo para pós-2026."
       - name: favorecido_doc
         description: "CPF/CNPJ do favorecido (pré-2026: favorecido_doc; pós-2026: favorecido_codigo)."
       - name: favorecido_doc_descricao
@@ -271,31 +259,23 @@ models:
       - name: favorecido_municipio_descricao
         description: "Nome do município do favorecido. Somente dados pré-2026; nulo para pós-2026."
       - name: valor_celula
-        description: "Valor financeiro da linha da NC (numeric). Pré-2026: nc_valor_linha; pós-2026: valor_celula. Sem correção de sinal."
+        description: "Valor do movimento, sempre positivo (o sentido está em nc_evento_descricao)."
       - name: movimento_liquido_moeda_origem
-        description: "Movimento líquido na moeda de origem. Pré-2026: campo homônimo; pós-2026: total_lista."
+        description: "Valor com sinal do ponto de vista do MIR: descentralização +, anulação e devolução -."
       - name: descricao
         description: "Descrição geral da NC. Somente dados pós-2026; nulo para pré-2026."
-      - name: nc_evento
-        description: "Código do evento contábil da NC. Somente dados pré-2026; nulo para pós-2026. Usado no gold para classificar orcamento_recebido/devolvido."
-      - name: nc_item_detalhamento
-        description: "Indicador S/N de detalhamento do item da NC. Somente dados pós-2026; nulo para pré-2026."
       - name: emissao_dia
-        description: "Data de emissão da NC (date). Somente dados pós-2026; nulo para pré-2026."
-      - name: emissao_mes
-        description: "Mês de emissão da NC (text). Somente dados pós-2026; nulo para pré-2026."
+        description: "Data de emissão da NC. Somente dados pós-2026; nulo para pré-2026."
       - name: emissao_ano
-        description: "Ano de emissão da NC (text). Somente dados pós-2026; nulo para pré-2026."
-      - name: ro
-        description: "Registro de Operação associado à NC. Somente dados pós-2026; nulo para pré-2026."
+        description: "Ano da NC (do número)."
       - name: dc
-        description: "Indicador Débito/Crédito da NC. Somente dados pós-2026; nulo para pré-2026."
-      - name: total_lista
-        description: "Valor total da lista de itens da NC (numeric). Somente dados pós-2026; nulo para pré-2026."
-      - name: esfera_orcamentaria_codigo
-        description: "Código da esfera orçamentária. Somente dados pós-2026; nulo para pré-2026."
-      - name: esfera_orcamentaria_nome
-        description: "Nome da esfera orçamentária. Somente dados pós-2026; nulo para pré-2026."
+        description: "Lado da célula (DESTINO). Somente dados pós-2026; nulo para pré-2026."
+      - name: relatorio
+        description: "enviadas (emitente MIR) ou recebidas (favorecido MIR)."
+      - name: ug_emitente
+        description: "UG emitente da NC (6 primeiros dígitos do número)."
+      - name: ug_emitente_descricao
+        description: "Nome da UG emitente. Só a partir de 2026."
       - name: dt_ingest
         description: "Timestamp de ingestão do SIAFI (timestamptz, UTC-3)."
     tests:
@@ -388,12 +368,15 @@ models:
       - name: nc
         description: "Número da Nota de Crédito associada à NE, extraído de ne_ccor_descricao via regex e formatado pela UDF format_nc."
       - name: num_transf
-        description: "Número da transferência TED extraído da NE pelos métodos 1 a 9. Chave de ligação com a ponte num_transf_n_plano_acao."
+        description: "Número da transferência TED extraído da NE pelos métodos 1 a 9 ou pela página do gov.br. Chave de ligação com a ponte num_transf_n_plano_acao."
       - name: metodo
         description: >
           Identifica qual método resolveu o vínculo da NE. Valores possíveis:
           'sem vinculo' (NEs com TED explícito sem número), 'metodo 1' a 'metodo 9',
-          'ted ou nc invalido' e 'vinculo nao encontrado' (sem vínculo identificado).
+          'pagina gov.br: TED NN/AAAA' (NE que a cascata não ligou a um plano, resolvida
+          pelo número/ano do TED na página do gov.br, só se a UG da NE recebeu crédito
+          do plano), 'ted ou nc invalido' e 'vinculo nao encontrado' (sem vínculo
+          identificado).
       - name: complemento_ted
         description: "Complemento textual do TED extraído antes do número (ex: nome do programa), produzido pelos métodos 7 e 8."
       - name: num_ted

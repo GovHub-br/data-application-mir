@@ -346,3 +346,36 @@ def test_two_fetches_share_one_login_via_open_mailbox(monkeypatch) -> None:
     assert csv_result == []
     # MailBox(...) so foi instanciado uma vez (um login), apesar de duas buscas.
     c.MailBox.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# format_csv / extract_csv_from_zip
+# ---------------------------------------------------------------------------
+def _zip(nome: str, conteudo: str) -> bytes:
+    import io
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr(nome, conteudo.encode("latin-1"))
+    return buf.getvalue()
+
+
+def test_format_csv_dtype_str_preserva_zero_a_esquerda() -> None:
+    csv = 'Titulo\n\n"0032","5802"\n'
+
+    inferido = c.format_csv(csv, {0: "a", 1: "b"}, skiprows=2)
+    texto = c.format_csv(csv, {0: "a", 1: "b"}, skiprows=2, dtype=str)
+
+    assert inferido.loc[0, "a"] == 32
+    assert texto.loc[0, "a"] == "0032"
+
+
+def test_extract_csv_from_zip_separador_tab() -> None:
+    payload = _zip("r.csv", 'Relatório\n\n"Dia"\t"NC"\n"05/01/2026"\t"X1"\n')
+
+    df = c.extract_csv_from_zip(
+        payload, {0: "emissao_dia", 1: "nc"}, skiprows=3, sep="\t", dtype=str
+    )
+
+    assert df.to_dict(orient="records") == [{"emissao_dia": "05/01/2026", "nc": "X1"}]
