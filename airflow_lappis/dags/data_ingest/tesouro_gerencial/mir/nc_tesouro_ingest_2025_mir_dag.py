@@ -133,19 +133,33 @@ with DAG(
                         )
                         continue
 
-                    # Se não tem mapeamento de colunas (recebidas), aplicar o
-                    # mapeamento padrão.
+                    # Se não tem mapeamento de colunas (recebidas), o CSV já
+                    # foi lido com header=0 (nomes reais do relatório). NÃO
+                    # sobrescrever esses nomes com expected_columns: o
+                    # relatório de NCs recebidas tem o MIR como destinatário,
+                    # não como emitente, e não há garantia de que suas
+                    # colunas estejam na mesma ordem do relatório de
+                    # enviadas — só bater a quantidade não é suficiente.
+                    # Renomear por posição sem validar a identidade de cada
+                    # coluna foi a causa de dados de 2023-2025 com colunas
+                    # trocadas silenciosamente (ver investigação da issue
+                    # #507). Até existir um column_mapping próprio para o
+                    # layout real do relatório de recebidas, o anexo é
+                    # ignorado em vez de inserido com nomes incorretos.
                     if config["column_mapping"] is None:
-                        if len(df.columns) == len(expected_columns):
-                            df.columns = pd.Index(expected_columns)
-                        else:
-                            logging.warning(
-                                "NCs %s anexo %s: N coluna incompatível:%s,%s",
+                        if list(df.columns) != expected_columns:
+                            logging.error(
+                                "NCs %s anexo %s: cabecalho do CSV (%s) nao "
+                                "corresponde ao layout esperado (%s). Anexo "
+                                "IGNORADO para nao inserir colunas trocadas "
+                                "-- definir um column_mapping proprio para "
+                                "o relatorio de NCs recebidas.",
                                 email_type,
                                 idx,
-                                len(expected_columns),
-                                len(df.columns),
+                                list(df.columns),
+                                expected_columns,
                             )
+                            continue
 
                     data = df.to_dict(orient="records")
                     for record in data:
