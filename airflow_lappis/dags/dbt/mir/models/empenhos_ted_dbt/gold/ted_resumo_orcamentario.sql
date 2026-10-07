@@ -64,32 +64,51 @@ with
         group by ltrim(trim(cast(num_transf as text)), '0')
     ),
 
+    -- Processos tedinho com nc_transferencia != '-8' (chaveados como
+    -- transf:<codigo> em tedinhos_mir -- um codigo interno do SIAFI que
+    -- nunca chegou a ser registrado no TransfereGov) ainda passam pelo
+    -- filtro `nc_transferencia != '-8'` de nc_plano_acao, porque esse
+    -- modelo nao checa registro no TransfereGov, so a existencia do
+    -- codigo. Sem excluir aqui, a mesma NC seria somada duas vezes: uma
+    -- vez como TED (bloco abaixo) e outra como Tedinho (CTE tedinhos).
+    -- Tedinhos com nc_transferencia = '-8' ja ficam de fora naturalmente
+    -- (filtro `nc_transferencia != '-8'` do proprio nc_plano_acao).
+    tedinhos_com_codigo as (
+        select distinct nc_transferencia_atual
+        from {{ ref("tedinhos_mir") }}
+        where tedinho_provavel
+            and nc_transferencia_atual is not null
+            and nc_transferencia_atual <> '-8'
+    ),
+
     valores_orcamentos_tb as (
         select
-            ltrim(trim(cast(nc_transferencia as text)), '0') as num_transf_canon,
+            ltrim(trim(cast(npa.nc_transferencia as text)), '0') as num_transf_canon,
             -- valor_celula e sempre positivo; o sentido vem do tipo da NC. A
             -- anulacao desfaz parte da descentralizacao e abate o recebido.
             sum(
                 case
-                    when nc_evento_descricao ~* '^DESC' then valor_celula
-                    when nc_evento_descricao ~* '^ANU' then -valor_celula
+                    when npa.nc_evento_descricao ~* '^DESC' then npa.valor_celula
+                    when npa.nc_evento_descricao ~* '^ANU' then -npa.valor_celula
                     else 0
                 end
             ) as orcamento_recebido,
             sum(
                 case
-                    when nc_evento_descricao ~* '^DEV' then valor_celula
+                    when npa.nc_evento_descricao ~* '^DEV' then npa.valor_celula
                     else 0
                 end
             ) as orcamento_devolvido,
-            max(programa_governo) as programa_governo,
-            max(programa_governo_descricao) as programa_governo_descricao,
-            max(dt_ingest) as dt_ingest_vo
-        from {{ ref("nc_plano_acao") }}
-        where ptres not in ('-9')
-            and nc_transferencia is not null
-            and ltrim(trim(cast(nc_transferencia as text)), '0') <> ''
-        group by ltrim(trim(cast(nc_transferencia as text)), '0')
+            max(npa.programa_governo) as programa_governo,
+            max(npa.programa_governo_descricao) as programa_governo_descricao,
+            max(npa.dt_ingest) as dt_ingest_vo
+        from {{ ref("nc_plano_acao") }} npa
+        left join tedinhos_com_codigo tc on tc.nc_transferencia_atual = npa.nc_transferencia
+        where npa.ptres not in ('-9')
+            and npa.nc_transferencia is not null
+            and ltrim(trim(cast(npa.nc_transferencia as text)), '0') <> ''
+            and tc.nc_transferencia_atual is null
+        group by ltrim(trim(cast(npa.nc_transferencia as text)), '0')
     ),
 
     -- Agregado no grao da transferencia canonica, igual aos demais blocos. A UG
