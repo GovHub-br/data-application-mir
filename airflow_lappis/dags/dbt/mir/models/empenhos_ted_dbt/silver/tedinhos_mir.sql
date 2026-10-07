@@ -43,7 +43,11 @@ with
             nc_transferencia,
             emissao_dia,
             descricao,
-            (regexp_match(descricao, '([0-9]{5}\.[0-9]{6}/[0-9]{4}-[0-9]{2})'))[1] as processo,
+            -- Restrito ao prefixo 21290 (orgao SEI do MIR): sem isso, o
+            -- regex tambem casava processo administrativo de OUTRO orgao
+            -- (ex: da instituicao favorecida) quando citado no texto da NC,
+            -- misturando processos que nao sao do MIR.
+            (regexp_match(descricao, '(21290\.[0-9]{6}/[0-9]{4}-[0-9]{2})'))[1] as processo,
             coalesce(
                 (regexp_match(
                     descricao, 'TED\s+([0-9]{6}|1[A-Za-z0-9]{5}|7[A-Za-z0-9]{5})'
