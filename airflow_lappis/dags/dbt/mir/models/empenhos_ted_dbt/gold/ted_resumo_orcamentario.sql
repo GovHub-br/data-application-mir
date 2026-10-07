@@ -64,32 +64,51 @@ with
         group by ltrim(trim(cast(num_transf as text)), '0')
     ),
 
+    -- Processos tedinho com nc_transferencia != '-8' (chaveados como
+    -- transf:<codigo> em tedinhos_mir -- um codigo interno do SIAFI que
+    -- nunca chegou a ser registrado no TransfereGov) ainda passam pelo
+    -- filtro `nc_transferencia != '-8'` de nc_plano_acao, porque esse
+    -- modelo nao checa registro no TransfereGov, so a existencia do
+    -- codigo. Sem excluir aqui, a mesma NC seria somada duas vezes: uma
+    -- vez como TED (bloco abaixo) e outra como Tedinho (CTE tedinhos).
+    -- Tedinhos com nc_transferencia = '-8' ja ficam de fora naturalmente
+    -- (filtro `nc_transferencia != '-8'` do proprio nc_plano_acao).
+    tedinhos_com_codigo as (
+        select distinct nc_transferencia_atual
+        from {{ ref("tedinhos_mir") }}
+        where tedinho_provavel
+            and nc_transferencia_atual is not null
+            and nc_transferencia_atual <> '-8'
+    ),
+
     valores_orcamentos_tb as (
         select
-            ltrim(trim(cast(nc_transferencia as text)), '0') as num_transf_canon,
+            ltrim(trim(cast(npa.nc_transferencia as text)), '0') as num_transf_canon,
             -- valor_celula e sempre positivo; o sentido vem do tipo da NC. A
             -- anulacao desfaz parte da descentralizacao e abate o recebido.
             sum(
                 case
-                    when nc_evento_descricao ~* '^DESC' then valor_celula
-                    when nc_evento_descricao ~* '^ANU' then -valor_celula
+                    when npa.nc_evento_descricao ~* '^DESC' then npa.valor_celula
+                    when npa.nc_evento_descricao ~* '^ANU' then -npa.valor_celula
                     else 0
                 end
             ) as orcamento_recebido,
             sum(
                 case
-                    when nc_evento_descricao ~* '^DEV' then valor_celula
+                    when npa.nc_evento_descricao ~* '^DEV' then npa.valor_celula
                     else 0
                 end
             ) as orcamento_devolvido,
-            max(programa_governo) as programa_governo,
-            max(programa_governo_descricao) as programa_governo_descricao,
-            max(dt_ingest) as dt_ingest_vo
-        from {{ ref("nc_plano_acao") }}
-        where ptres not in ('-9')
-            and nc_transferencia is not null
-            and ltrim(trim(cast(nc_transferencia as text)), '0') <> ''
-        group by ltrim(trim(cast(nc_transferencia as text)), '0')
+            max(npa.programa_governo) as programa_governo,
+            max(npa.programa_governo_descricao) as programa_governo_descricao,
+            max(npa.dt_ingest) as dt_ingest_vo
+        from {{ ref("nc_plano_acao") }} npa
+        left join tedinhos_com_codigo tc on tc.nc_transferencia_atual = npa.nc_transferencia
+        where npa.ptres not in ('-9')
+            and npa.nc_transferencia is not null
+            and ltrim(trim(cast(npa.nc_transferencia as text)), '0') <> ''
+            and tc.nc_transferencia_atual is null
+        group by ltrim(trim(cast(npa.nc_transferencia as text)), '0')
     ),
 
     -- Agregado no grao da transferencia canonica, igual aos demais blocos. A UG
@@ -209,36 +228,109 @@ with
         full join valores_orcamentos_tb vo using (num_transf_canon)
         full join valores_financeiro_tb vfin using (num_transf_canon)
         full join valor_firmado_tb vf using (num_transf_canon)
+    ),
+
+    teds as (
+        select
+            ppt.plano_acao,
+            'TED' as tipo_instrumento,
+            jp.num_transf_canon as num_transf,
+            cast(null as text) as processo,
+            jp.ugs_responsaveis_codigos,
+            jp.ugs_responsaveis_nomes,
+            jp.qtd_ugs_responsaveis,
+            jp.sigla_unidade_descentralizada,
+            jp.valor_firmado,
+            jp.orcamento_recebido,
+            jp.orcamento_devolvido,
+            jp.empenhado,
+            jp.empenho_anulado,
+            jp.despesas_pagas_exercicio,
+            jp.despesas_pagas_rap,
+            jp.restos_a_pagar,
+            jp.despesas_liquidada,
+            jp.financeiro_recebido,
+            jp.financeiro_devolvido,
+            jp.financeiro_cancelado,
+            jp.dt_ingest_jp as dt_ingest,
+            prog.sigla_unidade_responsavel_acompanhamento,
+            prog.tx_nome_institucional_programa,
+            prog.tx_objetivo_programa,
+            jp.programa_governo,
+            jp.programa_governo_descricao,
+            case when e.tem_autor then 'Emenda - ' || e.autor_emendas_orcamento else 'Recurso Próprio' end as origem
+        from join_parcial jp
+        left join plano_por_transf ppt using (num_transf_canon)
+        left join programas_tb prog on prog.id_plano_acao = ppt.plano_acao
+        left join emendas e using (num_transf_canon)
+        where jp.num_transf_canon is not null
+    ),
+
+    -- Tedinhos (issue #507): descentralizacoes de credito que nunca chegam a
+    -- ser registradas no TransfereGov -- ver tedinhos_mir.sql para a regra de
+    -- deteccao. Viram instrumento proprio aqui, chaveado por instrumento_key
+    -- (nc_transferencia quando atribuido, senao processo, senao a propria NC
+    -- -- nunca existe num_transf nem plano_acao reconhecido, por definicao).
+    -- A coluna processo exposta aqui e o melhor identificador humano
+    -- disponivel: processo administrativo (2026+) ou, quando so existe o
+    -- codigo interno do SIAFI (anos sem processo extraivel), esse codigo.
+    -- Empenhado/liquidado/pago/valor_firmado ficam nulos: a NE do orgao
+    -- executor carrega o *proprio* processo administrativo dele, nao o do
+    -- MIR, entao nao ha hoje um join confiavel entre o tedinho e
+    -- empenhos_por_plano_acao (confirmado: 0 de 23 processos conhecidos
+    -- batem via ne_num_processo). Resolver essa lacuna exige uma fonte
+    -- adicional (ex. de-para processo MIR -> processo da instituicao
+    -- executora) fora do escopo desta mudanca.
+    tedinhos as (
+        select
+            cast(null as integer) as plano_acao,
+            'Tedinho' as tipo_instrumento,
+            cast(null as text) as num_transf,
+            coalesce(
+                max(processo), nullif(max(nc_transferencia_atual), '-8'), max(nc)
+            ) as processo,
+            cast(null as text) as ugs_responsaveis_codigos,
+            cast(null as text) as ugs_responsaveis_nomes,
+            cast(null as bigint) as qtd_ugs_responsaveis,
+            cast(null as text) as sigla_unidade_descentralizada,
+            cast(null as numeric) as valor_firmado,
+            sum(
+                case
+                    when nc_evento_descricao ilike '%DEVOLUCAO%'
+                        or nc_evento_descricao ilike '%ANULACAO%'
+                    then 0
+                    else valor_celula
+                end
+            ) as orcamento_recebido,
+            sum(
+                case
+                    when nc_evento_descricao ilike '%DEVOLUCAO%'
+                        or nc_evento_descricao ilike '%ANULACAO%'
+                    then valor_celula
+                    else 0
+                end
+            ) as orcamento_devolvido,
+            cast(null as numeric) as empenhado,
+            cast(null as numeric) as empenho_anulado,
+            cast(null as numeric) as despesas_pagas_exercicio,
+            cast(null as numeric) as despesas_pagas_rap,
+            cast(null as numeric) as restos_a_pagar,
+            cast(null as numeric) as despesas_liquidada,
+            cast(null as numeric) as financeiro_recebido,
+            cast(null as numeric) as financeiro_devolvido,
+            cast(null as numeric) as financeiro_cancelado,
+            max(dt_ingest) as dt_ingest,
+            cast(null as text) as sigla_unidade_responsavel_acompanhamento,
+            cast(null as text) as tx_nome_institucional_programa,
+            cast(null as text) as tx_objetivo_programa,
+            cast(null as text) as programa_governo,
+            cast(null as text) as programa_governo_descricao,
+            'Tedinho (sem registro no TransfereGov)' as origem
+        from {{ ref("tedinhos_mir") }}
+        where tedinho_provavel
+        group by instrumento_key
     )
 
-select
-    ppt.plano_acao,
-    jp.num_transf_canon as num_transf,
-    jp.ugs_responsaveis_codigos,
-    jp.ugs_responsaveis_nomes,
-    jp.qtd_ugs_responsaveis,
-    jp.sigla_unidade_descentralizada,
-    jp.valor_firmado,
-    jp.orcamento_recebido,
-    jp.orcamento_devolvido,
-    jp.empenhado,
-    jp.empenho_anulado,
-    jp.despesas_pagas_exercicio,
-    jp.despesas_pagas_rap,
-    jp.restos_a_pagar,
-    jp.despesas_liquidada,
-    jp.financeiro_recebido,
-    jp.financeiro_devolvido,
-    jp.financeiro_cancelado,
-    jp.dt_ingest_jp as dt_ingest,
-    prog.sigla_unidade_responsavel_acompanhamento,
-    prog.tx_nome_institucional_programa,
-    prog.tx_objetivo_programa,
-    jp.programa_governo,
-    jp.programa_governo_descricao,
-    case when e.tem_autor then 'Emenda - ' || e.autor_emendas_orcamento else 'Recurso Próprio' end as origem
-from join_parcial jp
-left join plano_por_transf ppt using (num_transf_canon)
-left join programas_tb prog on prog.id_plano_acao = ppt.plano_acao
-left join emendas e using (num_transf_canon)
-where jp.num_transf_canon is not null
+select * from teds
+union all
+select * from tedinhos

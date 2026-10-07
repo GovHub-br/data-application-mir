@@ -4,33 +4,60 @@ models:
 
   - name: ted_resumo_orcamentario
     description: >
-      Tabela gold de consolidação orçamentária e financeira por transferência TED do MIR.
-      O grão é num_transf: uma linha por transferência canônica (num_transf_canon), que é
-      a única chave de junção dos quatro blocos — o valor total pactuado no plano
-      (TransfereGov), os créditos orçamentários via Notas de Crédito (SIAFI), os empenhos
-      das Notas de Empenho (SIAFI) e os recursos das Programações Financeiras
-      (SIAFI + TransfereGov) — combinados via FULL JOIN para não perder registro que exista
-      em apenas uma fonte. Como os quatro blocos estão no mesmo grão, o join é 1:1 e TODAS
-      as métricas são somáveis. O plano_acao NÃO faz parte da chave: é resolvido como
-      atributo da transferência pela ponte canônica num_transf_n_plano_acao (1:1 por
-      transferência). A UG responsável provém apenas dos empenhos e é exposta consolidada
-      (ugs_responsaveis_codigos/nomes + qtd_ugs_responsaveis); quando a UG esteve no grão,
-      transferências com múltiplas UGs repetiam os valores dos demais blocos em cada linha
-      e inflavam qualquer soma. Para o detalhe por UG use ted_empenhos_plano_acao, que tem
-      grão de Nota de Empenho.
+      Tabela gold de consolidação orçamentária e financeira por instrumento do MIR — TED
+      ou tedinho (issue #507: descentralização de crédito sem registro no TransfereGov).
+      O grão é o instrumento: uma linha por transferência canônica (num_transf_canon) para
+      TED, uma linha por instrumento_key para tedinho (ver tedinhos_mir — nc_transferencia
+      quando atribuído, senão processo administrativo extraído da NC, senão a própria NC) —
+      tipo_instrumento distingue os dois; coalesce(num_transf, processo) é o identificador.
+      Bloco TED: quatro fontes — o valor total pactuado no plano (TransfereGov), os créditos orçamentários via
+      Notas de Crédito (SIAFI), os empenhos das Notas de Empenho (SIAFI) e os recursos das
+      Programações Financeiras (SIAFI + TransfereGov) — combinadas via FULL JOIN por
+      num_transf_canon para não perder registro que exista em apenas uma fonte; como as
+      quatro fontes estão no mesmo grão, o join é 1:1 e todas as métricas são somáveis. O
+      plano_acao NÃO faz parte da chave: é resolvido como atributo da transferência pela
+      ponte canônica num_transf_n_plano_acao (1:1 por transferência). A UG responsável provém
+      apenas dos empenhos e é exposta consolidada (ugs_responsaveis_codigos/nomes +
+      qtd_ugs_responsaveis); quando a UG esteve no grão, transferências com múltiplas UGs
+      repetiam os valores dos demais blocos em cada linha e inflavam qualquer soma. Para o
+      detalhe por UG use ted_empenhos_plano_acao, que tem grão de Nota de Empenho — só cobre
+      TED, não tedinho (ver tedinhos_mir para a limitação de empenho por tedinho). Bloco
+      Tedinho: só orcamento_recebido/devolvido vêm preenchidos (via tedinhos_mir, que já
+      aplica a detecção correta por nc_evento_descricao + cruzamento com TransfereGov);
+      plano_acao, valor_firmado e todas as métricas de empenho/liquidação/pagamento/
+      financeiro ficam nulas — a NE do órgão executor carrega o processo administrativo
+      *dele*, não o do MIR, então não há hoje um join confiável entre o processo do tedinho
+      e empenhos_por_plano_acao (confirmado: 0 de 23 processos conhecidos batem via
+      ne_num_processo). Fechar essa lacuna exige uma fonte adicional (de-para processo MIR
+      -> processo da instituição executora), fora do escopo desta mudança.
     columns:
       - name: plano_acao
         description: >
           Identificador do Plano de Ação no TransfereGov, resolvido como atributo da
           transferência via a ponte num_transf_n_plano_acao (1:1). Nulo quando a
-          transferência não possui plano correspondente cadastrado. NÃO é chave do grão.
+          transferência não possui plano correspondente cadastrado, ou sempre nulo para
+          tedinho (que por definição não tem plano no TransfereGov). NÃO é chave do grão.
+      - name: tipo_instrumento
+        description: "'TED' ou 'Tedinho' — distingue as duas origens do grão. Ver descrição da tabela."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['TED', 'Tedinho']
       - name: num_transf
         description: >
           Número canônico da transferência TED (num_transf_canon, normalizado por
-          ltrim/trim de zeros à esquerda) — o elo entre SIAFI e TransfereGov e a chave
-          de consolidação dos quatro blocos. Junto com ug_responsavel forma o grão.
-        tests:
-          - not_null
+          ltrim/trim de zeros à esquerda) — o elo entre SIAFI e TransfereGov. Preenchido
+          apenas quando tipo_instrumento = 'TED'; nulo para tedinho (ver coluna processo).
+      - name: processo
+        description: >
+          Melhor identificador humano disponível para o tedinho: processo administrativo
+          (SEI), quando a NC é do relatório pós-2026 e cita processo no texto; senão o
+          código de transferência mais recente do SIAFI (nc_transferencia_atual, mesmo não
+          registrado no TransfereGov); senão o número da própria Nota de Crédito, como
+          último recurso (NCs pré-2026 sem processo extraível). Preenchido apenas quando
+          tipo_instrumento = 'Tedinho'; nulo para TED (ver coluna num_transf). NÃO é a
+          chave do grão — a chave real é instrumento_key em tedinhos_mir (coalesce aqui
+          pode juntar sinais de fontes diferentes por instrumento).
       - name: sigla_unidade_descentralizada
         description: >
           Sigla da unidade receptora dos recursos, conforme cadastrado no Plano de Ação do TransfereGov.
@@ -120,7 +147,10 @@ models:
           dos casos; acima de 1 indica execução compartilhada entre unidades — use
           ted_empenhos_plano_acao para abrir o detalhe.
       - name: origem
-        description: "Indica a origem do recurso: 'Emenda' se vinculado a uma emenda parlamentar, 'Recurso Próprio' caso contrário."
+        description: >
+          Para TED: 'Emenda - <autor>' se vinculado a uma emenda parlamentar, 'Recurso
+          Próprio' caso contrário. Para tedinho: sempre 'Tedinho (sem registro no
+          TransfereGov)' — a vinculação a emenda ainda não é resolvida para esse tipo.
     tests:
       - verificacao_tipagem:
           nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'

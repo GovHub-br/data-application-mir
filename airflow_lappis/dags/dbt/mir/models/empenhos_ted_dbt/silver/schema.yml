@@ -427,3 +427,98 @@ models:
           nome_tabela: 'siafi_dbt.empenhos_por_plano_acao'
           nome_coluna: 'dt_ingest'
           tipo_esperado: 'timestamp with time zone'
+
+  - name: tedinhos_mir
+    description: >
+      Detecção de "tedinhos" (issue #507) a partir da própria Nota de Crédito do SIAFI —
+      nc_tesouro_mir.nc_evento_descricao = 'DESCENTRALIZACAO DE CREDITO' — em vez de regex
+      sobre texto de NE. Só considera relatorio = 'enviadas' (MIR descentralizando); o lado
+      'recebidas' é o MIR executando crédito de outro órgão, categoria diferente, fora do
+      escopo da issue.
+      Chave de instrumento (instrumento_key), em ordem de preferência: (1) nc_transferencia
+      quando já atribuído (!= '-8') — existe em TODOS os anos, 2023-2026, é a chave
+      universal; (2) processo, extraído do texto de descricao — só existe no relatório
+      pós-2026 (o relatório "até 2025" não tem esse campo de texto livre); (3) a própria NC
+      — fallback de último caso, nunca funde instrumentos diferentes por falta de
+      identificador comum. nc_transferencia = '-8' isoladamente NÃO identifica um
+      instrumento: é um estado transitório que até um TED formal carrega na sua primeira NC
+      antes do SIAFI preencher o número definitivo (observado: TED 17/2026 UFF, processo
+      21290.001965/2026-19, Transferegov 7AAFDT, apareceu com '-8' na NC inicial). A regra
+      correta é pegar o nc_transferencia mais recente por instrumento — uma descentralização
+      pode ser anulada e reemitida com um código novo, caso observado em MIR x UFF/CERD,
+      processo 21290.000127/2026-28, que saiu de '-8' para '1ABDUQ' após reemissão — e
+      cruzar com ted_plano_acao_consolidado.sq_instrumento (fonte nova do PR #75: portal do
+      sistema TED + página de transparência do gov.br + dados abertos como reserva — cobre
+      mais instrumentos conhecidos que a fonte antiga). Mesmo assim o texto da NC às vezes
+      já cita o código TED antes do campo estruturado ser atualizado — por isso o modelo
+      também extrai qualquer código citado em codigo_mencionado_no_texto; um instrumento só
+      é classificado como tedinho forte (tedinho_provavel) quando os dois sinais concordam:
+      não registrado no TransfereGov E nenhum código citado em lugar nenhum do texto.
+      Grão: uma linha por NC com evento de descentralização de crédito (não por instrumento —
+      um instrumento pode ter várias NCs ao longo do tempo, incluindo anulações/reemissões).
+      Alimenta ted_resumo_orcamentario como tipo_instrumento = 'Tedinho' (decisão de negócio:
+      instrumento próprio, não somado ao TED pai).
+    columns:
+      - name: nc
+        description: "Chave da Nota de Crédito no SIAFI."
+      - name: instrumento_key
+        description: >
+          Chave de agrupamento do instrumento: 'transf:<código>' quando nc_transferencia já
+          foi atribuído, senão 'proc:<processo>' (só 2026+), senão 'nc:<nc>' como último
+          recurso. Usada para agrupar NCs do mesmo instrumento ao longo do tempo — não é
+          para exibição direta.
+      - name: processo
+        description: >
+          Número do processo administrativo (SEI) extraído por regex do texto de descricao
+          (formato NNNNN.NNNNNN/AAAA-NN). Nulo quando a NC não cita processo no texto
+          (sempre nulo para NCs do relatório até 2025).
+      - name: nc_ug_responsavel
+        description: "Código da UG responsável pela NC."
+      - name: nc_ug_responsavel_descricao
+        description: "Nome da UG responsável pela NC."
+      - name: valor_celula
+        description: "Valor financeiro da NC (numeric 15,2)."
+      - name: nc_evento_descricao
+        description: "Descrição do evento contábil — sempre contém 'DESCENTRALIZACAO DE CREDITO' neste modelo."
+      - name: nc_transferencia
+        description: "Valor de nc_transferencia nesta NC específica — pode ser '-8' mesmo para um instrumento que depois vira TED formal."
+      - name: nc_transferencia_atual
+        description: >
+          nc_transferencia mais recente para este instrumento (entre todas as NCs do mesmo
+          instrumento_key, por emissao_dia desc). É este valor, não nc_transferencia da
+          linha, que deve ser usado para classificar o instrumento.
+      - name: codigo_mencionado_no_texto
+        description: >
+          Qualquer código tipo TED citado no texto de descricao de alguma NC do mesmo
+          instrumento (padrões "TED <código>" ou "...DESCENTRALIZADA Nº <código>"), mesmo
+          que nc_transferencia ainda esteja '-8'. Não nulo aqui geralmente indica um TED
+          normal em trânsito, não um tedinho — ver caso TED 17/2026 UFF na descrição do modelo.
+      - name: registrado_no_transferegov
+        description: >
+          true quando nc_transferencia_atual existe em
+          ted_plano_acao_consolidado.sq_instrumento — ou seja, o instrumento tem um plano
+          formal no TransfereGov.
+        tests:
+          - not_null
+      - name: tedinho_provavel
+        description: >
+          true quando o instrumento NÃO está registrado no TransfereGov E nenhum código TED
+          foi citado em nenhuma NC dele, em lugar nenhum — o sinal mais forte de tedinho
+          genuíno que dá para derivar só do SIAFI. false inclui tanto instrumentos formais
+          quanto TEDs normais ainda em trânsito (nc_transferencia desatualizado mas já com
+          código citado no texto).
+        tests:
+          - not_null
+      - name: emissao_dia
+        description: "Data de emissão da NC (date)."
+      - name: dt_ingest
+        description: "Timestamp de ingestão da NC no SIAFI (UTC-3)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.tedinhos_mir'
+          nome_coluna: 'valor_celula'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.tedinhos_mir'
+          nome_coluna: 'emissao_dia'
+          tipo_esperado: 'date'
