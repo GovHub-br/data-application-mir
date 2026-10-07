@@ -469,8 +469,10 @@ models:
           para exibição direta.
       - name: processo
         description: >
-          Número do processo administrativo (SEI) extraído por regex do texto de descricao
-          (formato NNNNN.NNNNNN/AAAA-NN). Nulo quando a NC não cita processo no texto
+          Número do processo administrativo (SEI) do MIR extraído por regex do texto de
+          descricao (formato 21290.NNNNNN/AAAA-NN — restrito ao prefixo 21290, o órgão SEI
+          do MIR, para não capturar processo de outro órgão citado na mesma NC, ex: da
+          instituição favorecida). Nulo quando a NC não cita um processo do MIR no texto
           (sempre nulo para NCs do relatório até 2025).
       - name: nc_ug_responsavel
         description: "Código da UG responsável pela NC."
