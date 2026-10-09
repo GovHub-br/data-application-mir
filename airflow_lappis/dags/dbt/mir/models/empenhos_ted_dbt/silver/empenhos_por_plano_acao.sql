@@ -116,11 +116,14 @@ empenhos_seed as (
     select
         {{ star_except(passthrough_columns) }},
         nc,
-        replace(
-            (regexp_match({{ m.field }}, '{{ m.regex }}', 'i'))[{{ m.group }}],
-            '.',
-            ''
-        ) as num_transf,
+        case
+            when {{ m.get('excluir_se', 'false') }} then null
+            else replace(
+                (regexp_match({{ m.field }}, '{{ m.regex }}', 'i'))[{{ m.group }}],
+                '.',
+                ''
+            )
+        end as num_transf,
         '{{ m.label }}' as metodo
     from {{ prev }}
 )

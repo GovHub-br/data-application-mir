@@ -25,6 +25,17 @@
   em macro para o teste regex_ted_fixtures validar os mesmos regex do modelo.
   O número do TransfereGov é numérico (6 dígitos) ou alfanumérico começando com
   1 ou, a partir de 2026, com 7 (ex.: 7AADZA).
+
+  Campo opcional `excluir_se`: expressão SQL (sobre as colunas da NE) que,
+  quando verdadeira, invalida o match do método mesmo que o regex tenha
+  casado -- a NE cai pro proximo metodo da cascata em vez de ficar marcada
+  com um num_transf errado. Usado no metodo 5: ne_info_complementar guarda
+  numero de 6 digitos tanto pra TED quanto pra Termo de Fomento/Convenio (o
+  campo nao distingue o tipo de instrumento), entao sem essa exclusao
+  qualquer NE de Fomento/Convenio com esse formato virava um "TED" sem
+  plano_acao resolvido (issue #510 -- confirmado: 192 dos 203 casos de
+  TED sem plano no resumo eram Termo de Fomento/Convenio deste metodo,
+  nenhum deles citando TED em lugar nenhum do texto).
 #}
 {% macro ted_num_transf_metodos() -%}
     {% set metodos_yaml %}
@@ -48,6 +59,7 @@
   field: ne_info_complementar
   group: 1
   regex: '^([0-9]{6}|[17][A-Za-z0-9]{5})$'
+  excluir_se: "ne_ccor_descricao ~* 'TERMO DE FOMENTO|CONV[EÊ]NIO|SICONV' or doc_observacao ~* 'TERMO DE FOMENTO|CONV[EÊ]NIO|SICONV'"
 - label: "metodo 10"
   field: doc_observacao
   group: 2
