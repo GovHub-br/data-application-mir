@@ -8,6 +8,10 @@ with
             sq_instrumento as num_transf,
             sigla_unidade_descentralizada,
             vl_total_plano_acao,
+            aa_ano_plano_acao,
+            dt_inicio_vigencia,
+            dt_fim_vigencia,
+            tx_situacao_plano_acao,
             dt_ingest as dt_ingest_plano_acao
         from (
             select
@@ -57,6 +61,10 @@ with
             ltrim(trim(cast(num_transf as text)), '0') as num_transf_canon,
             max(vl_total_plano_acao) as valor_firmado,
             max(sigla_unidade_descentralizada) as sigla_unidade_descentralizada,
+            max(aa_ano_plano_acao) as aa_ano_plano_acao,
+            max(dt_inicio_vigencia) as dt_inicio_vigencia,
+            max(dt_fim_vigencia) as dt_fim_vigencia,
+            max(tx_situacao_plano_acao) as tx_situacao_plano_acao,
             max(dt_ingest_plano_acao) as dt_ingest_vf
         from planos_acao_deduplicado
         where num_transf is not null
@@ -208,6 +216,10 @@ with
             ve.qtd_ugs_responsaveis,
             vf.valor_firmado,
             vf.sigla_unidade_descentralizada,
+            vf.aa_ano_plano_acao,
+            vf.dt_inicio_vigencia,
+            vf.dt_fim_vigencia,
+            vf.tx_situacao_plano_acao,
             vo.orcamento_recebido,
             vo.orcamento_devolvido,
             vo.programa_governo,
@@ -241,6 +253,10 @@ with
             jp.qtd_ugs_responsaveis,
             jp.sigla_unidade_descentralizada,
             jp.valor_firmado,
+            jp.aa_ano_plano_acao,
+            jp.dt_inicio_vigencia,
+            jp.dt_fim_vigencia,
+            coalesce(jp.tx_situacao_plano_acao, 'Sem plano de ação cadastrado') as situacao_plano_acao,
             jp.orcamento_recebido,
             jp.orcamento_devolvido,
             jp.empenhado,
@@ -294,6 +310,10 @@ with
             cast(null as bigint) as qtd_ugs_responsaveis,
             cast(null as text) as sigla_unidade_descentralizada,
             cast(null as numeric) as valor_firmado,
+            cast(null as integer) as aa_ano_plano_acao,
+            cast(null as date) as dt_inicio_vigencia,
+            cast(null as date) as dt_fim_vigencia,
+            'Sem plano de ação cadastrado' as situacao_plano_acao,
             sum(
                 case
                     when nc_evento_descricao ilike '%DEVOLUCAO%'

@@ -35,7 +35,15 @@
   qualquer NE de Fomento/Convenio com esse formato virava um "TED" sem
   plano_acao resolvido (issue #510 -- confirmado: 192 dos 203 casos de
   TED sem plano no resumo eram Termo de Fomento/Convenio deste metodo,
-  nenhum deles citando TED em lugar nenhum do texto).
+  nenhum deles citando TED em lugar nenhum do texto). Cobre "FOMENTO" e o
+  typo "FOMENO" visto em producao. Essa exclusao por palavra-chave e
+  complementada em empenhos_por_plano_acao.sql por um cross-check contra o
+  cadastro do SICONV (siconv_dbt.convenio / termo_fomento_consolidado):
+  nem todo NE de Fomento/Convenio cita a palavra-chave na propria linha (o
+  numero pode vir sem contexto, ou o evento onde "CONVENIO"/"SICONV"
+  aparece e um outro lancamento contabil do mesmo instrumento) -- a prova
+  definitiva e o numero existir no cadastro do SICONV, que nunca
+  compartilha faixa de numeracao com o TED.
 #}
 {% macro ted_num_transf_metodos() -%}
     {% set metodos_yaml %}
@@ -59,7 +67,7 @@
   field: ne_info_complementar
   group: 1
   regex: '^([0-9]{6}|[17][A-Za-z0-9]{5})$'
-  excluir_se: "ne_ccor_descricao ~* 'TERMO DE FOMENTO|CONV[EÊ]NIO|SICONV' or doc_observacao ~* 'TERMO DE FOMENTO|CONV[EÊ]NIO|SICONV'"
+  excluir_se: "ne_ccor_descricao ~* 'TERMO DE FOMENT?O|CONV[EÊ]NIO|SICONV' or doc_observacao ~* 'TERMO DE FOMENT?O|CONV[EÊ]NIO|SICONV'"
 - label: "metodo 10"
   field: doc_observacao
   group: 2

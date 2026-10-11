@@ -302,8 +302,14 @@ models:
       O vínculo é desafiador porque a NE não possui um campo estruturado para o número de
       transferência — ele está embutido no campo livre ne_ccor_descricao ou em campos auxiliares.
       O modelo aplica 9 métodos sequenciais de extração via regex, processando cada NE apenas
-      uma vez pelo primeiro método que obtiver resultado. Ao final, cruza o num_transf encontrado
-      com a view num_transf_n_plano_acao para obter o plano_acao correspondente.
+      uma vez pelo primeiro método que obtiver resultado. Como rede de segurança final (issue
+      #510), qualquer num_transf extraído — de qualquer método — que exista no cadastro do
+      SICONV (siconv_dbt.convenio ou termo_fomento_consolidado) é descartado: TED e SICONV
+      nunca compartilham faixa de numeração, então a presença no cadastro prova que não é um
+      TED, mesmo quando a NE não cita "CONVENIO"/"FOMENTO"/"SICONV" na própria linha (ver
+      excluir_se do método 5 em regex_vinculo.sql para a primeira camada, por palavra-chave).
+      Ao final, cruza o num_transf encontrado com a view num_transf_n_plano_acao para obter o
+      plano_acao correspondente.
     columns:
       - name: emissao_mes
         description: "Mês de emissão da NE no SIAFI"
@@ -375,8 +381,10 @@ models:
           'sem vinculo' (NEs com TED explícito sem número), 'metodo 1' a 'metodo 9',
           'pagina gov.br: TED NN/AAAA' (NE que a cascata não ligou a um plano, resolvida
           pelo número/ano do TED na página do gov.br, só se a UG da NE recebeu crédito
-          do plano), 'ted ou nc invalido' e 'vinculo nao encontrado' (sem vínculo
-          identificado).
+          do plano), 'ted ou nc invalido', 'vinculo nao encontrado' (sem vínculo
+          identificado) e 'excluido: numero e de convenio/termo de fomento (SICONV)'
+          (num_transf descartado na rede de segurança final por existir no cadastro do
+          SICONV — issue #510).
       - name: complemento_ted
         description: "Complemento textual do TED extraído antes do número (ex: nome do programa), produzido pelos métodos 7 e 8."
       - name: num_ted
