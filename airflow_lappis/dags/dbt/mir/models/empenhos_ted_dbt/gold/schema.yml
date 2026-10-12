@@ -362,3 +362,49 @@ models:
           nome_tabela: 'siafi_dbt.ted_empenhos_plano_acao'
           nome_coluna: 'restos_a_pagar_inscritos'
           tipo_esperado: 'numeric'
+  - name: ted_auditoria_cascata
+    description: >
+      Auditoria da cascata de extração de num_transf: para onde vai cada real de empenho
+      que passa pela cascata, e por qual motivo. Issue #508 — este modelo é o "número
+      fechado explicando a diferença de empenhado/liquidado entre painel e CGPO,
+      decomposto por motivo" pedido no critério de aceite.
+      Toda NE de ppa_tesouro (exceto as linhas de dotação, ne_ccor = '-9') cai em
+      exatamente uma linha de agregação, então as somas fecham com o total da fonte e
+      nenhum valor fica fora do relatório — garantido por test_ted_auditoria_cascata_fecha.
+      A convenção de valor é idêntica à de valores_empenhados_tb em ted_resumo_orcamentario
+      (empenhado conta só despesas_empenhadas positivas; a anulação vai para
+      empenho_anulado) para que os números sejam comparáveis com o painel sem ajuste.
+      Não há eixo de tipo de instrumento: desde a issue #510 a cascata já descarta na
+      origem qualquer número presente no cadastro do SICONV, então o que chega ao painel
+      não é mais contaminado por Convênio/Termo de Fomento — o volume dessa exclusão
+      aparece na categoria 'e_excluido_siconv'.
+      Lembre o escopo: a cascata é de governo inteiro, então o grosso do volume está em
+      destino = 'residuo', categoria 'a_sem_mencao_ted', que é orçamento próprio de outras
+      UGs e não perda do MIR. O que importa para a reconciliação são as categorias 'b' e
+      'c' do resíduo.
+    columns:
+      - name: destino
+        description: "'painel' se a NE entra no empenhado da gold (num_transf preenchido); 'residuo' caso contrário."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['painel', 'residuo']
+      - name: categoria_residuo
+        description: "Motivo do descarte (a/b/c/d/e — ver empenhos_ted_residuo). Nulo quando destino = 'painel'."
+      - name: descartado_em
+        description: "'silver' ou 'gold' — em qual filtro a linha morreu. Nulo quando destino = 'painel'."
+      - name: metodo
+        description: "O método da cascata que resolveu (ou não) a NE."
+      - name: qtd_nes
+        description: "Quantidade de linhas de NE no grupo."
+      - name: qtd_instrumentos
+        description: "Quantidade de num_transf distintos no grupo (0 no resíduo, que não tem num_transf)."
+      - name: empenhado
+        description: "Soma de despesas_empenhadas positivas."
+      - name: empenho_anulado
+        description: "Soma do módulo das despesas_empenhadas negativas."
+      - name: liquidado
+        description: "Soma de despesas_liquidadas."
+      - name: pago
+        description: "Soma de despesas_pagas do exercício."
