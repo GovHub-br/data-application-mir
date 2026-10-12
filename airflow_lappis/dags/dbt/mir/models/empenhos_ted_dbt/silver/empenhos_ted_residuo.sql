@@ -4,9 +4,13 @@
   Resíduo da cascata de extração de num_transf: as NEs que NÃO contribuem com
   empenhado para o painel de TED, cada uma com o motivo.
 
-  Issue #508. O critério é num_transf nulo, porque é num_transf que decide se a
-  NE vira empenhado na gold (valores_empenhados_tb agrega
-  `where num_transf is not null`). NE com num_transf preenchido fica fora daqui.
+  Issue #508. O critério reproduz exatamente a condição que a gold usa para
+  somar empenhado (valores_empenhados_tb): num_transf não nulo E que não
+  canonicalize para vazio. A segunda metade importa — um num_transf de zeros
+  ('0', '000000') é não nulo mas é descartado pela gold, então a NE não vira
+  empenhado no painel e precisa aparecer aqui. Usar só `is null` deixaria essa
+  NE invisível no resíduo e contada como painel na auditoria, que é justamente
+  a lacuna que esta issue existe para fechar.
 
   Os dois filtros que eliminam linha, agora explícitos na coluna descartado_em:
 
@@ -48,6 +52,7 @@ with
         select *
         from {{ ref("empenhos_ted_cascata") }}
         where num_transf is null
+            or ltrim(trim(cast(num_transf as text)), '0') = ''
     ),
 
     -- Mesmos campos de texto que a cascata inspeciona, concatenados para a
@@ -94,6 +99,11 @@ select
     nc,
     num_transf,
     metodo,
+    -- Familia do metodo, estavel para agregacao. Os metodos 'pagina gov.br' e
+    -- 'empenho de origem' embutem o numero do TED / a NE de origem na propria
+    -- string de metodo, entao agrupar por metodo cru fragmenta o relatorio em
+    -- grupos quase individuais. metodo continua disponivel para drill-down.
+    split_part(metodo, ':', 1) as metodo_familia,
     case
         when excluido_siconv then 'e_excluido_siconv'
         when metodo = 'sem vinculo' then 'd_ted_sem_vinculo'

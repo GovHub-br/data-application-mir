@@ -384,7 +384,11 @@ models:
       'c' do resíduo.
     columns:
       - name: destino
-        description: "'painel' se a NE entra no empenhado da gold (num_transf preenchido); 'residuo' caso contrário."
+        description: >
+          'painel' se a NE entra no empenhado da gold, 'residuo' caso contrário. A condição
+          reproduz a de valores_empenhados_tb — num_transf não nulo E que não canonicalize
+          para vazio — porque um num_transf de zeros é descartado pela gold e portanto é
+          resíduo, não painel.
         tests:
           - not_null
           - accepted_values:
@@ -394,8 +398,13 @@ models:
         description: "Motivo do descarte (a/b/c/d/e — ver empenhos_ted_residuo). Nulo quando destino = 'painel'."
       - name: descartado_em
         description: "'silver' ou 'gold' — em qual filtro a linha morreu. Nulo quando destino = 'painel'."
-      - name: metodo
-        description: "O método da cascata que resolveu (ou não) a NE."
+      - name: metodo_familia
+        description: >
+          Família do método que resolveu (ou não) a NE: a parte do metodo antes do primeiro
+          ':'. Os métodos 'pagina gov.br' e 'empenho de origem' embutem o número do TED e a
+          NE de origem na string de metodo; agregar pelo metodo cru fragmentaria o relatório
+          em grupos quase individuais e quebraria a promessa de agregado por método. Para o
+          metodo detalhado use empenhos_ted_residuo.
       - name: qtd_nes
         description: "Quantidade de linhas de NE no grupo."
       - name: qtd_instrumentos
