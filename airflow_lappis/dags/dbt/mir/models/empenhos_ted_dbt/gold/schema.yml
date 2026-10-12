@@ -65,6 +65,28 @@ models:
         description: >
           Valor total pactuado no Plano de Ação (vl_total_plano_acao), conforme o registro
           mais recente no TransfereGov. Representa o compromisso financeiro acordado.
+      - name: aa_ano_plano_acao
+        description: >
+          Ano em que o Plano de Ação foi pactuado no TransfereGov (issue #510). É o ano do
+          PLANEJAMENTO, não o exercício em que a despesa de fato ocorreu — um plano de 2022
+          pode nunca ter sido empenhado, ou ter sido empenhado anos depois. Para abrir
+          valores financeiros por ano real da despesa, use
+          ted_resumo_orcamentario_por_exercicio. Nulo para tedinho e para TED sem plano
+          cadastrado.
+      - name: dt_inicio_vigencia
+        description: "Data de início de vigência do Plano de Ação no TransfereGov. Nulo para tedinho e para TED sem plano cadastrado."
+      - name: dt_fim_vigencia
+        description: "Data de fim de vigência do Plano de Ação no TransfereGov. Nulo para tedinho e para TED sem plano cadastrado."
+      - name: situacao_plano_acao
+        description: >
+          Situação do Plano de Ação no TransfereGov (ex.: APROVADO, REJEITADO,
+          ANALISE_APROVADA). Nunca nula (issue #510, critério de aceite): quando não há
+          plano de ação resolvido — TED sem plano cadastrado no TransfereGov, ou tedinho,
+          que por definição nunca tem — o valor é o rótulo explícito "Sem plano de ação
+          cadastrado", para que o painel nunca precise tratar branco/nulo como ausência de
+          instrumento.
+        tests:
+          - not_null
       - name: orcamento_recebido
         description: >
           Crédito descentralizado nas Notas de Crédito do TED (descentralizações menos
@@ -166,6 +188,78 @@ models:
           tipo_esperado: 'numeric'
       - verificacao_tipagem:
           nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+          nome_coluna: 'dt_ingest'
+          tipo_esperado: 'timestamp with time zone'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+          nome_coluna: 'aa_ano_plano_acao'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+          nome_coluna: 'dt_inicio_vigencia'
+          tipo_esperado: 'date'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
+          nome_coluna: 'situacao_plano_acao'
+          tipo_esperado: 'text'
+
+  - name: ted_resumo_orcamentario_por_exercicio
+    description: >
+      Tabela gold de execução financeira de TED aberta por exercício da despesa (issue
+      #510). ted_resumo_orcamentario agrega cada TED numa única linha; aqui o grão é
+      (num_transf, exercício), onde exercício é o ano real de emissão da NE
+      (ne_ccor_ano_emissao), não o ano do plano de ação (aa_ano_plano_acao — quando o
+      plano foi pactuado, não quando a despesa ocorreu). Soma de empenhado aqui reconcilia
+      1:1 com a soma de empenhado de tipo_instrumento = 'TED' em ted_resumo_orcamentario
+      (ver teste de reconciliação). Só cobre TED — tedinho não tem join confiável com
+      empenhos_por_plano_acao (mesma limitação documentada em ted_resumo_orcamentario).
+    columns:
+      - name: num_transf
+        description: "Número canônico da transferência TED (num_transf_canon). Chave do grão junto com exercicio."
+        tests:
+          - not_null
+      - name: plano_acao
+        description: >
+          Identificador do Plano de Ação no TransfereGov, resolvido via a ponte
+          num_transf_n_plano_acao. Nulo quando a transferência não possui plano
+          correspondente cadastrado (ver ted_resumo_orcamentario).
+      - name: exercicio
+        description: >
+          Ano real de emissão da NE (ne_ccor_ano_emissao) — o exercício da despesa.
+          Chave do grão junto com num_transf. Linhas com despesas_empenhadas = 0 em todas
+          as NEs de um exercício não aparecem (ex.: os planos de ação de 2022 citados na
+          issue #510, que nunca tiveram empenho em nenhum exercício).
+        tests:
+          - not_null
+      - name: empenhado
+        description: "Soma de despesas_empenhadas positivas no exercício — mesma definição de ted_resumo_orcamentario.empenhado, aberta por ano."
+      - name: empenho_anulado
+        description: "Soma dos valores absolutos de despesas_empenhadas negativas no exercício."
+      - name: despesas_pagas_exercicio
+        description: "Total pago no exercício corrente (despesas_pagas), aberto por ano de emissão da NE."
+      - name: despesas_pagas_rap
+        description: "Total pago via Restos a Pagar no exercício, aberto por ano de emissão da NE."
+      - name: restos_a_pagar
+        description: "Valor inscrito em Restos a Pagar no exercício."
+      - name: despesas_liquidada
+        description: "Soma das despesas liquidadas no exercício."
+      - name: dt_ingest
+        description: "Timestamp mais recente de ingestão entre as NEs do exercício (UTC-3)."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario_por_exercicio'
+          nome_coluna: 'plano_acao'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario_por_exercicio'
+          nome_coluna: 'exercicio'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario_por_exercicio'
+          nome_coluna: 'empenhado'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'siafi_dbt.ted_resumo_orcamentario_por_exercicio'
           nome_coluna: 'dt_ingest'
           tipo_esperado: 'timestamp with time zone'
 

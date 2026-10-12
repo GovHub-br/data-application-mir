@@ -116,11 +116,14 @@ empenhos_seed as (
     select
         {{ star_except(passthrough_columns) }},
         nc,
-        replace(
-            (regexp_match({{ m.field }}, '{{ m.regex }}', 'i'))[{{ m.group }}],
-            '.',
-            ''
-        ) as num_transf,
+        case
+            when {{ m.get('excluir_se', 'false') }} then null
+            else replace(
+                (regexp_match({{ m.field }}, '{{ m.regex }}', 'i'))[{{ m.group }}],
+                '.',
+                ''
+            )
+        end as num_transf,
         '{{ m.label }}' as metodo
     from {{ prev }}
 )
@@ -529,8 +532,41 @@ SELECT
     FROM empenhos_orgaos_metodo_gov_br ert
     LEFT JOIN vinculo_empenho_origem o USING (ne_ccor)
 ),
+-- Rede de seguranca final: nenhum metodo da cascata confere o numero
+-- extraido contra o cadastro do TransfereGov antes de atribui-lo, entao um
+-- numero de Convenio/Termo de Fomento pode escapar das exclusoes por
+-- palavra-chave do metodo 5 (ver regex_vinculo.sql) quando a NE nao cita
+-- "CONVENIO"/"FOMENTO"/"SICONV" na propria linha -- o contexto so aparece
+-- em outro lancamento contabil do mesmo instrumento (issue #510). TED e
+-- SICONV nunca compartilham faixa de numeracao, entao a existencia do
+-- numero no cadastro do SICONV e prova suficiente de que nao e um TED,
+-- independente de qual metodo o extraiu.
+siconv_registrados as (
+    select nr_convenio from {{ ref("convenio") }} where nr_convenio is not null
+    union
+    select nr_convenio from {{ ref("termo_fomento_consolidado") }} where nr_convenio is not null
+),
+
+empenhos_sem_siconv as (
+    select
+        {{ star_except(narrow_passthrough, ['ne_ccor']) }}, ert.ne_ccor,
+        ert.nc,
+        case when sc.nr_convenio is not null then null else ert.num_transf end as num_transf,
+        case
+            when sc.nr_convenio is not null then 'excluido: numero e de convenio/termo de fomento (SICONV)'
+            else ert.metodo
+        end as metodo,
+        complemento_ted, num_ted, numero_base, ano_raw, ano_normalizado, ano_oficial,
+        numero_instrumento, ert.tipo_instrumento
+    from empenhos_orgaos_metodo_origem ert
+    left join siconv_registrados sc on sc.nr_convenio = ert.num_transf
+),
+
 empenhos_restantes_metodo_9 as (
-    select * from empenhos_orgaos_metodo_origem where (nc != '') or (num_transf is not null)
+    select * from empenhos_sem_siconv
+    where (nc != '')
+        or (num_transf is not null)
+        or metodo = 'excluido: numero e de convenio/termo de fomento (SICONV)'
 ),
 result_table as (
     select distinct er.*, pa.plano_acao::integer as plano_acao, pa.num_transf as num_transf_pa
