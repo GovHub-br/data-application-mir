@@ -15,9 +15,25 @@ models:
     - name: modalidade_instrumento
       description: "Modalidade do instrumento: Convênio ou Termo de Fomento."
     - name: uf_execucao
-      description: "UF onde o projeto será executado."
+      description: >
+        UF onde o projeto será executado, a partir das metas físicas do
+        convênio (meta_crono_fisico). Quando há mais de uma UF distinta entre
+        as metas, retorna 'Múltiplas UFs'. Quando o convênio não tem meta
+        física com UF válida cadastrada, cai para a UF da sede do
+        proponente — ver fonte_localizacao para saber qual foi usada em cada
+        linha.
     - name: municipio_execucao
-      description: "Município onde o projeto será executado."
+      description: >
+        Município onde o projeto será executado, mesma lógica e mesmo
+        fallback de uf_execucao. Retorna 'Múltiplos municípios' quando há
+        mais de um município distinto entre as metas do convênio.
+    - name: fonte_localizacao
+      description: >
+        Indica a origem de uf_execucao/municipio_execucao nesta linha:
+        'meta' (veio das metas físicas do convênio), 'sede_proponente'
+        (fallback — não há meta física com UF válida, usou-se o endereço
+        registrado do proponente) ou 'sem_informacao' (nenhuma das duas
+        fontes disponível).
     - name: nome_convenente
       description: "Nome do convenente — município, estado ou organização que vai executar o projeto."
     - name: categoria_convenente
