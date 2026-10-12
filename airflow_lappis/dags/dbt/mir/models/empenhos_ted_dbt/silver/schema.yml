@@ -563,8 +563,13 @@ models:
   - name: empenhos_ted_residuo
     description: >
       O resíduo da cascata: as NEs que NÃO contribuem com empenhado para o painel de TED,
-      cada uma com o motivo. Issue #508, tarefas de auditoria do resíduo. O critério é
-      num_transf nulo, porque é num_transf que decide se a NE vira empenhado na gold.
+      cada uma com o motivo. Issue #508, tarefas de auditoria do resíduo. O critério
+      reproduz exatamente a condição que a gold usa para somar empenhado
+      (valores_empenhados_tb): fica aqui a NE com num_transf nulo OU cujo num_transf
+      canonicalize para vazio. A segunda metade importa — um num_transf de zeros ('0',
+      '000000') é não nulo mas é descartado pela gold, então a NE não vira empenhado no
+      painel e é resíduo. Usar só `is null` a deixaria invisível aqui e contada como
+      painel na auditoria, que é a lacuna que esta issue existe para fechar.
       Mesmo escopo de governo inteiro de empenhos_ted_cascata: a categoria
       'a_sem_mencao_ted' domina em volume e é esperada — é o orçamento próprio das outras
       UGs, não perda do MIR. O que interessa para a reconciliação com a CGPO são as
@@ -614,7 +619,19 @@ models:
         tests:
           - not_null
       - name: num_transf
-        description: "Sempre nulo neste modelo, por definição do resíduo. Mantido para conferência."
+        description: >
+          Nulo na maioria dos casos. Pode vir preenchido quando canonicaliza para vazio
+          (zeros), situação em que a gold o descarta e a NE é resíduo apesar de ter valor.
+          Mantido para conferência.
+      - name: metodo_familia
+        description: >
+          Família do método, estável para agregação: a parte do metodo antes do primeiro
+          ':'. Os métodos 'pagina gov.br' e 'empenho de origem' embutem o número do TED e a
+          NE de origem na própria string de metodo, então agrupar pelo metodo cru
+          fragmentaria qualquer relatório em grupos quase individuais. É esta coluna que
+          ted_auditoria_cascata agrega; metodo continua disponível para drill-down.
+        tests:
+          - not_null
       - name: despesas_empenhadas
         description: "Valor empenhado da NE. Positivo é empenho, negativo é anulação."
       - name: despesas_liquidadas
