@@ -298,6 +298,13 @@ models:
 
   - name: empenhos_por_plano_acao
     description: >
+      NOTA (issue #508): a cascata de extração de num_transf foi movida para
+      empenhos_ted_cascata (ephemeral, nenhuma linha descartada). Este modelo aplica sobre
+      ela o filtro de vínculo e resolve o plano de ação — a saída é a mesma de antes do
+      split. O filtro elimina linhas: quem chega sem nc, sem num_transf e sem o rótulo de
+      exclusão SICONV não entra aqui nem em nada a jusante. O complemento exato desse
+      filtro, categorizado por motivo, está em empenhos_ted_residuo; a contabilidade
+      fechada de para onde vai cada real está em ted_auditoria_cascata.
       Tabela silver que vincula as Notas de Empenho do SIAFI aos Planos de Ação do TransfereGov.
       O vínculo é desafiador porque a NE não possui um campo estruturado para o número de
       transferência — ele está embutido no campo livre ne_ccor_descricao ou em campos auxiliares.
@@ -532,3 +539,85 @@ models:
           nome_tabela: 'siafi_dbt.tedinhos_mir'
           nome_coluna: 'emissao_dia'
           tipo_esperado: 'date'
+
+  - name: empenhos_ted_cascata
+    description: >
+      Cascata completa de extração de num_transf, sem nenhum descarte: toda NE de
+      ppa_tesouro (exceto as linhas de dotação, ne_ccor = '-9', que não são NE) sai aqui
+      com o rótulo do método que a resolveu — ou com metodo = 'vinculo nao encontrado'
+      quando nenhum resolveu, ou com o rótulo de exclusão SICONV da issue #510.
+      Issue #508: antes a cascata e o filtro de vínculo viviam no mesmo modelo, então a NE
+      sem vínculo era eliminada sem deixar rastro e a diferença entre o painel e o
+      levantamento da CGPO não era mensurável. Separando os dois, o descarte virou um passo
+      explícito: empenhos_por_plano_acao aplica o filtro (o que chega na gold) e
+      empenhos_ted_residuo guarda o complemento, categorizado por motivo.
+      É `ephemeral` de propósito — não vira tabela no banco, o dbt a inlina como CTE em
+      cada consumidor. Nada novo para entregar; o custo é calcular a cascata duas vezes por
+      run. Se isso passar a pesar, trocar para materialized="table" basta, sem mudar os
+      consumidores.
+      ATENÇÃO ao escopo: o modelo é de governo inteiro, não só do MIR — ne_tesouro_ppa traz
+      as NEs de todos os órgãos por desenho, porque o TED é empenhado pelo órgão RECEBEDOR.
+      A maior parte das linhas aqui é orçamento próprio de outras UGs. Não use este modelo
+      para somar valores do MIR; use empenhos_por_plano_acao ou a gold.
+
+  - name: empenhos_ted_residuo
+    description: >
+      O resíduo da cascata: as NEs que NÃO contribuem com empenhado para o painel de TED,
+      cada uma com o motivo. Issue #508, tarefas de auditoria do resíduo. O critério é
+      num_transf nulo, porque é num_transf que decide se a NE vira empenhado na gold.
+      Mesmo escopo de governo inteiro de empenhos_ted_cascata: a categoria
+      'a_sem_mencao_ted' domina em volume e é esperada — é o orçamento próprio das outras
+      UGs, não perda do MIR. O que interessa para a reconciliação com a CGPO são as
+      categorias 'b' e 'c'; 'e' mede o conserto da issue #510 em funcionamento.
+    columns:
+      - name: ne_ccor
+        description: "Chave completa da Nota de Empenho no SIAFI."
+      - name: categoria_residuo
+        description: >
+          Motivo do descarte, com precedência e > d > c > b > a:
+          'e_excluido_siconv' (o número existe no cadastro do SICONV, então não é TED —
+          Convênio/Termo de Fomento descartado de propósito pela rede de segurança da
+          cascata, issue #510; NÃO é perda, é o conserto do bucket "Em Branco" funcionando.
+          Precede as demais porque uma dessas NEs pode também ter NC e seria rotulada 'c');
+          'd_ted_sem_vinculo' (a NE declara "TED S/V"/"sem vínculo" — resíduo legítimo);
+          'c_nc_sem_transferencia' (tem NC, mas a NC não resolve transferência);
+          'b_menciona_ted_sem_captura' (o texto menciona TED/transferência num formato que
+          nenhum regex capturou — é desta categoria que sairiam novos métodos);
+          'a_sem_mencao_ted' (nenhuma menção a TED em nenhum campo lido pela cascata).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'a_sem_mencao_ted'
+                  - 'b_menciona_ted_sem_captura'
+                  - 'c_nc_sem_transferencia'
+                  - 'd_ted_sem_vinculo'
+                  - 'e_excluido_siconv'
+      - name: descartado_em
+        description: >
+          Em qual filtro a linha morreu. 'silver' = o filtro de vínculo de
+          empenhos_por_plano_acao a elimina do modelo. 'gold' = sobreviveu à silver (tem NC,
+          ou é exclusão SICONV rotulada) mas o `where num_transf is not null` de
+          valores_empenhados_tb a deixa fora do somatório de empenhado.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['silver', 'gold']
+      - name: menciona_ted
+        description: >
+          true quando algum dos campos de texto lidos pela cascata menciona TED,
+          TransfereGov, descentralização, termo de execução, nota de transferência ou NT.
+          Checagem deliberadamente mais larga que os regex de captura: separa "o número não
+          está escrito" de "o número está escrito num formato que o regex não pega".
+        tests:
+          - not_null
+      - name: num_transf
+        description: "Sempre nulo neste modelo, por definição do resíduo. Mantido para conferência."
+      - name: despesas_empenhadas
+        description: "Valor empenhado da NE. Positivo é empenho, negativo é anulação."
+      - name: despesas_liquidadas
+        description: "Valor liquidado da NE."
+      - name: despesas_pagas
+        description: "Valor pago da NE no exercício."
