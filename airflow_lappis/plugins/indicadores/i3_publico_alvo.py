@@ -1,45 +1,45 @@
-"""Indicador I3 — Instrumentos com Público-Alvo Racializado.
+"""Indicador I3 — Público-Alvo por Grupo.
 
-Porte de ``i3_publico_alvo.py`` (equipe de BI, idêntico nas pastas TED e
-Convênios — é um único script que processa as duas fontes). Função pura — a
-lógica e as decisões metodológicas são as do script original; só a origem
-dos dados muda (tabelas dbt no lugar dos CSVs exportados para o OneDrive).
+Porte de ``I3/i3_ted_bi.R`` e ``I3/i3_convenios_bi.R`` (equipe de BI, pacote
+Bloco 1) para funções puras. Substitui a versão anterior deste indicador
+(um único script que processava TED e Convênios juntos). TED e
+Convênios/Fomentos agora são dois módulos independentes (``calcular_i3_ted``
+/ ``calcular_i3_convenios``), combinados em ``calcular_i3`` — mesmo padrão
+do I1.
 
-Diferente do I2, este indicador NÃO lê a saída do I1: reprocessa as mesmas
-tabelas-fonte do I1 (mesmo universo e filtros), porque precisa do texto do
-objeto/justificativa, que a saída do I1 não carrega.
+MÉTODO (sem mudança): busca textual (regex) sobre texto normalizado
+(minúsculas, sem acento). TED usa objeto + justificativa do plano de ação;
+Convênio usa só o objeto (não há justificativa no gold). Sem camada de
+similaridade semântica — limitação conhecida, não implementada.
 
-Fontes (tabelas do dbt, iguais às do I1):
-    siafi_dbt.planos_acao_ted           → objeto + justificativa do TED
-    siafi_dbt.ted_resumo_orcamentario   → programa de governo (join)
-    siconv_dbt.resumo_convenios         → objeto do convênio/fomento
-    emendas.instrumentos_emendas        → marcação de origem emenda do TED
+PRINCIPAIS MUDANÇAS EM RELAÇÃO À VERSÃO ANTERIOR:
+ 1. Sem subcategorias: ``mulheres_negras``/``estudantes_negros`` saem —
+    já contavam em ``pessoas_negras``, sem indicador próprio no pacote
+    atual.
+ 2. Nomenclatura: ``leitura_estrita`` → ``grupo_nomeado``, ``leitura_ampla``
+    → ``explicita_publico_racial``, ``racial_generico`` → ``generico``
+    (mesmo conceito, nome novo — alinhado ao script R).
+ 3. TED: origem não depende mais de ``instrumentos_emendas`` — vem direto
+    da coluna ``origem`` do ``ted_resumo_orcamentario`` (mesma lógica do
+    I1 TED Bloco 1: Emenda/Regular/Sem informação).
+ 4. Convênios: universo ganha a exclusão de ``empenho_zero_com_pagamento``
+    por padrão (mesma regra do I1 Convênios Bloco 1) e os campos
+    ``modalidade``/``qualidade_dado`` entram como dimensão do fato.
+ 5. Saídas mudam de formato: cada módulo devolve fato (instrumento x grupo),
+    barras (n e % por grupo, já ordenadas) e cartão (métricas agregadas da
+    tela) — em vez de um resumo único e um "grupos" em formato longo.
+ 6. Categoria "ciganos" mantida (confirmado pela BI: não é marginal nos
+    dados reais).
 
-AVISO DE VALIDAÇÃO: ao contrário do I1 e do I2, este módulo não foi validado
-por regressão ponta-a-ponta contra dado real — os textos de objeto/
-justificativa que alimentam a classificação não estavam disponíveis no
-ambiente de porte (só os CSVs de saída já processados pela BI, sem o texto
-de entrada). A lógica de classificação foi portada byte a byte do script
-original; a validação real fica para a execução da DAG contra o Postgres,
-onde dá pra conferir números de checagem que a própria BI registrou (ex.:
-22 dos 118 TEDs mencionam "cigan*", majoritariamente via a sigla SQPT).
+Fontes (tabelas dbt — mesmas do I1, já usadas sem mudança de schema):
+    siafi_dbt.planos_acao_ted         → objeto + justificativa do TED
+    siafi_dbt.ted_resumo_orcamentario → origem do TED
+    siconv_dbt.resumo_convenios       → objeto do convênio/fomento
 
-Decisões metodológicas (resumo; o detalhe está no script original):
- 1. Categoria "ciganos" existe e não é marginal (confirmado pela BI: 22 dos
-    118 TEDs, 6 convênios/fomentos).
- 2. Duas leituras: ESTRITA (categoria específica nomeada — é o indicador
-    reportado) e AMPLA (estrita OU racial_generico). O gap entre as duas é
-    a "oportunidade de amadurecimento" na ficha do sumário.
- 3. Método é só busca textual (regex) sobre texto normalizado (minúsculas,
-    sem acento). Sem camada de similaridade semântica/embeddings — limitação
-    conhecida, não implementada aqui.
- 4. Mesmo universo e filtros do I1: TEDs excluem situação REJEITADO;
-    Convênios usam o mesmo corte de ano (>=2023) e exclusão de situação
-    (Cancelado/Convênio Anulado) do I1.
- 5. Convênios não têm campo de programa de governo estruturado — só TED tem
-    essa desagregação.
- 6. Subcategorias informativas dentro de "pessoas_negras": mulheres_negras e
-    estudantes_negros. Não alteram leitura_estrita — são subconjunto.
+Saídas (6):
+    i3_ted_publico_fato, i3_ted_publico_barras, i3_ted_publico_cartao,
+    i3_convenio_publico_fato, i3_convenio_publico_barras,
+    i3_convenio_publico_cartao
 """
 
 import re
@@ -48,20 +48,50 @@ from collections import defaultdict
 from datetime import date, datetime
 from typing import Any
 
-ANO_CORTE = 2023
-SITUACOES_EXCLUIDAS_CONVENIO = {"Cancelado", "Convênio Anulado", "Convenio Anulado"}
+ANO_CORTE_CONVENIO = 2023
 SITUACOES_EXCLUIDAS_TED = {"REJEITADO"}
-GRUPOS = ["pessoas_negras", "quilombolas", "indigenas", "terreiro", "ciganos"]
+SITUACOES_EXCLUIDAS_CONVENIO = {"cancelado", "convenio anulado"}
+EXCLUIR_EMPENHO_ZERO_COM_PAGO = True
+ROTULO_REGULAR = "Regular"
+ROTULO_EMENDA = "Emenda"
+ROTULO_SEM_INFO = "Sem informação"
 
 
 # ---------------------------------------------------------------------------
-# Normalização (mesmos helpers do i1_valor_executado.py)
+# Normalização
 # ---------------------------------------------------------------------------
 def _txt(valor: Any) -> str:
     return "" if valor is None else str(valor).strip()
 
 
-def _ano(valor: Any) -> int | None:
+def _num(valor: Any) -> float:
+    if valor is None:
+        return 0.0
+    if isinstance(valor, (int, float)):
+        return float(valor)
+    texto = str(valor).strip()
+    if not texto:
+        return 0.0
+    try:
+        return float(texto)
+    except ValueError:
+        return 0.0
+
+
+def _ano_int(valor: Any) -> int | None:
+    texto = _txt(valor)
+    try:
+        return int(float(texto)) if texto else None
+    except ValueError:
+        return None
+
+
+def _sem_acento(texto: str) -> str:
+    texto = unicodedata.normalize("NFD", texto)
+    return "".join(c for c in texto if unicodedata.category(c) != "Mn")
+
+
+def _ano_data(valor: Any) -> int | None:
     if isinstance(valor, (date, datetime)):
         return valor.year
     texto = _txt(valor)
@@ -70,250 +100,262 @@ def _ano(valor: Any) -> int | None:
     return None
 
 
-def _ano_instrumento(r: dict) -> int | None:
-    """Ano de referência: data_assinatura, com fallback para inicio_vigencia."""
-    for campo in ("data_assinatura", "inicio_vigencia"):
-        ano = _ano(r.get(campo))
-        if ano is not None:
-            return ano
-    return None
+def _ano_instrumento_convenio(data_assinatura: Any, inicio_vigencia: Any) -> int | None:
+    return _ano_data(data_assinatura) or _ano_data(inicio_vigencia)
+
+
+def normalizar(texto: str) -> str:
+    """Minúsculas + remove acentos, para facilitar o casamento de regex."""
+    return _sem_acento((texto or "").lower())
 
 
 # ---------------------------------------------------------------------------
 # Padrões de classificação (aplicados sobre texto em minúsculas, sem acento)
 # ---------------------------------------------------------------------------
-def normalizar(texto: str) -> str:
-    """Minúsculas + remove acentos, para facilitar o casamento de regex."""
-    texto = (texto or "").lower()
-    texto = unicodedata.normalize("NFD", texto)
-    return "".join(c for c in texto if unicodedata.category(c) != "Mn")
+GRUPOS = {
+    "pessoas_negras": "Pessoas negras",
+    "quilombolas": "Quilombolas",
+    "indigenas": "Indígenas",
+    "terreiro": "Povos de terreiro",
+    "ciganos": "Ciganos",
+}
 
-
-CATEGORIAS = {
+PADROES = {
     "pessoas_negras": re.compile(
         r"negr[ao]|negras|negros|afro.brasileir|afrodescendent|"
-        r"\bpret[ao]\b|pretas|pretos|"
-        r"pessoas negras|populacao negra|mulheres negras|jovens negros|"
-        r"homens negros|criancas negras|idosos negros",
+        r"\bpret[ao]\b|pretas|pretos|populacao negra",
         re.IGNORECASE,
     ),
     "quilombolas": re.compile(r"quilombol", re.IGNORECASE),
-    "indigenas": re.compile(
-        r"ind[ií]gen|povos origin[aá]rios|comunidades indigenas", re.IGNORECASE
-    ),
+    "indigenas": re.compile(r"indigen|povos originarios", re.IGNORECASE),
     "terreiro": re.compile(
-        r"terreiro|matriz africana|candombl[eé]|umbanda|"
-        r"povos de terreiro|comunidades de terreiro|religiosidade afro",
+        r"terreiro|matriz africana|candomble|umbanda|religiosidade afro",
         re.IGNORECASE,
     ),
-    # Decisão 1: categoria confirmada nos dados, majoritariamente via SQPT.
+    # Categoria confirmada nos dados reais, majoritariamente via SQPT.
     "ciganos": re.compile(r"cigan", re.IGNORECASE),
-    "racial_generico": re.compile(
-        r"igualdade racial|antirracist|[eé]tnico.racial|etnico.racial|"
-        r"relacoes etnico|relações étnico|acoes afirmativas|ações afirmativas|"
-        r"enfrentamento ao racismo|promocao da igualdade",
-        re.IGNORECASE,
-    ),
 }
-CATEGORIAS_ESPECIFICAS = [
-    "pessoas_negras", "quilombolas", "indigenas", "terreiro", "ciganos",
-]
-
-# Decisão 6: subcategorias informativas, subconjunto de pessoas_negras
-SUBCATEGORIAS = {
-    "mulheres_negras": re.compile(r"mulheres negras|mulher negra", re.IGNORECASE),
-    "estudantes_negros": re.compile(
-        r"estudantes negr|aluno[as]? negr|estudante negr", re.IGNORECASE
-    ),
-}
+# Menção racial genérica (sem nomear um grupo): só entra na leitura ampla.
+PADRAO_GENERICO = re.compile(
+    r"igualdade racial|antirracist|etnico.racial|relacoes etnico|"
+    r"acoes afirmativas|enfrentamento ao racismo|promocao da igualdade",
+    re.IGNORECASE,
+)
 
 
 def classificar(*textos: str) -> dict[str, int]:
-    """Classifica um instrumento nas categorias raciais (decisão 2)."""
+    """Classifica um instrumento nos grupos de público-alvo."""
     texto = normalizar(" ".join(t or "" for t in textos))
-    resultado: dict[str, int] = {}
-    for categoria, padrao in CATEGORIAS.items():
-        resultado[categoria] = 1 if padrao.search(texto) else 0
-    for sub, padrao in SUBCATEGORIAS.items():
-        resultado[sub] = 1 if padrao.search(texto) else 0
-
-    resultado["leitura_estrita"] = (
-        1 if any(resultado[c] for c in CATEGORIAS_ESPECIFICAS) else 0
-    )
-    resultado["leitura_ampla"] = (
-        1 if (resultado["leitura_estrita"] or resultado["racial_generico"]) else 0
+    resultado: dict[str, int] = {
+        chave: 1 if padrao.search(texto) else 0 for chave, padrao in PADROES.items()
+    }
+    resultado["generico"] = 1 if PADRAO_GENERICO.search(texto) else 0
+    resultado["grupo_nomeado"] = 1 if any(resultado[g] for g in GRUPOS) else 0
+    resultado["explicita_publico_racial"] = (
+        1 if (resultado["grupo_nomeado"] or resultado["generico"]) else 0
     )
     return resultado
 
 
 # ---------------------------------------------------------------------------
-# Bloco 1 — TEDs
+# Fato / barras / cartão — compartilhado entre TED e Convênios
 # ---------------------------------------------------------------------------
-def montar_instrumentos_ted(
-    planos: list[dict], resumo: list[dict], instrumentos_emendas: list[dict]
-) -> list[dict]:
-    teds_de_emenda = {
-        _txt(r.get("numero_instrumento"))
-        for r in instrumentos_emendas
-        if _txt(r.get("tipo_instrumento")).upper() == "TED"
-        and _txt(r.get("numero_instrumento"))
-    }
+def montar_fato(instrumentos: list[dict], dims: list[str]) -> list[dict]:
+    """Formato longo: uma linha por (instrumento, grupo)."""
+    fato = []
+    for inst in instrumentos:
+        base = {"id": inst["id"], **{d: inst[d] for d in dims}}
+        for chave, grupo in GRUPOS.items():
+            fato.append({
+                **base,
+                "grupo": grupo,
+                "ativo": inst[chave],
+                "explicita_publico_racial": inst["explicita_publico_racial"],
+            })
+    return fato
 
-    programa_por_plano: dict[str, str] = {}
+
+def montar_barras(fato: list[dict], n_instrumentos: int) -> list[dict]:
+    acc: dict[str, int] = defaultdict(int)
+    for f in fato:
+        acc[f["grupo"]] += f["ativo"]
+    ordem_base = {grupo: i for i, grupo in enumerate(GRUPOS.values())}
+    linhas = sorted(
+        (
+            {
+                "grupo": grupo,
+                "n_instrumentos": n,
+                "pct_do_total": round(100 * n / n_instrumentos, 1) if n_instrumentos else 0.0,
+            }
+            for grupo, n in acc.items()
+        ),
+        key=lambda l: (-l["n_instrumentos"], ordem_base[l["grupo"]]),
+    )
+    return [
+        {"ordem_exibicao": i, **linha} for i, linha in enumerate(linhas, start=1)
+    ]
+
+
+def montar_cartao(instrumentos: list[dict], barras: list[dict]) -> list[dict]:
+    n_inst = len(instrumentos)
+    n_explicita = sum(i["explicita_publico_racial"] for i in instrumentos)
+    n_nomeado = sum(i["grupo_nomeado"] for i in instrumentos)
+    top = barras[0]
+    return [{
+        "n_instrumentos": n_inst,
+        "n_explicitam_publico_racial": n_explicita,
+        "pct_explicitam_publico_racial": round(100 * n_explicita / n_inst, 1) if n_inst else 0.0,
+        "grupo_mais_citado": top["grupo"],
+        "n_grupo_mais_citado": top["n_instrumentos"],
+        "n_grupos_distintos": sum(1 for b in barras if b["n_instrumentos"] > 0),
+        "n_grupo_nomeado": n_nomeado,
+        "pct_grupo_nomeado": round(100 * n_nomeado / n_inst, 1) if n_inst else 0.0,
+    }]
+
+
+# ===========================================================================
+# TED
+# ===========================================================================
+def calcular_origem_por_plano(resumo: list[dict]) -> dict[str, str]:
+    por_plano: dict[str, set[str]] = defaultdict(set)
     for r in resumo:
         pid = _txt(r.get("plano_acao"))
-        if pid and pid not in programa_por_plano and _txt(r.get("programa_governo")):
-            programa_por_plano[pid] = _txt(r.get("programa_governo"))
+        if not pid:
+            continue
+        por_plano[pid].add(_txt(r.get("origem")).lower())
+
+    origem: dict[str, str] = {}
+    for pid, valores in por_plano.items():
+        if any(v.startswith("emenda") for v in valores):
+            origem[pid] = ROTULO_EMENDA
+        elif any(v.startswith("recurso") for v in valores):
+            origem[pid] = ROTULO_REGULAR
+        else:
+            origem[pid] = ROTULO_SEM_INFO
+    return origem
+
+
+def montar_instrumentos_ted(planos: list[dict], resumo: list[dict]) -> list[dict]:
+    origem_por_plano = calcular_origem_por_plano(resumo)
 
     instrumentos = []
     for p in planos:
-        if _txt(p.get("tx_situacao_plano_acao")) in SITUACOES_EXCLUIDAS_TED:
+        if _txt(p.get("tx_situacao_plano_acao")).upper() in SITUACOES_EXCLUIDAS_TED:
             continue
 
         pid = _txt(p.get("id_plano_acao"))
-        sq = _txt(p.get("sq_instrumento"))
         cats = classificar(
             p.get("tx_objeto_plano_acao", ""), p.get("tx_justificativa_plano_acao", "")
         )
         instrumentos.append({
-            "tipo": "TED",
-            "instrumento": "TED",
-            "id_instrumento": pid,
-            "origem": "emenda" if sq in teds_de_emenda else "orcamento_regular",
-            "ano": _txt(p.get("aa_ano_plano_acao")),
-            "programa_governo": programa_por_plano.get(pid, ""),
-            "sigla_executor": _txt(p.get("sigla_unidade_descentralizada")),
-            "tx_objeto": _txt(p.get("tx_objeto_plano_acao"))[:200],
+            "id": pid,
+            "ano": _ano_int(p.get("aa_ano_plano_acao")),
+            "origem": origem_por_plano.get(pid, ROTULO_SEM_INFO),
             **cats,
         })
     return instrumentos
 
 
-# ---------------------------------------------------------------------------
-# Bloco 2 — Convênios e Termos (mesmo universo do I1)
-# ---------------------------------------------------------------------------
+def calcular_i3_ted(planos: list[dict], resumo: list[dict]) -> dict[str, list[dict]]:
+    """Calcula as três saídas do I3 (TED)."""
+    instrumentos = montar_instrumentos_ted(planos, resumo)
+    if not instrumentos:
+        raise ValueError("Universo vazio: confira as situações excluídas.")
+
+    fato = montar_fato(instrumentos, dims=["ano", "origem"])
+    barras = montar_barras(fato, len(instrumentos))
+    cartao = montar_cartao(instrumentos, barras)
+
+    assert len(fato) == len(instrumentos) * len(GRUPOS)
+    assert sum(b["n_instrumentos"] for b in barras) == sum(f["ativo"] for f in fato)
+
+    return {
+        "i3_ted_publico_fato": fato,
+        "i3_ted_publico_barras": barras,
+        "i3_ted_publico_cartao": cartao,
+    }
+
+
+# ===========================================================================
+# Convênios/Fomentos
+# ===========================================================================
+def _qualidade_dado(empenhado: float, pago: float, firmado: float) -> str:
+    if empenhado == 0 and pago > 0:
+        return "empenho_zero_com_pagamento"
+    if pago > empenhado + 0.01:
+        return "pago_maior_que_empenhado"
+    if empenhado == 0:
+        return "sem_empenho"
+    if abs(firmado - empenhado) > 0.01:
+        return "empenho_parcial"
+    return "ok"
+
+
 def montar_instrumentos_convenio(
-    gold_convenios: list[dict], ano_corte: int = ANO_CORTE
+    gold: list[dict], ano_corte: int = ANO_CORTE_CONVENIO,
+    excluir_empenho_zero_com_pago: bool = EXCLUIR_EMPENHO_ZERO_COM_PAGO,
 ) -> list[dict]:
     instrumentos = []
-    for r in gold_convenios:
-        ano = _ano_instrumento(r)
+    for r in gold:
+        ano = _ano_instrumento_convenio(r.get("data_assinatura"), r.get("inicio_vigencia"))
         if ano is None or ano < ano_corte:
             continue
-        if _txt(r.get("situacao_atual")) in SITUACOES_EXCLUIDAS_CONVENIO:
+        situacao_norm = _sem_acento(_txt(r.get("situacao_atual")).lower())
+        if situacao_norm in SITUACOES_EXCLUIDAS_CONVENIO:
+            continue
+
+        firmado_atualizado = _num(r.get("valor_firmado_atualizado"))
+        firmado = round(
+            firmado_atualizado if firmado_atualizado > 0
+            else _num(r.get("valor_firmado_inicial")),
+            2,
+        )
+        empenhado = round(_num(r.get("valor_empenhado")), 2)
+        pago = round(_num(r.get("valor_total_pago")), 2)
+        qualidade = _qualidade_dado(empenhado, pago, firmado)
+        if excluir_empenho_zero_com_pago and qualidade == "empenho_zero_com_pagamento":
             continue
 
         cats = classificar(r.get("objeto", ""))
         instrumentos.append({
-            "tipo": "Convenio_Fomento",
-            "instrumento": _txt(r.get("modalidade_instrumento")),
-            "id_instrumento": _txt(r.get("nr_convenio")),
-            "origem": "emenda" if _txt(r.get("parlamentares")) else "orcamento_regular",
+            "id": _txt(r.get("nr_convenio")),
             "ano": ano,
-            "programa_governo": "",  # não disponível no gold_convenios (decisão 5)
-            "sigla_executor": _txt(r.get("nome_convenente")),
-            "tx_objeto": _txt(r.get("objeto"))[:200],
+            "origem": ROTULO_EMENDA if _txt(r.get("parlamentares")) else ROTULO_REGULAR,
+            "modalidade": _txt(r.get("modalidade_instrumento")).title(),
+            "qualidade_dado": qualidade,
             **cats,
         })
     return instrumentos
 
 
-# ---------------------------------------------------------------------------
-# Formato longo, para Power BI (unpivot por grupo)
-# ---------------------------------------------------------------------------
-def _montar_grupos(
-    instrumentos: list[dict], id_campo: str, campo_extra: str
-) -> list[dict]:
-    return [
-        {
-            id_campo: r["id_instrumento"],
-            "grupo": grupo,
-            "ativo": r[grupo],
-            "leitura_estrita": r["leitura_estrita"],
-            "leitura_ampla": r["leitura_ampla"],
-            "racial_generico": r["racial_generico"],
-            campo_extra: r[campo_extra],
-            "origem": r["origem"],
-            "ano": r["ano"],
-        }
-        for r in instrumentos
-        for grupo in GRUPOS
-    ]
+def calcular_i3_convenios(gold: list[dict]) -> dict[str, list[dict]]:
+    """Calcula as três saídas do I3 (Convênios/Fomentos)."""
+    instrumentos = montar_instrumentos_convenio(gold)
+    if not instrumentos:
+        raise ValueError("Universo vazio: confira ANO_CORTE_CONVENIO e as situações excluídas.")
 
+    fato = montar_fato(instrumentos, dims=["ano", "origem", "modalidade", "qualidade_dado"])
+    barras = montar_barras(fato, len(instrumentos))
+    cartao = montar_cartao(instrumentos, barras)
 
-def montar_grupos_ted(instrumentos_ted: list[dict]) -> list[dict]:
-    return _montar_grupos(instrumentos_ted, "id_plano_acao", "programa_governo")
+    assert len(fato) == len(instrumentos) * len(GRUPOS)
+    assert sum(b["n_instrumentos"] for b in barras) == sum(f["ativo"] for f in fato)
 
-
-def montar_grupos_convenio(instrumentos_convenio: list[dict]) -> list[dict]:
-    return _montar_grupos(instrumentos_convenio, "nr_convenio", "instrumento")
-
-
-# ---------------------------------------------------------------------------
-# Resumo por bloco (TED, Convênio/Fomento, TOTAL, e por modalidade)
-# ---------------------------------------------------------------------------
-def _resumo_bloco(bloco: list[dict], tipo: str) -> dict:
-    total = len(bloco)
-    n_estrita = sum(r["leitura_estrita"] for r in bloco)
-    n_ampla = sum(r["leitura_ampla"] for r in bloco)
     return {
-        "tipo": tipo,
-        "total_instrumentos": total,
-        "leitura_estrita_n": n_estrita,
-        "leitura_estrita_pct": round(100 * n_estrita / total, 1) if total else 0,
-        "leitura_ampla_n": n_ampla,
-        "leitura_ampla_pct": round(100 * n_ampla / total, 1) if total else 0,
-        "gap_leitura_pct": round(100 * (n_ampla - n_estrita) / total, 1) if total else 0,
-        "pessoas_negras": sum(r["pessoas_negras"] for r in bloco),
-        "mulheres_negras": sum(r["mulheres_negras"] for r in bloco),
-        "estudantes_negros": sum(r["estudantes_negros"] for r in bloco),
-        "quilombolas": sum(r["quilombolas"] for r in bloco),
-        "indigenas": sum(r["indigenas"] for r in bloco),
-        "terreiro": sum(r["terreiro"] for r in bloco),
-        "ciganos": sum(r["ciganos"] for r in bloco),
-        "racial_generico_apenas": sum(
-            1 for r in bloco if r["racial_generico"] and not r["leitura_estrita"]
-        ),
-        "sem_mencao_racial": sum(1 for r in bloco if not r["leitura_ampla"]),
+        "i3_convenio_publico_fato": fato,
+        "i3_convenio_publico_barras": barras,
+        "i3_convenio_publico_cartao": cartao,
     }
 
 
-def calcular_resumo(instrumentos: list[dict]) -> list[dict]:
-    teds = [r for r in instrumentos if r["tipo"] == "TED"]
-    convenios = [r for r in instrumentos if r["tipo"] == "Convenio_Fomento"]
-
-    linhas = [
-        _resumo_bloco(teds, "TED"),
-        _resumo_bloco(convenios, "Convenio_Fomento"),
-        _resumo_bloco(instrumentos, "TOTAL"),
-    ]
-
-    por_instrumento: dict[str, list[dict]] = defaultdict(list)
-    for r in instrumentos:
-        por_instrumento[r["instrumento"]].append(r)
-    for instr, bloco in sorted(por_instrumento.items()):
-        if instr == "TED":
-            continue  # já coberto na linha "TED" acima
-        linhas.append(_resumo_bloco(bloco, instr))
-    return linhas
-
-
-# ---------------------------------------------------------------------------
+# ===========================================================================
 # Orquestração
-# ---------------------------------------------------------------------------
+# ===========================================================================
 def calcular_i3(
-    planos: list[dict],
-    resumo: list[dict],
-    instrumentos_emendas: list[dict],
-    gold_convenios: list[dict],
+    planos: list[dict], resumo: list[dict], gold_convenios: list[dict]
 ) -> dict[str, list[dict]]:
-    """Calcula as quatro saídas do I3 a partir das tabelas-fonte."""
-    instrumentos_ted = montar_instrumentos_ted(planos, resumo, instrumentos_emendas)
-    instrumentos_convenio = montar_instrumentos_convenio(gold_convenios)
-    todos = instrumentos_ted + instrumentos_convenio
+    """Calcula as seis saídas do I3 (TED + Convênios/Fomentos)."""
     return {
-        "i3_publico_alvo_instrumentos": todos,
-        "i3_publico_alvo_resumo": calcular_resumo(todos),
-        "i3_ted_publico_alvo_grupos": montar_grupos_ted(instrumentos_ted),
-        "i3_convenio_publico_alvo_grupos": montar_grupos_convenio(instrumentos_convenio),
+        **calcular_i3_ted(planos, resumo),
+        **calcular_i3_convenios(gold_convenios),
     }

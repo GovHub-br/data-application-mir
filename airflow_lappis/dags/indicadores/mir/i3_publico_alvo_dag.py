@@ -15,7 +15,6 @@ SCHEMA_INDICADORES = "indicadores"
 FONTES = {
     "planos": ("siafi_dbt", "planos_acao_ted"),
     "resumo": ("siafi_dbt", "ted_resumo_orcamentario"),
-    "instrumentos_emendas": ("emendas", "instrumentos_emendas"),
     "gold_convenios": ("siconv_dbt", "resumo_convenios"),
 }
 
@@ -36,8 +35,8 @@ FONTES = {
 def i3_publico_alvo_dag() -> None:
     """I3 — Instrumentos com Público-Alvo Racializado.
 
-    Lê as tabelas dbt (TED, convênios, emendas), aplica a metodologia do BI
-    (plugins/indicadores/i3_publico_alvo.py) e grava as quatro saídas do
+    Lê as tabelas dbt (TED e convênios), aplica a metodologia do BI
+    (plugins/indicadores/i3_publico_alvo.py) e grava as seis saídas do
     indicador no schema ``indicadores``, recalculadas do zero a cada execução.
     """
 
