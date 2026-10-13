@@ -592,13 +592,12 @@ models:
         tests:
           - not_null
           - accepted_values:
-              arguments:
-                values:
-                  - 'a_sem_mencao_ted'
-                  - 'b_menciona_ted_sem_captura'
-                  - 'c_nc_sem_transferencia'
-                  - 'd_ted_sem_vinculo'
-                  - 'e_excluido_siconv'
+              values:
+                - 'a_sem_mencao_ted'
+                - 'b_menciona_ted_sem_captura'
+                - 'c_nc_sem_transferencia'
+                - 'd_ted_sem_vinculo'
+                - 'e_excluido_siconv'
       - name: descartado_em
         description: >
           Em qual filtro a linha morreu. 'silver' = o filtro de vínculo de
@@ -608,8 +607,7 @@ models:
         tests:
           - not_null
           - accepted_values:
-              arguments:
-                values: ['silver', 'gold']
+              values: ['silver', 'gold']
       - name: menciona_ted
         description: >
           true quando algum dos campos de texto lidos pela cascata menciona TED,
