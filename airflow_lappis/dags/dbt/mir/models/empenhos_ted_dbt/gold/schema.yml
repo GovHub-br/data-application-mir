@@ -392,8 +392,7 @@ models:
         tests:
           - not_null
           - accepted_values:
-              arguments:
-                values: ['painel', 'residuo']
+              values: ['painel', 'residuo']
       - name: categoria_residuo
         description: "Motivo do descarte (a/b/c/d/e — ver empenhos_ted_residuo). Nulo quando destino = 'painel'."
       - name: descartado_em
