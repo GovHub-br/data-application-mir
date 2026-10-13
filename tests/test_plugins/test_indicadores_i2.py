@@ -1,290 +1,219 @@
-"""Testes do indicador I2 — Concentração Institucional dos Executores.
+"""Testes do indicador I2 — Valor Médio por Executor/Convenente, por UF.
 
-Cada teste unitário cobre uma decisão metodológica registrada no script
-original da equipe de BI (i2_concentracao_executores.py /
-i2_concentracao_executores_convenios.py). Os testes de regressão usam os
-CSVs entregues pelo BI em `tests/fixtures` como saída esperada.
+Cada teste cobre uma decisão metodológica do pacote Bloco 1 da equipe de BI
+(``i2_ted_bi.R`` / ``i2_convenios_bi.R``), documentada no módulo
+``plugins/indicadores/i2_concentracao_executores.py``.
 """
 
-import csv
-from pathlib import Path
-
-import pytest
-
 from indicadores.i2_concentracao_executores import (
-    agregar_convenio_por_executor,
-    agregar_ted_por_executor,
-    calcular_convenio_localizacao_institucional,
+    ROTULO_SEM_UF,
     calcular_i2,
-    calcular_resumo_convenio,
-    calcular_resumo_ted,
-    calcular_ted_localizacao_institucional,
+    calcular_i2_convenios,
+    calcular_i2_ted,
+    montar_barras_convenio,
+    montar_barras_ted,
+    montar_fato_convenio,
+    montar_fato_ted,
 )
-
-FIXTURES_I2 = Path(__file__).parent.parent / "fixtures" / "indicadores" / "i2"
-FIXTURES_I1 = Path(__file__).parent.parent / "fixtures" / "indicadores" / "i1"
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-def _ted_i1(
-    id_plano_acao, sigla="UFX", nome="Universidade X", vl_firmado=1000.0, **extra
-):
-    base = {
+def _plano(id_plano_acao, situacao="APROVADO", ano=2024, firmado=1000.0,
+           sigla="UFBA", nome_unidade="Universidade Federal da Bahia"):
+    return {
         "id_plano_acao": id_plano_acao,
-        "sigla_executor": sigla,
-        "nome_executor": nome,
-        "programa_governo": "5804",
-        "origem": "orcamento_regular",
-        "ano": "2024",
-        "vl_firmado": vl_firmado,
-    }
-    base.update(extra)
-    return base
-
-
-def _convenio_i1(
-    nr_convenio, convenente="Prefeitura X", uf="DF", empenhado=1000.0, **extra
-):
-    base = {
-        "nr_convenio": nr_convenio,
-        "convenente": convenente,
-        "categoria_convenente": "Administração Pública Municipal",
-        "uf_execucao": uf,
-        "municipio_execucao": "BRASÍLIA",
-        "instrumento": "CONVENIO",
-        "origem": "orcamento_regular",
-        "ano": 2024,
-        "empenhado_liquido": empenhado,
-    }
-    base.update(extra)
-    return base
-
-
-def _ler_fixture(pasta, nome, numericos=(), inteiros=()):
-    with open(pasta / nome, encoding="utf-8-sig") as f:
-        linhas = list(csv.DictReader(f))
-    for linha in linhas:
-        for col in numericos:
-            linha[col] = float(linha[col])
-        for col in inteiros:
-            linha[col] = int(linha[col])
-    return linhas
-
-
-def _assert_linhas_iguais(obtidas, esperadas):
-    assert len(obtidas) == len(esperadas)
-    for obtida, esperada in zip(obtidas, esperadas):
-        assert set(obtida) == set(esperada), f"colunas diferem: {obtida.keys()}"
-        for col, valor in esperada.items():
-            if isinstance(valor, float):
-                assert obtida[col] == pytest.approx(valor, abs=0.011), (col, obtida)
-            else:
-                assert obtida[col] == valor, (col, obtida, esperada)
-
-
-# ---------------------------------------------------------------------------
-# Bloco 1 — TED: UF-sede e tipo institucional
-# ---------------------------------------------------------------------------
-def test_ted_uf_sede_vem_do_dicionario_por_sigla() -> None:
-    """Decisão 1: leitura institucional (sede), não territorial."""
-    [ted] = calcular_ted_localizacao_institucional([_ted_i1(1, sigla="UFPR")])
-
-    assert ted["uf_sede"] == "PR"
-    assert ted["tipo_institucional"] == "Universidade Federal"
-
-
-def test_ted_sigla_nao_mapeada_fica_explicita() -> None:
-    [ted] = calcular_ted_localizacao_institucional([_ted_i1(1, sigla="XPTO")])
-
-    assert ted["uf_sede"] == "NAO_MAPEADO"
-    assert ted["tipo_institucional"] == "Outro"
-
-
-def test_ted_sigla_vazia_corrigida_pelo_nome_conhecido() -> None:
-    """Decisão 4: sigla vazia é inferida pelo nome do executor quando possível."""
-    [ted] = calcular_ted_localizacao_institucional(
-        [_ted_i1(1, sigla="", nome="Universidade Federal do Parana")]
-    )
-
-    assert ted["sigla_executor"] == "UFPR"
-    assert ted["uf_sede"] == "PR"
-
-
-def test_ted_sigla_vazia_sem_nome_conhecido_vira_sem_sigla() -> None:
-    [ted] = calcular_ted_localizacao_institucional(
-        [_ted_i1(1, sigla="", nome="Orgao Qualquer")]
-    )
-
-    assert ted["sigla_executor"] == "SEM_SIGLA"
-
-
-def test_ted_tipo_institucional_por_correspondencia_exata_nao_prefixo() -> None:
-    """Decisão 3: UNIFEI não é confundida com universidade 'UF*' por prefixo."""
-    [unifei] = calcular_ted_localizacao_institucional([_ted_i1(1, sigla="UNIFEI")])
-    [instituto] = calcular_ted_localizacao_institucional([_ted_i1(2, sigla="IFBA")])
-    [outro] = calcular_ted_localizacao_institucional([_ted_i1(3, sigla="IPEA")])
-
-    assert unifei["tipo_institucional"] == "Universidade Federal"
-    assert instituto["tipo_institucional"] == "Instituto Federal"
-    assert outro["tipo_institucional"] == "Outro"
-
-
-# ---------------------------------------------------------------------------
-# Bloco 1 — TED: agregação e HHI
-# ---------------------------------------------------------------------------
-def test_ted_hhi_calculado_sobre_vl_firmado() -> None:
-    """Decisão 2: base do HHI é vl_firmado, não empenhado (não existe no I2)."""
-    loc = calcular_ted_localizacao_institucional([
-        _ted_i1(1, sigla="A", vl_firmado=600.0),
-        _ted_i1(2, sigla="A", vl_firmado=0.0),
-        _ted_i1(3, sigla="B", vl_firmado=400.0),
-    ])
-
-    [resumo] = calcular_resumo_ted(loc)
-
-    # A: 60% -> 3600; B: 40% -> 1600; HHI = 5200
-    assert resumo["hhi"] == 5200.0
-    assert resumo["n_executores_distintos"] == 2
-    assert resumo["total_firmado"] == 1000.0
-
-
-def test_ted_concentracao_agrupa_por_sigla_e_ordena_desc() -> None:
-    loc = calcular_ted_localizacao_institucional([
-        _ted_i1(1, sigla="A", vl_firmado=100.0),
-        _ted_i1(2, sigla="B", vl_firmado=900.0),
-        _ted_i1(3, sigla="A", vl_firmado=100.0),
-    ])
-
-    conc = agregar_ted_por_executor(loc)
-
-    assert [c["sigla_executor"] for c in conc] == ["B", "A"]
-    assert conc[0]["n_teds"] == 1
-    assert conc[1]["n_teds"] == 2
-    assert conc[1]["vl_firmado"] == 200.0
-    assert conc[0]["share_pct"] == pytest.approx(81.82, abs=0.01)  # 900 / 1100
-
-
-# ---------------------------------------------------------------------------
-# Bloco 2 — Convênios: recorte de campos e agregação
-# ---------------------------------------------------------------------------
-def test_convenio_localizacao_recorta_campos_do_universo_do_i1() -> None:
-    [conv] = calcular_convenio_localizacao_institucional([_convenio_i1(1)])
-
-    assert set(conv) == {
-        "nr_convenio", "convenente", "categoria_convenente", "uf_execucao",
-        "municipio_execucao", "instrumento", "origem", "ano", "empenhado_liquido",
+        "tx_situacao_plano_acao": situacao,
+        "aa_ano_plano_acao": ano,
+        "vl_total_plano_acao": firmado,
+        "sigla_unidade_descentralizada": sigla,
+        "unidade_descentralizada": nome_unidade,
     }
 
 
-def test_convenio_hhi_calculado_sobre_empenhado_liquido() -> None:
-    """Decisão 2: base do HHI para convênios é empenhado_liquido, não vl_firmado."""
-    loc = calcular_convenio_localizacao_institucional([
-        _convenio_i1(1, convenente="X", empenhado=750.0),
-        _convenio_i1(2, convenente="Y", empenhado=250.0),
-    ])
-
-    [resumo] = calcular_resumo_convenio(loc)
-
-    # X: 75% -> 5625; Y: 25% -> 625; HHI = 6250
-    assert resumo["hhi"] == 6250.0
-    assert resumo["n_convenentes_distintos"] == 2
+def _resumo(plano_acao, origem):
+    return {"plano_acao": plano_acao, "origem": origem}
 
 
-def test_convenio_agrega_por_nome_do_convenente_sem_cnpj() -> None:
-    """Decisão 5: sem CNPJ disponível, agregação é por nome (risco de grafia)."""
-    loc = calcular_convenio_localizacao_institucional([
-        _convenio_i1(1, convenente="Prefeitura de X"),
-        _convenio_i1(2, convenente="Prefeitura de X"),
-    ])
-
-    [conc] = agregar_convenio_por_executor(loc)
-
-    assert conc["n_instrumentos"] == 2
-
-
-def test_convenio_reporta_n_ufs_distintas_em_vez_de_uf_unica() -> None:
-    """Decisão 6: um convenente pode executar em mais de uma UF."""
-    loc = calcular_convenio_localizacao_institucional([
-        _convenio_i1(1, convenente="X", uf="DF"),
-        _convenio_i1(2, convenente="X", uf="GO"),
-        _convenio_i1(3, convenente="X", uf="DF"),
-    ])
-
-    [conc] = agregar_convenio_por_executor(loc)
-
-    assert conc["n_ufs_distintas"] == 2
-    assert "uf_execucao" not in conc
-    assert "uf_sede" not in conc
+def _convenio(nr, assinatura="2024-03-01", vigencia=None, situacao="Em execução",
+              parlamentares=None, firmado_atualizado=1000.0, firmado_inicial=0.0,
+              empenhado=1000.0, pago=500.0, convenente="Instituto X",
+              uf_execucao=None, categoria=None):
+    return {
+        "nr_convenio": nr,
+        "modalidade_instrumento": "CONVENIO",
+        "parlamentares": parlamentares,
+        "data_assinatura": assinatura,
+        "inicio_vigencia": vigencia,
+        "situacao_atual": situacao,
+        "valor_firmado_atualizado": firmado_atualizado,
+        "valor_firmado_inicial": firmado_inicial,
+        "valor_empenhado": empenhado,
+        "valor_total_pago": pago,
+        "nome_convenente": convenente,
+        "uf_execucao": uf_execucao,
+        "categoria_convenente": categoria,
+    }
 
 
 # ---------------------------------------------------------------------------
-# Regressão — contra os resultados entregues pelo BI
+# TED — executor e UF (sede, via dicionário)
 # ---------------------------------------------------------------------------
-def test_regressao_ted_localizacao_institucional() -> None:
-    teds_i1 = _ler_fixture(FIXTURES_I1, "i1_ted_por_instrumento.csv")
-    esperado = _ler_fixture(FIXTURES_I2, "i2_ted_localizacao_institucional.csv",
-                             numericos=("vl_firmado",))
+def test_ted_rejeitado_fica_fora() -> None:
+    planos = [_plano(1), _plano(2, situacao="REJEITADO")]
 
-    _assert_linhas_iguais(calcular_ted_localizacao_institucional(teds_i1), esperado)
+    fato = montar_fato_ted(planos, resumo=[])
+
+    assert [f["id_plano_acao"] for f in fato] == ["1"]
 
 
-def test_regressao_ted_concentracao() -> None:
-    teds_i1 = _ler_fixture(FIXTURES_I1, "i1_ted_por_instrumento.csv")
-    esperado = _ler_fixture(
-        FIXTURES_I2, "i2_executores_concentracao.csv",
-        numericos=("vl_firmado", "share_pct", "share_pct_ao_quadrado"),
-        inteiros=("n_teds",),
+def test_ted_uf_vem_do_dicionario_por_sigla() -> None:
+    [f] = montar_fato_ted([_plano(1, sigla="UFBA")], resumo=[])
+
+    assert f["executor"] == "UFBA"
+    assert f["uf"] == "BA"
+
+
+def test_ted_sigla_ausente_corrigida_pelo_nome() -> None:
+    [f] = montar_fato_ted(
+        [_plano(1, sigla="", nome_unidade="Universidade Federal do Paraná")], resumo=[],
     )
 
-    loc = calcular_ted_localizacao_institucional(teds_i1)
-    _assert_linhas_iguais(agregar_ted_por_executor(loc), esperado)
+    assert f["executor"] == "UFPR"
+    assert f["uf"] == "PR"
 
 
-def test_regressao_ted_resumo() -> None:
-    teds_i1 = _ler_fixture(FIXTURES_I1, "i1_ted_por_instrumento.csv")
-    esperado = _ler_fixture(
-        FIXTURES_I2, "i2_resumo.csv",
-        numericos=("total_firmado", "hhi"),
-        inteiros=("n_teds", "n_executores_distintos"),
-    )
+def test_ted_sigla_ausente_sem_correcao_vira_sem_sigla_e_sem_uf() -> None:
+    [f] = montar_fato_ted([_plano(1, sigla="", nome_unidade="Órgão Desconhecido")], resumo=[])
 
-    loc = calcular_ted_localizacao_institucional(teds_i1)
-    _assert_linhas_iguais(calcular_resumo_ted(loc), esperado)
+    assert f["executor"] == "Sem sigla"
+    assert f["uf"] == ROTULO_SEM_UF
 
 
-def test_regressao_convenio_localizacao_institucional() -> None:
-    convenios_i1 = _ler_fixture(FIXTURES_I1, "i1_convenios_por_instrumento.csv")
-    esperado = _ler_fixture(FIXTURES_I2, "i2_convenio_localizacao_institucional.csv",
-                             numericos=("empenhado_liquido",))
+def test_ted_sigla_fora_do_dicionario_vira_sem_uf() -> None:
+    [f] = montar_fato_ted([_plano(1, sigla="XYZ")], resumo=[])
 
-    obtido = calcular_convenio_localizacao_institucional(convenios_i1)
-    _assert_linhas_iguais(obtido, esperado)
+    assert f["executor"] == "XYZ"
+    assert f["uf"] == ROTULO_SEM_UF
 
 
-def test_regressao_convenio_concentracao() -> None:
-    convenios_i1 = _ler_fixture(FIXTURES_I1, "i1_convenios_por_instrumento.csv")
-    esperado = _ler_fixture(
-        FIXTURES_I2, "i2_convenio_concentracao.csv",
-        numericos=("empenhado_liquido", "share_pct", "share_pct_ao_quadrado"),
-        inteiros=("n_instrumentos", "n_ufs_distintas"),
-    )
+def test_ted_origem_via_resumo_orcamentario() -> None:
+    [f] = montar_fato_ted([_plano(1)], resumo=[_resumo(1, "Emenda - Dep. X")])
 
-    loc = calcular_convenio_localizacao_institucional(convenios_i1)
-    _assert_linhas_iguais(agregar_convenio_por_executor(loc), esperado)
+    assert f["origem"] == "Emenda"
 
 
-def test_regressao_convenio_resumo() -> None:
-    convenios_i1 = _ler_fixture(FIXTURES_I1, "i1_convenios_por_instrumento.csv")
-    esperado = _ler_fixture(
-        FIXTURES_I2, "i2_resumo_convenio.csv",
-        numericos=("total_empenhado", "hhi"),
-        inteiros=("n_instrumentos", "n_convenentes_distintos"),
-    )
+def test_barras_ted_valor_medio_e_ponderado_por_executor_nao_media_de_medias() -> None:
+    # UFBA: 1 executor, 2 TEDs, 900 total -> média 900.
+    # UFC: 1 executor, 1 TED, 100 total -> média 100.
+    planos = [
+        _plano(1, sigla="UFBA", firmado=500.0),
+        _plano(2, sigla="UFBA", firmado=400.0),
+        _plano(3, sigla="UFC", firmado=100.0),
+    ]
+    fato = montar_fato_ted(planos, resumo=[])
 
-    loc = calcular_convenio_localizacao_institucional(convenios_i1)
-    _assert_linhas_iguais(calcular_resumo_convenio(loc), esperado)
+    barras = montar_barras_ted(fato)
+
+    por_uf = {b["uf_grupo"]: b for b in barras}
+    assert por_uf["BA"]["valor_medio_por_executor"] == 900.0
+    assert por_uf["CE"]["valor_medio_por_executor"] == 100.0
+    assert por_uf["BA"]["media_nacional"] == por_uf["CE"]["media_nacional"]
+
+
+def test_calcular_i2_ted_devolve_tres_saidas_e_passa_nas_checagens() -> None:
+    planos = [
+        _plano(1, sigla="UFBA", firmado=1000.0),
+        _plano(2, sigla="UFC", firmado=2000.0),
+        _plano(3, situacao="REJEITADO"),
+    ]
+
+    saidas = calcular_i2_ted(planos, resumo=[])
+
+    assert set(saidas) == {"i2_ted_executor_uf_fato", "i2_ted_uf_barras", "i2_ted_cartao"}
+    assert len(saidas["i2_ted_executor_uf_fato"]) == 2
+
+    [cartao] = saidas["i2_ted_cartao"]
+    assert cartao["firmado"] == 3000.0
+    assert cartao["n_executores"] == 2
+
+
+# ---------------------------------------------------------------------------
+# Convênios/Fomentos — uf_execucao deixada em branco (decisão da equipe)
+# ---------------------------------------------------------------------------
+def test_convenio_corte_temporal_2023() -> None:
+    gold = [_convenio(1, assinatura="2022-12-31"), _convenio(2, assinatura="2023-01-01")]
+
+    instrumentos = montar_fato_convenio(gold)
+
+    assert [i["nr_convenio"] for i in instrumentos] == ["2"]
+
+
+def test_convenio_exclui_empenho_zero_com_pagamento_por_padrao() -> None:
+    gold = [_convenio(1, empenhado=0.0, pago=100.0), _convenio(2, empenhado=100.0, pago=50.0)]
+
+    instrumentos = montar_fato_convenio(gold)
+
+    assert [i["nr_convenio"] for i in instrumentos] == ["2"]
+
+
+def test_convenio_uf_execucao_nula_vira_sem_uf() -> None:
+    """Decisão da equipe (João): uf_execucao fica NULL até o coleta mir existir —
+    o indicador não quebra, só cai inteiro no grupo 'Sem UF' enquanto isso."""
+    [i] = montar_fato_convenio([_convenio(1, uf_execucao=None)])
+
+    assert i["uf"] == ROTULO_SEM_UF
+
+
+def test_convenio_uf_execucao_invalida_tambem_vira_sem_uf() -> None:
+    [i] = montar_fato_convenio([_convenio(1, uf_execucao="Múltiplas UFs")])
+
+    assert i["uf"] == ROTULO_SEM_UF
+
+
+def test_convenio_nome_normalizado_sem_acento_e_maiuscula() -> None:
+    [i] = montar_fato_convenio([_convenio(1, convenente="Instituto de São José  ")])
+
+    assert i["convenente"] == "INSTITUTO DE SAO JOSE"
+
+
+def test_convenio_mesmo_convenente_conta_uma_vez_por_uf() -> None:
+    """Como uf_execucao está sempre nula hoje, todo convenente cai no mesmo
+    grupo 'Sem UF' — o teste já cobre esse caso degenerado."""
+    gold = [
+        _convenio(1, convenente="Instituto X", uf_execucao=None),
+        _convenio(2, convenente="Instituto X", uf_execucao=None),
+    ]
+    instrumentos = montar_fato_convenio(gold)
+
+    barras = montar_barras_convenio(instrumentos)
+
+    [barra] = barras
+    assert barra["uf_grupo"] == ROTULO_SEM_UF
+    assert barra["n_convenentes"] == 1
+    assert barra["n_instrumentos"] == 2
+
+
+def test_calcular_i2_convenios_devolve_tres_saidas_e_passa_nas_checagens() -> None:
+    gold = [
+        _convenio(1, convenente="Instituto A", firmado_atualizado=1000.0, empenhado=1000.0),
+        _convenio(2, convenente="Instituto B", firmado_atualizado=2000.0, empenhado=2000.0),
+    ]
+
+    saidas = calcular_i2_convenios(gold)
+
+    assert set(saidas) == {
+        "i2_convenio_convenente_uf_fato", "i2_convenio_uf_barras", "i2_convenio_cartao",
+    }
+
+    [cartao] = saidas["i2_convenio_cartao"]
+    assert cartao["firmado"] == 3000.0
+    assert cartao["n_convenentes"] == 2
+
+    # Único grupo "Sem UF" hoje, já que uf_execucao está sempre em branco.
+    [barra] = saidas["i2_convenio_uf_barras"]
+    assert barra["uf_grupo"] == ROTULO_SEM_UF
 
 
 # ---------------------------------------------------------------------------
@@ -292,17 +221,12 @@ def test_regressao_convenio_resumo() -> None:
 # ---------------------------------------------------------------------------
 def test_calcular_i2_devolve_as_seis_saidas() -> None:
     saidas = calcular_i2(
-        teds_i1=[_ted_i1(1)],
-        convenios_i1=[_convenio_i1(1)],
+        planos=[_plano(1)],
+        resumo=[],
+        gold_convenios=[_convenio(1)],
     )
 
     assert set(saidas) == {
-        "i2_ted_localizacao_institucional",
-        "i2_executores_concentracao",
-        "i2_resumo",
-        "i2_convenio_localizacao_institucional",
-        "i2_convenio_concentracao",
-        "i2_resumo_convenio",
+        "i2_ted_executor_uf_fato", "i2_ted_uf_barras", "i2_ted_cartao",
+        "i2_convenio_convenente_uf_fato", "i2_convenio_uf_barras", "i2_convenio_cartao",
     }
-    assert saidas["i2_resumo"][0]["n_teds"] == 1
-    assert saidas["i2_resumo_convenio"][0]["n_instrumentos"] == 1

@@ -1,53 +1,89 @@
-"""Indicador I2 — Concentração Institucional dos Executores.
+"""Indicador I2 — Valor Médio por Executor/Convenente, por UF.
 
-Porte de ``i2_concentracao_executores.py`` (TED) e
-``i2_concentracao_executores_convenios.py`` (Convênios/Fomentos), equipe de
-BI. Funções puras — a lógica e as decisões metodológicas são as dos scripts
-originais; só a origem dos dados muda.
+Porte de ``I2/i2_ted_bi.R`` e ``I2/i2_convenios_bi.R`` (equipe de BI, pacote
+Bloco 1). Substitui a versão anterior deste indicador (concentração
+institucional via HHI, lendo a SAÍDA do I1). Esta versão troca o HHI por
+valor médio por entidade (executor/convenente) dentro de cada UF, lendo as
+tabelas dbt diretamente — TED e Convênios/Fomentos calculados por módulos
+independentes (``calcular_i2_ted`` / ``calcular_i2_convenios``), mesmo
+padrão do I1/I3/I4/I8.
 
-Diferente do I1, este indicador NÃO reprocessa as tabelas dbt: ele lê a SAÍDA
-do I1 já gravada no schema ``indicadores`` (``i1_ted_por_instrumento`` e
-``i1_convenios_por_instrumento``), decisão da BI para os dois indicadores
-nunca divergirem sobre "quem está no universo". A DAG deste indicador roda
-por isso depois da DAG do I1.
+O QUE O INDICADOR ENTREGA: barras por UF — valor médio por entidade =
+firmado da UF ÷ nº de entidades distintas da UF; linha de referência = média
+nacional (firmado total ÷ total de entidades). Ponderação sempre pelo nº de
+entidades (nunca média de médias): o grupo "Demais" soma o firmado das UFs
+menores e divide pela soma dos seus executores/convenentes.
 
-Fontes (tabelas em ``indicadores``, gravadas pela DAG do I1):
-    indicadores.i1_ted_por_instrumento       → universo + valores dos TEDs
-    indicadores.i1_convenios_por_instrumento → universo + valores dos
-                                                convênios/fomentos
+TED — UF é a SEDE do executor, não o território atendido:
+ - Executor = unidade descentralizada do plano (``sigla_unidade_descentralizada``).
+   Cada executor pertence a uma única UF (a da sede), via o dicionário
+   ``SIGLA_PARA_UF``. Sigla fora do dicionário vira "Sem UF"; plano sem
+   sigla é corrigido pelo nome via ``CORRECAO_SIGLA_VAZIA`` quando possível,
+   senão vira "Sem sigla".
+ - Valor = firmado (``vl_total_plano_acao``), não empenhado — a maioria dos
+   TEDs tem empenho zero, o que zeraria a maior parte da carteira.
+ - Mesmo universo e lógica de origem do I1/I4/I8 novos.
 
-Decisões metodológicas (resumo; detalhe nos scripts originais):
- 1. Leitura institucional, não territorial: a UF do TED é a SEDE do executor
-    (dicionário ``SIGLA_PARA_UF``, por sigla institucional), não o território
-    atendido — um TED com sede em Brasília pode financiar o país inteiro.
-    Convênios usam ``uf_execucao`` (execução real, já validada no I1).
- 2. Base do HHI difere por fonte: TED usa ``vl_firmado`` (92 dos 116 TEDs têm
-    empenho zero — HHI sobre empenhado zeraria a participação da maior parte
-    da carteira); Convênios usa ``empenhado_liquido`` (só 11 de 181 têm
-    empenho zero).
- 3. Tipo institucional (TED): classificação por correspondência EXATA de
-    sigla (não por prefixo, para não confundir UNIFEI/UNIRIO/UNIVASF com
-    universidades federais "UF*"). "Outro" é honesto, não substantivo —
-    mistura naturezas jurídicas diferentes (autarquia, fundação, órgão etc).
- 4. Sigla vazia (TED): corrigida via nome do executor quando possível (ex.:
-    "UNIVERSIDADE FEDERAL DO PARANA" -> "UFPR"); senão vira "SEM_SIGLA".
- 5. Convênios: agregação por NOME do convenente (``gold_convenios`` não tem
-    CNPJ) — risco de variação de grafia inflar a contagem de executores
-    distintos, registrado como limitação, não resolvido aqui.
- 6. Convênios: um mesmo convenente pode executar em mais de uma UF (ao
-    contrário do TED, onde a sede é fixa) — o agregado por executor não
-    atribui UF única, reporta ``n_ufs_distintas``.
- 7. HHI = Σ (participação percentual de cada executor)², em escala 0-10.000.
-    Calculado sobre os valores SEM arredondamento intermediário (arredondar
-    cada share antes de somar os quadrados desloca o HHI final).
+Convênios/Fomentos — UF é ``uf_execucao`` do gold, DEIXADA EM BRANCO desde o
+fix de ``siconv_dbt.resumo_convenios`` (decisão da equipe: não inferir de
+outra fonte do SICONV, dado real virá do coleta mir). Na prática, hoje TODO
+convênio cai no grupo único "Sem UF" até esse dado existir — o indicador
+continua funcionando (não quebra, não é caso especial no código), só não
+quebra por UF enquanto a fonte não é populada. Quando o coleta mir existir,
+este indicador passa a desagregar por UF sem precisar de nenhuma mudança de
+código.
+ - Convenente identificado pelo NOME normalizado (sem CNPJ na base) —
+   variações de grafia podem inflar a contagem de convenentes.
+ - Mesmo universo do I1 Convênios (ano >= 2023, situações excluídas,
+   exclusão de ``empenho_zero_com_pagamento`` por padrão).
+ - Um convenente pode aparecer em mais de uma UF — conta uma vez em cada UF.
+
+Fontes (tabelas dbt):
+    siafi_dbt.planos_acao_ted         → cadastro, firmado, ano, situação, executor
+    siafi_dbt.ted_resumo_orcamentario → usado só para a coluna origem
+    siconv_dbt.resumo_convenios       → convênios/fomentos consolidados
+
+Saídas (6):
+    i2_ted_executor_uf_fato, i2_ted_uf_barras, i2_ted_cartao,
+    i2_convenio_convenente_uf_fato, i2_convenio_uf_barras, i2_convenio_cartao
 """
 
+import unicodedata
 from collections import defaultdict
+from datetime import date, datetime
 from typing import Any
+
+ANO_CORTE_CONVENIO = 2023
+SITUACOES_EXCLUIDAS_TED = {"REJEITADO"}
+SITUACOES_EXCLUIDAS_CONVENIO = {"cancelado", "convenio anulado"}
+EXCLUIR_EMPENHO_ZERO_COM_PAGO = True
+ROTULO_REGULAR = "Regular"
+ROTULO_EMENDA = "Emenda"
+ROTULO_SEM_INFO = "Sem informação"
+N_UFS_DESTAQUE = 8
+ROTULO_DEMAIS = "Demais"
+ROTULO_SEM_UF = "Sem UF"
+
+# Dicionário sigla do executor -> UF da sede. Acrescentar siglas novas aqui.
+SIGLA_PARA_UF = {
+    "AGU": "DF", "ABC": "DF", "CAPES": "DF", "CGU": "DF", "CNPq": "DF",
+    "CODEVASF": "DF", "CONAB": "DF", "Enap": "DF", "FCP": "DF", "IBGE": "RJ",
+    "IPEA": "DF", "MEC": "DF", "MinC": "DF", "SENAD": "DF", "SENATP": "DF",
+    "FIOCRUZ": "RJ", "CPAR": "RJ", "IFB": "DF", "IFBA": "BA", "IFG": "GO",
+    "IFMA": "MA", "IFRJ": "RJ", "IFRN": "RN", "IFSP": "SP", "UFABC": "SP",
+    "UFAL": "AL", "UFBA": "BA", "UFC": "CE", "UFCG": "PB", "UFF": "RJ",
+    "UFFS": "SC", "UFG": "GO", "UFGD": "MS", "UFJ": "GO", "UFMA": "MA",
+    "UFOPA": "PA", "UFPA": "PA", "UFPB": "PB", "UFRB": "BA", "UFRGS": "RS",
+    "UFRJ": "RJ", "UFSB": "BA", "UFSC": "SC", "UFSCar": "SP", "UFSM": "RS",
+    "UFU": "MG", "UNB": "DF", "UNIFEI": "MG", "UNIRIO": "RJ", "UNIVASF": "PE",
+    "UFCSPA": "RS", "UTFPR": "PR", "UFPR": "PR",
+}
+# Plano sem sigla de executor: corrige pelo nome da unidade (maiúsculas, sem acento)
+CORRECAO_SIGLA_VAZIA = {"UNIVERSIDADE FEDERAL DO PARANA": "UFPR"}
 
 
 # ---------------------------------------------------------------------------
-# Normalização (mesmos helpers do i1_valor_executado.py)
+# Normalização
 # ---------------------------------------------------------------------------
 def _txt(valor: Any) -> str:
     return "" if valor is None else str(valor).strip()
@@ -67,199 +103,343 @@ def _num(valor: Any) -> float:
         return 0.0
 
 
-# ---------------------------------------------------------------------------
-# Dicionário sigla -> UF-sede e tipo institucional (decisões 1/3/4; TED)
-# ---------------------------------------------------------------------------
-SIGLA_PARA_UF = {
-    "AGU": "DF", "CAPES": "DF", "CGU": "DF", "CNPq": "DF", "CODEVASF": "DF",
-    "CONAB": "DF", "Enap": "DF", "FCP": "DF", "IBGE": "RJ", "IPEA": "DF",
-    "MEC": "DF", "MinC": "DF", "SENAD": "DF", "SENATP": "DF",
-    "FIOCRUZ": "RJ",
-    "CPAR": "RJ", "IFB": "DF", "IFBA": "BA", "IFG": "GO", "IFMA": "MA",
-    "IFRJ": "RJ", "IFRN": "RN", "IFSP": "SP",
-    "UFABC": "SP", "UFAL": "AL", "UFBA": "BA", "UFC": "CE", "UFCG": "PB",
-    "UFF": "RJ", "UFFS": "SC", "UFG": "GO", "UFGD": "MS", "UFJ": "GO",
-    "UFMA": "MA", "UFOPA": "PA", "UFPA": "PA", "UFPB": "PB", "UFRB": "BA",
-    "UFRGS": "RS", "UFRJ": "RJ", "UFSB": "BA", "UFSC": "SC", "UFSCar": "SP",
-    "UFSM": "RS", "UFU": "MG", "UNB": "DF", "UNIFEI": "MG", "UNIRIO": "RJ",
-    "UNIVASF": "PE", "UFCSPA": "RS", "UTFPR": "PR",
-    "UFPR": "PR",  # decisão 4: inferido para TEDs sem sigla preenchida
-}
-
-UNIVERSIDADES_FEDERAIS = {
-    "UFABC", "UFAL", "UFBA", "UFC", "UFCG", "UFCSPA", "UFF", "UFFS", "UFG",
-    "UFGD", "UFJ", "UFMA", "UFOPA", "UFPA", "UFPB", "UFPR", "UFRB", "UFRGS",
-    "UFRJ", "UFSB", "UFSC", "UFSCar", "UFSM", "UFU", "UNB", "UNIFEI",
-    "UNIRIO", "UNIVASF", "UTFPR",
-}
-INSTITUTOS_FEDERAIS = {"IFB", "IFBA", "IFG", "IFMA", "IFRJ", "IFRN", "IFSP", "CPAR"}
-
-# Decisão 4: sigla vazia -> inferida pelo nome do executor
-CORRECAO_SIGLA_VAZIA = {
-    "UNIVERSIDADE FEDERAL DO PARANA": "UFPR",
-}
+def _ano_int(valor: Any) -> int | None:
+    texto = _txt(valor)
+    try:
+        return int(float(texto)) if texto else None
+    except ValueError:
+        return None
 
 
-def _tipo_institucional(sigla: str) -> str:
-    if sigla in UNIVERSIDADES_FEDERAIS:
-        return "Universidade Federal"
-    if sigla in INSTITUTOS_FEDERAIS:
-        return "Instituto Federal"
-    return "Outro"
+def _sem_acento(texto: str) -> str:
+    texto = unicodedata.normalize("NFD", texto)
+    return "".join(c for c in texto if unicodedata.category(c) != "Mn")
 
 
-def _hhi_por_grupo(linhas: list[dict], chave: str, campo_valor: str) -> float:
-    """HHI = Σ (share_pct)², sem arredondar cada share antes de somar (decisão 7)."""
-    total = sum(_num(l[campo_valor]) for l in linhas)
-    if not total:
-        return 0.0
-    somas: dict[str, float] = defaultdict(float)
-    for l in linhas:
-        somas[l[chave]] += _num(l[campo_valor])
-    return round(sum((soma / total * 100) ** 2 for soma in somas.values()), 1)
+def _ano_data(valor: Any) -> int | None:
+    if isinstance(valor, (date, datetime)):
+        return valor.year
+    texto = _txt(valor)
+    if len(texto) >= 4 and texto[:4].isdigit():
+        return int(texto[:4])
+    return None
 
 
-# ---------------------------------------------------------------------------
-# Bloco 1 — TED
-# ---------------------------------------------------------------------------
-def calcular_ted_localizacao_institucional(teds_i1: list[dict]) -> list[dict]:
-    """Enriquece o universo do I1 (TED) com UF-sede e tipo institucional."""
-    linhas = []
-    for t in teds_i1:
-        sigla = _txt(t.get("sigla_executor"))
-        if not sigla:
-            nome = _txt(t.get("nome_executor")).upper()
-            sigla = CORRECAO_SIGLA_VAZIA.get(nome, "") or "SEM_SIGLA"
-
-        linhas.append({
-            "id_plano_acao": _txt(t.get("id_plano_acao")),
-            "sigla_executor": sigla,
-            "nome_executor": _txt(t.get("nome_executor")),
-            "uf_sede": SIGLA_PARA_UF.get(sigla, "NAO_MAPEADO"),
-            "tipo_institucional": _tipo_institucional(sigla),
-            "programa_governo": _txt(t.get("programa_governo")),
-            "origem": _txt(t.get("origem")),
-            "ano": _txt(t.get("ano")),
-            "vl_firmado": round(_num(t.get("vl_firmado")), 2),
-        })
-    return linhas
+def _ano_instrumento_convenio(data_assinatura: Any, inicio_vigencia: Any) -> int | None:
+    return _ano_data(data_assinatura) or _ano_data(inicio_vigencia)
 
 
-def agregar_ted_por_executor(localizacao: list[dict]) -> list[dict]:
-    """Agrega por executor; HHI sobre vl_firmado (decisão 2)."""
-    total = sum(l["vl_firmado"] for l in localizacao)
-    acc: dict[str, dict] = defaultdict(lambda: {
-        "nome_executor": "", "uf_sede": "", "tipo_institucional": "",
-        "n_teds": 0, "vl_firmado": 0.0,
-    })
-    for l in localizacao:
-        e = acc[l["sigla_executor"]]
-        e["nome_executor"] = l["nome_executor"]
-        e["uf_sede"] = l["uf_sede"]
-        e["tipo_institucional"] = l["tipo_institucional"]
-        e["n_teds"] += 1
-        e["vl_firmado"] += l["vl_firmado"]
-
-    saida = []
-    for sigla, v in sorted(acc.items(), key=lambda x: -x[1]["vl_firmado"]):
-        share_pct_raw = v["vl_firmado"] / total * 100 if total else 0.0
-        saida.append({
-            "sigla_executor": sigla,
-            "nome_executor": v["nome_executor"],
-            "uf_sede": v["uf_sede"],
-            "tipo_institucional": v["tipo_institucional"],
-            "n_teds": v["n_teds"],
-            "vl_firmado": round(v["vl_firmado"], 2),
-            "share_pct": round(share_pct_raw, 2),
-            "share_pct_ao_quadrado": round(share_pct_raw ** 2, 2),
-        })
-    return saida
+def _normalizar_nome(valor: Any) -> str:
+    return " ".join(_sem_acento(_txt(valor)).upper().split())
 
 
-def calcular_resumo_ted(localizacao: list[dict]) -> list[dict]:
-    return [{
-        "n_teds": len(localizacao),
-        "n_executores_distintos": len({l["sigla_executor"] for l in localizacao}),
-        "total_firmado": round(sum(l["vl_firmado"] for l in localizacao), 2),
-        "hhi": _hhi_por_grupo(localizacao, "sigla_executor", "vl_firmado"),
-    }]
+def _limpa_uf(valor: Any) -> str:
+    texto = _txt(valor).upper()
+    return texto if len(texto) == 2 and texto.isalpha() else ""
 
 
-# ---------------------------------------------------------------------------
-# Bloco 2 — Convênios/Fomentos
-# ---------------------------------------------------------------------------
-def calcular_convenio_localizacao_institucional(convenios_i1: list[dict]) -> list[dict]:
-    """Recorta do universo do I1 (Convênios) os campos usados por este indicador."""
+def calcular_origem_por_plano(resumo: list[dict]) -> dict[str, str]:
+    por_plano: dict[str, set[str]] = defaultdict(set)
+    for r in resumo:
+        pid = _txt(r.get("plano_acao"))
+        if not pid:
+            continue
+        por_plano[pid].add(_txt(r.get("origem")).lower())
+
+    origem: dict[str, str] = {}
+    for pid, valores in por_plano.items():
+        if any(v.startswith("emenda") for v in valores):
+            origem[pid] = ROTULO_EMENDA
+        elif any(v.startswith("recurso") for v in valores):
+            origem[pid] = ROTULO_REGULAR
+        else:
+            origem[pid] = ROTULO_SEM_INFO
+    return origem
+
+
+def _classifica_grupo_uf(
+    por_uf: list[dict], n_ufs_destaque: int = N_UFS_DESTAQUE
+) -> list[dict]:
+    """Marca as N maiores UFs por firmado com uf_grupo=uf; o resto vira 'Demais'."""
+    ordenadas = sorted(por_uf, key=lambda l: (-l["firmado"], l["uf"]))
     return [
-        {
-            "nr_convenio": _txt(c.get("nr_convenio")),
-            "convenente": _txt(c.get("convenente")),
-            "categoria_convenente": _txt(c.get("categoria_convenente")),
-            "uf_execucao": _txt(c.get("uf_execucao")),
-            "municipio_execucao": _txt(c.get("municipio_execucao")),
-            "instrumento": _txt(c.get("instrumento")),
-            "origem": _txt(c.get("origem")),
-            "ano": _txt(c.get("ano")),
-            "empenhado_liquido": round(_num(c.get("empenhado_liquido")), 2),
-        }
-        for c in convenios_i1
+        {**l, "uf_grupo": l["uf"] if posicao <= n_ufs_destaque else ROTULO_DEMAIS}
+        for posicao, l in enumerate(ordenadas, start=1)
     ]
 
 
-def agregar_convenio_por_executor(localizacao: list[dict]) -> list[dict]:
-    """Agrega por convenente (nome); HHI sobre empenhado_liquido (decisão 2).
+# ===========================================================================
+# TED
+# ===========================================================================
+def montar_fato_ted(planos: list[dict], resumo: list[dict]) -> list[dict]:
+    origem_por_plano = calcular_origem_por_plano(resumo)
+    correcao = {_normalizar_nome(k): v for k, v in CORRECAO_SIGLA_VAZIA.items()}
 
-    Sem UF única por executor (decisão 6): reporta n_ufs_distintas.
-    """
-    total = sum(l["empenhado_liquido"] for l in localizacao)
-    acc: dict[str, dict] = defaultdict(lambda: {
-        "categoria_convenente": "", "n_instrumentos": 0,
-        "empenhado_liquido": 0.0, "ufs": set(),
-    })
-    for l in localizacao:
-        e = acc[l["convenente"]]
-        e["categoria_convenente"] = l["categoria_convenente"] or e["categoria_convenente"]
-        e["n_instrumentos"] += 1
-        e["empenhado_liquido"] += l["empenhado_liquido"]
-        if l["uf_execucao"]:
-            e["ufs"].add(l["uf_execucao"])
+    vistos: set[str] = set()
+    fato = []
+    for p in planos:
+        pid = _txt(p.get("id_plano_acao"))
+        if not pid or pid in vistos:
+            continue
+        vistos.add(pid)
 
-    saida = []
-    for convenente, v in sorted(acc.items(), key=lambda x: -x[1]["empenhado_liquido"]):
-        share_pct_raw = v["empenhado_liquido"] / total * 100 if total else 0.0
-        saida.append({
-            "convenente": convenente,
-            "categoria_convenente": v["categoria_convenente"],
-            "n_instrumentos": v["n_instrumentos"],
-            "n_ufs_distintas": len(v["ufs"]),
-            "empenhado_liquido": round(v["empenhado_liquido"], 2),
-            "share_pct": round(share_pct_raw, 2),
-            "share_pct_ao_quadrado": round(share_pct_raw ** 2, 2),
+        if _txt(p.get("tx_situacao_plano_acao")).upper() in SITUACOES_EXCLUIDAS_TED:
+            continue
+
+        sigla = _txt(p.get("sigla_unidade_descentralizada"))
+        if not sigla:
+            sigla = correcao.get(_normalizar_nome(p.get("unidade_descentralizada")), "")
+        executor = sigla or "Sem sigla"
+        uf = SIGLA_PARA_UF.get(sigla, ROTULO_SEM_UF) if sigla else ROTULO_SEM_UF
+
+        fato.append({
+            "id_plano_acao": pid,
+            "executor": executor,
+            "uf": uf,
+            "ano": _ano_int(p.get("aa_ano_plano_acao")),
+            "origem": origem_por_plano.get(pid, ROTULO_SEM_INFO),
+            "firmado": round(_num(p.get("vl_total_plano_acao")), 2),
         })
-    return saida
+    return fato
 
 
-def calcular_resumo_convenio(localizacao: list[dict]) -> list[dict]:
+def montar_barras_ted(fato: list[dict]) -> list[dict]:
+    firm_total = sum(f["firmado"] for f in fato)
+    n_exec_total = len({f["executor"] for f in fato})
+    media_nacional = round(firm_total / n_exec_total, 2) if n_exec_total else 0.0
+
+    acc: dict[str, dict] = defaultdict(lambda: {"executores": set(), "n_teds": 0, "firmado": 0.0})
+    for f in fato:
+        a = acc[f["uf"]]
+        a["executores"].add(f["executor"])
+        a["n_teds"] += 1
+        a["firmado"] += f["firmado"]
+    por_uf = [
+        {"uf": uf, "n_executores": len(v["executores"]), "n_teds": v["n_teds"], "firmado": round(v["firmado"], 2)}
+        for uf, v in acc.items()
+    ]
+    por_uf = _classifica_grupo_uf(por_uf)
+
+    acc_grupo: dict[str, dict] = defaultdict(lambda: {"n_ufs": 0, "n_executores": 0, "n_teds": 0, "firmado": 0.0})
+    for l in por_uf:
+        g = acc_grupo[l["uf_grupo"]]
+        g["n_ufs"] += 1
+        g["n_executores"] += l["n_executores"]
+        g["n_teds"] += l["n_teds"]
+        g["firmado"] += l["firmado"]
+
+    linhas = []
+    for uf_grupo, v in acc_grupo.items():
+        valor_medio = round(v["firmado"] / v["n_executores"], 2) if v["n_executores"] else 0.0
+        linhas.append({
+            "uf_grupo": uf_grupo,
+            "n_ufs": v["n_ufs"],
+            "n_executores": v["n_executores"],
+            "n_teds": v["n_teds"],
+            "firmado": round(v["firmado"], 2),
+            "valor_medio_por_executor": valor_medio,
+            "media_nacional": media_nacional,
+            "acima_da_media": 1 if valor_medio > media_nacional else 0,
+            "grupo_demais": 1 if uf_grupo == ROTULO_DEMAIS else 0,
+        })
+    linhas.sort(key=lambda l: (l["grupo_demais"], -l["valor_medio_por_executor"]))
+    return [{"ordem_exibicao": i, **l} for i, l in enumerate(linhas, start=1)]
+
+
+def montar_cartao_ted(fato: list[dict]) -> list[dict]:
+    n_exec_total = len({f["executor"] for f in fato})
+    firm_total = sum(f["firmado"] for f in fato)
     return [{
-        "n_instrumentos": len(localizacao),
-        "n_convenentes_distintos": len({l["convenente"] for l in localizacao}),
-        "total_empenhado": round(sum(l["empenhado_liquido"] for l in localizacao), 2),
-        "hhi": _hhi_por_grupo(localizacao, "convenente", "empenhado_liquido"),
+        "n_executores": n_exec_total,
+        "n_teds": len(fato),
+        "firmado": round(firm_total, 2),
+        "media_nacional": round(firm_total / n_exec_total, 2) if n_exec_total else 0.0,
     }]
 
 
-# ---------------------------------------------------------------------------
-# Orquestração
-# ---------------------------------------------------------------------------
-def calcular_i2(teds_i1: list[dict], convenios_i1: list[dict]) -> dict[str, list[dict]]:
-    """Calcula as seis saídas do I2 a partir da saída do I1."""
-    loc_ted = calcular_ted_localizacao_institucional(teds_i1)
-    loc_conv = calcular_convenio_localizacao_institucional(convenios_i1)
+def calcular_i2_ted(planos: list[dict], resumo: list[dict]) -> dict[str, list[dict]]:
+    """Calcula as três saídas do I2 (TED)."""
+    fato = montar_fato_ted(planos, resumo)
+    if not fato:
+        raise ValueError("Universo vazio: confira as situações excluídas.")
+
+    barras = montar_barras_ted(fato)
+    cartao = montar_cartao_ted(fato)
+
+    firm_total = sum(f["firmado"] for f in fato)
+    assert abs(sum(b["firmado"] for b in barras) - firm_total) < 0.05
+    assert sum(b["n_teds"] for b in barras) == len(fato)
+
     return {
-        "i2_ted_localizacao_institucional": loc_ted,
-        "i2_executores_concentracao": agregar_ted_por_executor(loc_ted),
-        "i2_resumo": calcular_resumo_ted(loc_ted),
-        "i2_convenio_localizacao_institucional": loc_conv,
-        "i2_convenio_concentracao": agregar_convenio_por_executor(loc_conv),
-        "i2_resumo_convenio": calcular_resumo_convenio(loc_conv),
+        "i2_ted_executor_uf_fato": fato,
+        "i2_ted_uf_barras": barras,
+        "i2_ted_cartao": cartao,
+    }
+
+
+# ===========================================================================
+# Convênios/Fomentos
+# ===========================================================================
+def _qualidade_dado(empenhado: float, pago: float, firmado: float) -> str:
+    if empenhado == 0 and pago > 0:
+        return "empenho_zero_com_pagamento"
+    if pago > empenhado + 0.01:
+        return "pago_maior_que_empenhado"
+    if empenhado == 0:
+        return "sem_empenho"
+    if abs(firmado - empenhado) > 0.01:
+        return "empenho_parcial"
+    return "ok"
+
+
+def montar_fato_convenio(
+    gold: list[dict], ano_corte: int = ANO_CORTE_CONVENIO,
+    excluir_empenho_zero_com_pago: bool = EXCLUIR_EMPENHO_ZERO_COM_PAGO,
+) -> list[dict]:
+    instrumentos = []
+    for r in gold:
+        ano = _ano_instrumento_convenio(r.get("data_assinatura"), r.get("inicio_vigencia"))
+        if ano is None or ano < ano_corte:
+            continue
+        situacao_norm = _sem_acento(_txt(r.get("situacao_atual")).lower())
+        if situacao_norm in SITUACOES_EXCLUIDAS_CONVENIO:
+            continue
+
+        firmado_atualizado = _num(r.get("valor_firmado_atualizado"))
+        firmado = round(
+            firmado_atualizado if firmado_atualizado > 0
+            else _num(r.get("valor_firmado_inicial")),
+            2,
+        )
+        empenhado = round(_num(r.get("valor_empenhado")), 2)
+        pago = round(_num(r.get("valor_total_pago")), 2)
+        qualidade = _qualidade_dado(empenhado, pago, firmado)
+        if excluir_empenho_zero_com_pago and qualidade == "empenho_zero_com_pagamento":
+            continue
+
+        instrumentos.append({
+            "nr_convenio": _txt(r.get("nr_convenio")),
+            "convenente": _normalizar_nome(r.get("nome_convenente")) or "SEM NOME",
+            "uf": _limpa_uf(r.get("uf_execucao")) or ROTULO_SEM_UF,
+            "categoria_convenente": _txt(r.get("categoria_convenente")) or "Sem categoria",
+            "modalidade": _txt(r.get("modalidade_instrumento")).title(),
+            "ano": ano,
+            "origem": ROTULO_EMENDA if _txt(r.get("parlamentares")) else ROTULO_REGULAR,
+            "qualidade_dado": qualidade,
+            "firmado": firmado,
+        })
+    return instrumentos
+
+
+def montar_fato(instrumentos: list[dict]) -> list[dict]:
+    """Agrega o grão de instrumento em (convenente, uf, categoria, ano, origem,
+    modalidade, qualidade_dado) — grão do fato gravado."""
+    acc: dict[tuple, dict] = defaultdict(lambda: {"n_instrumentos": 0, "firmado": 0.0})
+    for i in instrumentos:
+        chave = (
+            i["convenente"], i["uf"], i["categoria_convenente"], i["ano"],
+            i["origem"], i["modalidade"], i["qualidade_dado"],
+        )
+        a = acc[chave]
+        a["n_instrumentos"] += 1
+        a["firmado"] += i["firmado"]
+
+    linhas = [
+        {
+            "convenente": chave[0], "uf": chave[1], "categoria_convenente": chave[2],
+            "ano": chave[3], "origem": chave[4], "modalidade": chave[5], "qualidade_dado": chave[6],
+            "n_instrumentos": v["n_instrumentos"], "firmado": round(v["firmado"], 2),
+        }
+        for chave, v in acc.items()
+    ]
+    linhas.sort(key=lambda l: (l["uf"], l["convenente"], l["ano"] is None, l["ano"], l["origem"], l["modalidade"], l["qualidade_dado"]))
+    return linhas
+
+
+def montar_barras_convenio(instrumentos: list[dict]) -> list[dict]:
+    firm_total = sum(i["firmado"] for i in instrumentos)
+    n_conv_total = len({i["convenente"] for i in instrumentos})
+    media_nacional = round(firm_total / n_conv_total, 2) if n_conv_total else 0.0
+
+    acc: dict[str, dict] = defaultdict(lambda: {"convenentes": set(), "n_instrumentos": 0, "firmado": 0.0})
+    for i in instrumentos:
+        a = acc[i["uf"]]
+        a["convenentes"].add(i["convenente"])
+        a["n_instrumentos"] += 1
+        a["firmado"] += i["firmado"]
+    por_uf = [
+        {"uf": uf, "n_convenentes": len(v["convenentes"]), "n_instrumentos": v["n_instrumentos"], "firmado": round(v["firmado"], 2)}
+        for uf, v in acc.items()
+    ]
+    por_uf = _classifica_grupo_uf(por_uf)
+
+    acc_grupo: dict[str, dict] = defaultdict(lambda: {"n_ufs": 0, "n_convenentes": 0, "n_instrumentos": 0, "firmado": 0.0})
+    for l in por_uf:
+        g = acc_grupo[l["uf_grupo"]]
+        g["n_ufs"] += 1
+        g["n_convenentes"] += l["n_convenentes"]
+        g["n_instrumentos"] += l["n_instrumentos"]
+        g["firmado"] += l["firmado"]
+
+    linhas = []
+    for uf_grupo, v in acc_grupo.items():
+        valor_medio = round(v["firmado"] / v["n_convenentes"], 2) if v["n_convenentes"] else 0.0
+        linhas.append({
+            "uf_grupo": uf_grupo,
+            "n_ufs": v["n_ufs"],
+            "n_convenentes": v["n_convenentes"],
+            "n_instrumentos": v["n_instrumentos"],
+            "firmado": round(v["firmado"], 2),
+            "valor_medio_por_convenente": valor_medio,
+            "media_nacional": media_nacional,
+            "acima_da_media": 1 if valor_medio > media_nacional else 0,
+            "grupo_demais": 1 if uf_grupo == ROTULO_DEMAIS else 0,
+        })
+    linhas.sort(key=lambda l: (l["grupo_demais"], -l["valor_medio_por_convenente"]))
+    return [{"ordem_exibicao": i, **l} for i, l in enumerate(linhas, start=1)]
+
+
+def montar_cartao_convenio(instrumentos: list[dict]) -> list[dict]:
+    n_conv_total = len({i["convenente"] for i in instrumentos})
+    firm_total = sum(i["firmado"] for i in instrumentos)
+    return [{
+        "n_convenentes": n_conv_total,
+        "n_instrumentos": len(instrumentos),
+        "firmado": round(firm_total, 2),
+        "media_nacional": round(firm_total / n_conv_total, 2) if n_conv_total else 0.0,
+    }]
+
+
+def calcular_i2_convenios(gold: list[dict]) -> dict[str, list[dict]]:
+    """Calcula as três saídas do I2 (Convênios/Fomentos)."""
+    instrumentos = montar_fato_convenio(gold)
+    if not instrumentos:
+        raise ValueError("Universo vazio: confira ANO_CORTE_CONVENIO e as situações excluídas.")
+
+    fato = montar_fato(instrumentos)
+    barras = montar_barras_convenio(instrumentos)
+    cartao = montar_cartao_convenio(instrumentos)
+
+    firm_total = sum(i["firmado"] for i in instrumentos)
+    assert abs(sum(b["firmado"] for b in barras) - firm_total) < 0.05
+    assert abs(sum(f["firmado"] for f in fato) - firm_total) < 0.05
+    assert sum(b["n_instrumentos"] for b in barras) == len(instrumentos)
+
+    return {
+        "i2_convenio_convenente_uf_fato": fato,
+        "i2_convenio_uf_barras": barras,
+        "i2_convenio_cartao": cartao,
+    }
+
+
+# ===========================================================================
+# Orquestração
+# ===========================================================================
+def calcular_i2(
+    planos: list[dict], resumo: list[dict], gold_convenios: list[dict]
+) -> dict[str, list[dict]]:
+    """Calcula as seis saídas do I2 (TED + Convênios/Fomentos)."""
+    return {
+        **calcular_i2_ted(planos, resumo),
+        **calcular_i2_convenios(gold_convenios),
     }
