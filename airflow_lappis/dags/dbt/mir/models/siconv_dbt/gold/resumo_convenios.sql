@@ -94,23 +94,6 @@ with
         from {{ ref("meta_crono_fisico") }}
         group by nr_convenio
     ),
-    -- Local de execução real (meta física), para não depender só da sede do
-    -- proponente. count(distinct)=1 + max() é o jeito padrão de "pegar o
-    -- valor quando é único": se há mais de uma UF/município nas metas do
-    -- convênio, max() não teria sentido sozinho, por isso a quantidade
-    -- também é calculada e usada no CASE abaixo para decidir entre valor
-    -- único, "Múltiplas UFs"/"Múltiplos municípios" ou fallback.
-    localidade_meta as (
-        select
-            nr_convenio,
-            count(distinct upper(uf_meta)) as quantidade_ufs_meta,
-            count(distinct municipio_meta) as quantidade_municipios_meta,
-            max(upper(uf_meta)) as uf_meta_unica,
-            max(municipio_meta) as municipio_meta_unico
-        from {{ ref("meta_crono_fisico") }}
-        where uf_meta is not null and upper(uf_meta) ~ '^[A-Z]{2}$'
-        group by nr_convenio
-    ),
     prorroga as (
         select
             nr_convenio,
@@ -170,30 +153,15 @@ select
     -- Identificação
     b.nr_convenio,
     p.modalidade as modalidade_instrumento,
-    -- uf_execucao/municipio_execucao: local de execução real (meta física)
-    -- quando disponível; cai para a sede do proponente só na ausência de
-    -- meta. fonte_localizacao diz qual das duas foi usada em cada linha —
-    -- ver investigação completa no card/PR desta mudança: o nome antigo
-    -- destas colunas fingia ser execução quando sempre foi sede do
-    -- proponente (p.uf_proponente/p.munic_proponente, sem nenhum cálculo).
-    case
-        when lm.quantidade_ufs_meta = 1 then lm.uf_meta_unica
-        when lm.quantidade_ufs_meta > 1 then 'Múltiplas UFs'
-        else upper(p.uf_proponente)
-    end as uf_execucao,
-    case
-        when lm.quantidade_ufs_meta > 1 then 'Múltiplos municípios'
-        when lm.quantidade_ufs_meta = 1 and lm.quantidade_municipios_meta = 1
-            then lm.municipio_meta_unico
-        when lm.quantidade_ufs_meta = 1 and lm.quantidade_municipios_meta > 1
-            then 'Múltiplos municípios'
-        else p.munic_proponente
-    end as municipio_execucao,
-    case
-        when lm.quantidade_ufs_meta >= 1 then 'meta'
-        when p.uf_proponente is not null then 'sede_proponente'
-        else 'sem_informacao'
-    end as fonte_localizacao,
+    -- uf_execucao/municipio_execucao: deixadas em branco de propósito.
+    -- Antes eram p.uf_proponente/p.munic_proponente (sede cadastrada do
+    -- proponente) com o nome enganoso de "execução", sem nenhum cálculo
+    -- real por trás. Decisão (João, equipe de dados): não inferir a partir
+    -- de outra fonte do SICONV por enquanto — o dado de execução real do
+    -- MIR virá do coleta mir no futuro. Ver investigação completa no PR
+    -- desta mudança.
+    cast(null as text) as uf_execucao,
+    cast(null as text) as municipio_execucao,
     p.nm_proponente as nome_convenente,
     p.natureza_juridica as categoria_convenente,
     p.objeto_proposta as objeto,
@@ -287,7 +255,6 @@ left join pagamento_tributo pt on b.nr_convenio = pt.nr_convenio
 left join ingresso_contrapartida ic on b.nr_convenio = ic.nr_convenio
 left join historico h on b.nr_convenio = h.nr_convenio
 left join meta m on b.nr_convenio = m.nr_convenio
-left join localidade_meta lm on b.nr_convenio = lm.nr_convenio
 left join prorroga pr on b.nr_convenio = pr.nr_convenio
 left join solicitacao_alteracao sa on b.nr_convenio = sa.nr_convenio
 left join solicitacao_rendimento sr on b.nr_convenio = sr.nr_convenio
