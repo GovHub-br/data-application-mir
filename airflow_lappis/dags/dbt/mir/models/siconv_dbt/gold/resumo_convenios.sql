@@ -153,8 +153,15 @@ select
     -- Identificação
     b.nr_convenio,
     p.modalidade as modalidade_instrumento,
-    p.uf_proponente as uf_execucao,
-    p.munic_proponente as municipio_execucao,
+    -- uf_execucao/municipio_execucao: deixadas em branco de propósito.
+    -- Antes eram p.uf_proponente/p.munic_proponente (sede cadastrada do
+    -- proponente) com o nome enganoso de "execução", sem nenhum cálculo
+    -- real por trás. Decisão (João, equipe de dados): não inferir a partir
+    -- de outra fonte do SICONV por enquanto — o dado de execução real do
+    -- MIR virá do coleta mir no futuro. Ver investigação completa no PR
+    -- desta mudança.
+    cast(null as text) as uf_execucao,
+    cast(null as text) as municipio_execucao,
     p.nm_proponente as nome_convenente,
     p.natureza_juridica as categoria_convenente,
     p.objeto_proposta as objeto,

@@ -15,9 +15,15 @@ models:
     - name: modalidade_instrumento
       description: "Modalidade do instrumento: Convênio ou Termo de Fomento."
     - name: uf_execucao
-      description: "UF onde o projeto será executado."
+      description: >
+        Deixada em branco de propósito. Antes vinha de uf_proponente (sede
+        cadastrada do proponente) com o nome enganoso de "execução", sem
+        nenhum cálculo real por trás. O dado de execução real do MIR virá
+        do coleta mir no futuro — até lá, a coluna fica NULL em vez de
+        expor um valor incorreto.
     - name: municipio_execucao
-      description: "Município onde o projeto será executado."
+      description: >
+        Deixada em branco de propósito, mesmo motivo de uf_execucao.
     - name: nome_convenente
       description: "Nome do convenente — município, estado ou organização que vai executar o projeto."
     - name: categoria_convenente
