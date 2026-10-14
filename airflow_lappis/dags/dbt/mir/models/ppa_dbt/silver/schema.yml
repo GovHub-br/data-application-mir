@@ -195,27 +195,61 @@ models:
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
   - name: agenda_filtrado_mir
     description: >
-      Camada silver do PPA/SIOP — agendas transversais (ver bronze `agenda`),
-      restritas às agendas vinculadas ao MIR em qualquer nível do PPA: une os
-      `codigo_agenda` de todas as tabelas `agenda_*_filtrado_mir` (programa,
-      objetivos, entregas, metas, indicadores, desagregações, regionalizações e
-      medidas institucionais). Chave `codigo` = `codigo_agenda` + `ano_ppa`.
+      Camada silver do PPA/SIOP — dimensão de agendas usadas pelo MIR (ver bronze
+      `agenda`). A tabela `agenda` do SIOP é um catálogo de marcadores de vários
+      tipos: as 5 agendas transversais, sub-agendas (recortes temáticos delas),
+      metas ODS, agendas prioritárias, agendas incluídas em 2025, planos regionais
+      e PPA Participativo; sub-agendas e metas ODS só existem a partir da revisão
+      2025. O recorte traz todo código que aparece em qualquer tabela
+      `agenda_*_filtrado_mir` (o SIOP marca cada nível de forma independente).
+      Para ficar só nas 5 agendas transversais, filtrar
+      `pertence_agenda_transversal` e agrupar por `nome_agenda_mae`.
     meta:
       tags:
         - silver
     columns:
       - name: exercicio
-        description: "Exercício"
+        description: "Exercício (vazio em 2024 na própria fonte; usar `ano_ppa`)."
       - name: codigo
-        description: "Código"
+        description: >
+          Código da agenda na revisão. O SIOP recodificou as agendas em 2025
+          (ex.: 5 -> 369); para comparar anos, usar `chave_agenda`.
       - name: titulo
-        description: "Título"
+        description: "Título (preenchido só em 2024; ver `nome_agenda`)."
       - name: descricao
         description: "Descrição"
       - name: tipo
-        description: "Tipo"
+        description: >
+          Tipo bruto do SIOP. Nas sub-agendas é o nome da agenda-mãe (ex.:
+          "Igualdade Racial"); nas metas ODS é o ODS (ex.: "ODS 16").
       - name: nome
-        description: "Nome"
+        description: "Nome (preenchido só a partir de 2025; ver `nome_agenda`)."
+      - name: nome_agenda
+        description: "Nome da agenda: `coalesce(nome, titulo)`, já que 2024 grava em `titulo`."
+        tests:
+          - not_null
+      - name: chave_agenda
+        description: >
+          Chave estável entre revisões: o código da agenda a partir de 2025. As
+          agendas de 2024 recebem, pelo nome, o código recodificado (1 -> 365,
+          5 -> 369, 9 -> 373, 19 -> 384...).
+        tests:
+          - not_null
+      - name: grupo_agenda
+        description: >
+          Classificação do marcador: Agenda transversal (as 5), Sub-agenda
+          transversal, Agenda transversal (incluída em 2025), Meta ODS, Agenda
+          prioritária, Agenda transversal territorial ou PPA Participativo.
+        tests:
+          - not_null
+      - name: nome_agenda_mae
+        description: >
+          Agrupador: nome da agenda transversal para as sub-agendas, o ODS para as
+          metas ODS e o próprio nome nos demais casos.
+      - name: codigo_agenda_mae
+        description: "Código da agenda-mãe no mesmo `ano_ppa` (vazio para metas ODS)."
+      - name: pertence_agenda_transversal
+        description: "Verdadeiro para as 5 agendas transversais e suas sub-agendas."
       - name: ano_ppa
         description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
         tests:
@@ -227,6 +261,71 @@ models:
           - unique
       - name: dt_ingest
         description: "Timestamp de ingestão (auditoria, herdado da bronze)."
+
+  - name: ponte_agenda_mir
+    description: >
+      Camada silver do PPA/SIOP — tabela ponte N:M entre os itens do PPA do MIR
+      (programa, objetivos, entregas, indicadores, metas, medidas) e as agendas que
+      os marcam, montada a partir das tabelas `agenda_*_filtrado_mir`. Só chaves:
+      aquelas tabelas repetem os valores e metas do item em cada agenda (é
+      marcação, não rateio), então somar sobre elas multiplica os totais. Somar
+      nas tabelas base (`entrega_filtrado_mir`, `meta_entrega_filtrado_mir`...) e
+      usar esta ponte só para filtrar por agenda. Grão: `ano_ppa` x `nivel` x
+      colunas do item x `codigo_agenda`; colunas que não se aplicam ao nível ficam
+      nulas.
+    meta:
+      tags:
+        - silver
+    columns:
+      - name: ano_ppa
+        description: "Ano da revisão/vigência do PPA (2024, 2025 ou 2026)."
+        tests:
+          - not_null
+      - name: nivel
+        description: >
+          Nível do item marcado (programa, objetivo_geral, objetivo_especifico,
+          entrega, indicador_*, meta_*, regionalizacao_meta_*,
+          desagregacao_meta_*, medida_institucional_*).
+        tests:
+          - not_null
+      - name: programa
+        description: "Código do Programa do PPA (programa do MIR)."
+        tests:
+          - not_null
+      - name: objetivo
+        description: "Objetivo geral."
+      - name: objetivo_especifico
+        description: "Objetivo específico."
+      - name: entrega
+        description: "Entrega."
+      - name: indicador
+        description: "Indicador."
+      - name: meta_do_objetivo_especifico
+        description: "Meta do objetivo específico."
+      - name: meta_da_entrega
+        description: "Meta da entrega."
+      - name: regiao
+        description: "Região (níveis de regionalização)."
+      - name: publico
+        description: "Público (níveis de desagregação)."
+      - name: medida_institucional_normativa
+        description: "Código da medida institucional (vazio em 2024 na fonte)."
+      - name: enunciado
+        description: >
+          Enunciado da medida institucional. Entra na chave das medidas porque em
+          2024 o código vem vazio e só o enunciado distingue uma medida da outra.
+      - name: codigo_agenda
+        description: "Código da agenda na revisão (liga com `agenda_filtrado_mir.codigo` + `ano_ppa`)."
+        tests:
+          - not_null
+      - name: chave_agenda
+        description: "Chave estável da agenda entre revisões (ver `agenda_filtrado_mir`)."
+      - name: nome_agenda
+        description: "Nome da agenda."
+      - name: grupo_agenda
+        description: "Classificação do marcador (ver `agenda_filtrado_mir`)."
+      - name: nome_agenda_mae
+        description: "Agenda-mãe ou ODS (ver `agenda_filtrado_mir`)."
 
   - name: agenda_desagregacao_meta_entrega_filtrado_mir
     description: >
