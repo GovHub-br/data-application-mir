@@ -274,7 +274,29 @@ with
             prog.tx_objetivo_programa,
             jp.programa_governo,
             jp.programa_governo_descricao,
-            case when e.tem_autor then 'Emenda - ' || e.autor_emendas_orcamento else 'Recurso Próprio' end as origem
+            case when e.tem_autor then 'Emenda - ' || e.autor_emendas_orcamento else 'Recurso Próprio' end as origem,
+            -- Unidade de contagem do painel (issue de nomenclatura, epico #506):
+            -- os cards contam instrumento, nao plano de acao. plano_acao e
+            -- atributo do TED e tedinho nao tem plano, entao contar plano_acao
+            -- mede outra entidade. id_instrumento e unico e nunca nulo nos dois
+            -- tipos -- o num_transf nao colide com o instrumento_key do tedinho,
+            -- que sempre tem prefixo (proc:/transf:/nc:).
+            jp.num_transf_canon as id_instrumento,
+            jp.aa_ano_plano_acao as ano_pactuacao,
+            -- Liquido de anulacao: TED com todo o empenho anulado nao tem
+            -- empenho vigente e conta como sem empenho.
+            case
+                when coalesce(jp.empenhado, 0) - coalesce(jp.empenho_anulado, 0) > 0
+                then 'Com empenho'
+                else 'Sem empenho'
+            end as situacao_empenho,
+            -- Vigencia do TED e a do plano de acao no TransfereGov. current_date
+            -- fixa a data do build da tabela (rodada diaria).
+            case
+                when jp.dt_fim_vigencia is null then 'Sem vigência cadastrada'
+                when jp.dt_fim_vigencia >= current_date then 'Vigente'
+                else 'Não vigente'
+            end as situacao_vigencia
         from join_parcial jp
         left join plano_por_transf ppt using (num_transf_canon)
         left join programas_tb prog on prog.id_plano_acao = ppt.plano_acao
@@ -345,7 +367,24 @@ with
             cast(null as text) as tx_objetivo_programa,
             cast(null as text) as programa_governo,
             cast(null as text) as programa_governo_descricao,
-            'Tedinho (sem registro no TransfereGov)' as origem
+            'Tedinho (sem registro no TransfereGov)' as origem,
+            instrumento_key as id_instrumento,
+            -- Tedinho nao tem plano pactuado: o ano e o da primeira
+            -- descentralizacao. NCs ate 2025 nao trazem emissao_dia, entao o
+            -- ano sai do proprio numero da NC (AAAANCnnnnnn).
+            coalesce(
+                extract(year from min(emissao_dia))::integer,
+                min(
+                    case
+                        when left(right(nc, 12), 4) ~ '^[0-9]{4}$'
+                        then left(right(nc, 12), 4)::integer
+                    end
+                )
+            ) as ano_pactuacao,
+            -- Sem join confiavel com as NEs (ver comentario acima): nao e
+            -- "sem empenho", e empenho que o painel nao consegue medir.
+            'Empenho não rastreável (tedinho)' as situacao_empenho,
+            'Sem vigência cadastrada' as situacao_vigencia
         from {{ ref("tedinhos_mir") }}
         where tedinho_provavel
         group by instrumento_key

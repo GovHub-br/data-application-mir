@@ -4,6 +4,8 @@ models:
 
   - name: ted_resumo_orcamentario
     description: >
+      {{ doc("glossario_ted") }}
+
       Tabela gold de consolidação orçamentária e financeira por instrumento do MIR — TED
       ou tedinho (issue #507: descentralização de crédito sem registro no TransfereGov).
       O grão é o instrumento: uma linha por transferência canônica (num_transf_canon) para
@@ -36,7 +38,8 @@ models:
           Identificador do Plano de Ação no TransfereGov, resolvido como atributo da
           transferência via a ponte num_transf_n_plano_acao (1:1). Nulo quando a
           transferência não possui plano correspondente cadastrado, ou sempre nulo para
-          tedinho (que por definição não tem plano no TransfereGov). NÃO é chave do grão.
+          tedinho (que por definição não tem plano no TransfereGov). NÃO é chave do grão
+          nem unidade de contagem do painel — para contar TEDs use id_instrumento.
       - name: tipo_instrumento
         description: "'TED' ou 'Tedinho' — distingue as duas origens do grão. Ver descrição da tabela."
         tests:
@@ -72,7 +75,7 @@ models:
           pode nunca ter sido empenhado, ou ter sido empenhado anos depois. Para abrir
           valores financeiros por ano real da despesa, use
           ted_resumo_orcamentario_por_exercicio. Nulo para tedinho e para TED sem plano
-          cadastrado.
+          cadastrado — o filtro de ano do painel usa ano_pactuacao, que cobre os dois.
       - name: dt_inicio_vigencia
         description: "Data de início de vigência do Plano de Ação no TransfereGov. Nulo para tedinho e para TED sem plano cadastrado."
       - name: dt_fim_vigencia
@@ -173,6 +176,46 @@ models:
           Para TED: 'Emenda - <autor>' se vinculado a uma emenda parlamentar, 'Recurso
           Próprio' caso contrário. Para tedinho: sempre 'Tedinho (sem registro no
           TransfereGov)' — a vinculação a emenda ainda não é resolvida para esse tipo.
+      - name: id_instrumento
+        description: >
+          Chave única do instrumento — a unidade de contagem dos cards do painel (ver
+          glossário). Para TED é o num_transf; para tedinho é o instrumento_key de
+          tedinhos_mir, sempre prefixado (proc:/transf:/nc:), então os dois nunca
+          colidem. Qtd TEDs do painel = count(distinct id_instrumento).
+        tests:
+          - unique
+          - not_null
+      - name: ano_pactuacao
+        description: >
+          Ano do instrumento, usado no filtro "Ano de Pactuação". Para TED é o ano do
+          Plano de Ação (aa_ano_plano_acao); para tedinho, que não tem plano, é o ano da
+          primeira Nota de Crédito de descentralização (emissao_dia, ou o ano no número
+          da NC quando emissao_dia não vem, caso das NCs até 2025). Nulo só para TED sem
+          plano cadastrado. Como aa_ano_plano_acao, é o ano da pactuação, não o exercício
+          da despesa.
+      - name: situacao_empenho
+        description: >
+          Situação de empenho do instrumento, base dos cards "TEDs com/sem Empenho".
+          'Com empenho' quando o empenhado líquido de anulação (empenhado -
+          empenho_anulado) é positivo; 'Sem empenho' caso contrário. Tedinho recebe
+          'Empenho não rastreável (tedinho)': não há join confiável entre o tedinho e as
+          NEs, então classificá-lo como sem empenho seria afirmar algo que o painel não
+          mede. Os três valores somam o total de instrumentos.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Com empenho', 'Sem empenho', 'Empenho não rastreável (tedinho)']
+      - name: situacao_vigencia
+        description: >
+          Situação de vigência do instrumento, base dos cards "TEDs Vigentes/Não
+          Vigentes" e do filtro "Situação da Vigência". 'Vigente' quando
+          dt_fim_vigencia >= data do build da tabela; 'Não vigente' quando já passou;
+          'Sem vigência cadastrada' quando não há data de fim (tedinho e TED sem plano
+          de ação cadastrado). Os três valores somam o total de instrumentos.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Vigente', 'Não vigente', 'Sem vigência cadastrada']
     tests:
       - verificacao_tipagem:
           nome_tabela: 'siafi_dbt.ted_resumo_orcamentario'
