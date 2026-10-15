@@ -52,6 +52,7 @@ sources:
         - name: ne_tesouro_ppa
         - name: nc_tesouro_ate_2025
         - name: nc_tesouro_desde_2026
+        - name: execucao_ted_ug
         - name: pf_tesouro
         - name: programacao_acao_ptres
 

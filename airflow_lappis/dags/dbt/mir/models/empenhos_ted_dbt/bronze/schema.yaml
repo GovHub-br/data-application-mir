@@ -762,3 +762,57 @@ models:
         description: "Endereço da subpágina."
       - name: dt_ingest
         description: "Data/hora (UTC-3) da ingestão."
+
+  - name: execucao_ted_ug
+    description: >
+      Tabela da camada bronze do relatório "Execução TED por UG" do Tesouro
+      Gerencial (origem: siafi.execucao_ted_ug), a consulta oficial do MIR para o
+      gasto com TEDs: crédito descentralizado pelo MIR (destaque recebido) e a
+      execução dele nas UGs executoras de outros órgãos. Grão: ano de lançamento
+      x UG executora x ação x plano orçamentário x PTRES x grupo de despesa x
+      fonte. Valores em saldo acumulado do ano na data da extração, convertidos
+      de string para numeric(15,2) via macro.
+    columns:
+      - name: ano_lancamento
+        description: Ano de lançamento contábil.
+        tests:
+          - not_null
+      - name: orgao_uge_codigo
+        description: Código do órgão da UG executora.
+      - name: orgao_uge_nome
+        description: Nome do órgão da UG executora.
+      - name: ug_executora_codigo
+        description: Código da UG executora que recebeu o destaque e/ou empenhou.
+        tests:
+          - not_null
+      - name: ug_executora_nome
+        description: Nome da UG executora.
+      - name: acao_governo_codigo
+        description: Código da ação orçamentária.
+      - name: acao_governo_nome
+        description: Nome da ação orçamentária.
+      - name: plano_orcamentario_codigo
+        description: Código do plano orçamentário (PO).
+      - name: plano_orcamentario_nome
+        description: Nome do plano orçamentário.
+      - name: ptres
+        description: Programa de trabalho resumido (PTRES).
+      - name: grupo_despesa
+        description: Grupo de natureza de despesa.
+      - name: fonte_recursos_detalhada
+        description: Fonte de recursos detalhada.
+      - name: destaque_recebido
+        description: >
+          Crédito recebido do MIR por descentralização (destaque), líquido de
+          anulações e devoluções.
+      - name: credito_disponivel
+        description: Crédito recebido ainda não empenhado.
+      - name: despesas_empenhadas
+        description: Despesa empenhada (destaque = disponível + empenhado).
+      - name: despesas_liquidadas
+        description: Despesa liquidada.
+      - name: despesas_pagas
+        description: Despesa paga.
+      - name: dt_ingest
+        description: Data e hora da ingestão do anexo.
+
