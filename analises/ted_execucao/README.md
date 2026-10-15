@@ -17,12 +17,12 @@ oficial em empenhado, liquidado e pago.
 |---|---|---|---|---|---|---|---|
 | 2023 | 32,01 | 17,46 | 9,39 | — | 4,92 | 0,03 | 0,20 |
 | 2024 | 72,89 | 38,44 | 18,51 | 9,79 | 6,15 | — | 0,00 |
-| 2025 | 80,11 | 40,83 | 14,44 | 5,33 | 17,92 | 0,27 | 1,32 |
+| 2025 | 80,11 | 40,83 | 14,44 | 5,33 | 18,06 | 0,27 | 1,18 |
 | 2026 | 50,12 | 33,97 | 9,82 | 3,22 | 2,65 | 0,03 | 0,43 |
-| **Total** | **235,12** | **130,70** | **52,16** | **18,34** | **31,64** | **0,32** | **1,96 (0,8%)** |
+| **Total** | **235,12** | **130,70** | **52,16** | **18,34** | **31,78** | **0,32** | **1,81 (0,8%)** |
 
-São 88 TEDs e 30 tedinhos com execução no período. Sobram 37 NEs sem instrumento
-identificado (R$ 1,19M do liquidado e R$ 0,81M do pago).
+São 88 TEDs e 30 tedinhos com execução no período. Sobram 35 NEs sem instrumento
+identificado.
 
 ## Achados que afetam o pipeline
 
@@ -79,7 +79,7 @@ Cada NE fica com a primeira camada que a resolver.
 | 2 regras | A1 nº do TransfereGov no texto; A2 numeração do MIR ("TED 17/2026") pela página do gov.br; D NC citada; B NE de referência (reforço); C mesmo processo; E mesmo contrato. TED precisa ser do órgão da UG | *leave-one-out*: A1 224/224, A2 30/30, D 2/2, C 137/140 |
 | 3 similaridade | texto da NE x objeto dos planos do órgão (TF-IDF, score ≥ 0,3 e margem ≥ 0,1) | 72/73 na calibração |
 | descarte | número que não é TED do MIR; vínculo que contradiz o crédito da célula (só derruba similaridade, ou crédito exclusivo de outro TED numerado) | 1 conflito em todas as células explicadas pelo crédito |
-| 4 crédito da UG | G1: todo o destaque oficial da célula (ano, órgão, PTRES, fonte) veio de um único instrumento; G2: o empenho sem TED é o saldo exato do crédito de um TED; G3: a célula não recebeu NC do MIR, e um instrumento do mesmo ano/PTRES/fonte foi para outro órgão, que repassou (crédito menos o que executou) exatamente o destaque da célula; G4: célula com 2+ instrumentos, crédito cobrindo o destaque e só um instrumento com saldo depois do que as NEs identificadas consumiram (roda de novo depois da camada 5) | G1 concordou 115/115 onde o TED do texto é real; G3 concordou com a regra S nas 4 NEs que as duas cobrem; G4 *leave-one-out* 35/35 |
+| 4 crédito da UG | G1: todo o destaque oficial da célula (ano, órgão, PTRES, fonte) veio de um único instrumento; G1b: idem, descontado o que esse instrumento repassou a outro órgão (repasse atribuído pela G3), ex.: Palmares 2025, TED 966942; G2: o empenho sem TED é o saldo exato do crédito de um TED; G3: a célula não recebeu NC do MIR, e um instrumento do mesmo ano/PTRES/fonte foi para outro órgão, que repassou (crédito menos o que executou) exatamente o destaque da célula; G4: célula com 2+ instrumentos, crédito cobrindo o destaque e só um instrumento com saldo depois do que as NEs identificadas consumiram (roda de novo depois da camada 5) | G1 concordou 115/115 onde o TED do texto é real; G3 concordou com a regra S nas 4 NEs que as duas cobrem; G4 *leave-one-out* 35/35 |
 | 5 tedinho / subdescentralização | T: NC do MIR citada no texto, com ano (2025NC000307) ou sem (NC000307 / 233518); S: NC citada de outro órgão (ENAP, Palmares) com um único TED com o MIR no ano + PTRES (desempate pela fonte) | — |
 
 Nada é rateado: o que nenhuma regra resolve fica em "não identificado", no grão da
@@ -91,13 +91,13 @@ objetos da página do gov.br. Na calibração acertou 37 de 37 (score ≥ 0,1 e 
 ≥ 0,05), mas resolve só 2 NEs das restantes (R$ 180 mil). Ainda não entra no
 pipeline.
 
-## O que falta (R$ 1,96M)
+## O que falta (R$ 1,81M)
 
 | Situação | Empenhado |
 |---|---|
 | 2 ou mais instrumentos com saldo na célula e texto genérico (UFF energia/água, UFC, ENAP, campi do IFBA) | R$ 1,08M |
 | nenhuma NC do MIR para o órgão e repasse sem casamento exato (UnB via tedinhos da ENAP em 2025; valores pequenos de IBGE, UTFPR, UFRB, UFPR e UFRJ) | R$ 0,53M |
-| 1 instrumento na célula, mas crédito diferente do destaque (Palmares repassou parte à UnB; UnB 2023) | R$ 0,35M |
+| 1 instrumento na célula, mas destaque maior que o crédito direto (UnB 2023: repasse da ENAP vindo de vários tedinhos) | R$ 0,20M |
 
 ## Como rodar
 

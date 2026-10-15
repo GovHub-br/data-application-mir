@@ -419,15 +419,24 @@ _rep = _rep[_rep.repassado > 0.005]
 _com_credito = set(cred.index.droplevel("instrumento"))
 
 
-def repasse(k: tuple) -> str | None:
+def repasse_com_origem(k: tuple) -> tuple[str, tuple] | None:
+    """Instrumento repassado à célula k e a célula de onde saiu o repasse."""
     if k in _com_credito or abs(dest.get(k, 0.0)) < 0.005:
         return None
     a, o, p, fo = k
     c = _rep[
         (_rep.ano == a) & (_rep.ptres == p) & (_rep.fonte == fo) & (_rep.orgao_ug != o)
     ]
-    hit = set(c[(c.repassado - dest[k]).abs() < 0.01].instrumento)
-    return str(hit.pop()) if len(hit) == 1 else None
+    c = c[(c.repassado - dest[k]).abs() < 0.01]
+    if c.instrumento.nunique() != 1 or len(c) != 1:
+        return None
+    z = c.iloc[0]
+    return str(z.instrumento), (z.ano, z.orgao_ug, z.ptres, z.fonte)
+
+
+def repasse(k: tuple) -> str | None:
+    r = repasse_com_origem(k)
+    return r[0] if r else None
 
 
 _val = f[f.ted.notna() & ~f.k.isin(_com_credito)].drop_duplicates("ne_ccor")
@@ -439,6 +448,32 @@ sem = f.ted.isna()
 g3 = f.loc[sem, "k"].map(repasse)
 f.loc[g3.dropna().index, "ted"] = g3.dropna()
 f.loc[g3.dropna().index, "camada"] = "G3 repasse por outro órgão"
+
+# G1b crédito exclusivo descontado o repasse: a célula recebeu um único instrumento,
+# que repassou parte a outro órgão (repasse já atribuído pela G3); o que sobra é
+# exatamente o destaque oficial. Ex.: Palmares 2025, TED 966942: R$ 408 mil
+# recebidos, R$ 265 mil repassados à UnB, R$ 143 mil executados.
+repassado: dict[tuple, float] = {}
+for k in set(f.loc[g3.dropna().index, "k"]):
+    r = repasse_com_origem(k)
+    if r:
+        repassado[(r[1], r[0])] = repassado.get((r[1], r[0]), 0.0) + dest[k]
+
+
+def exclusivo_menos_repasse(k: tuple) -> str | None:
+    if k not in _com_credito or len(cred.loc[k]) != 1:
+        return None
+    t = str(cred.loc[k].index[0])
+    rep = repassado.get((k, t), 0.0)
+    if rep > 0.005 and abs(cred_cel[k] - rep - dest.get(k, 0.0)) < 0.01:
+        return t
+    return None
+
+
+sem = f.ted.isna()
+g1b = f.loc[sem, "k"].map(exclusivo_menos_repasse)
+f.loc[g1b.dropna().index, "ted"] = g1b.dropna()
+f.loc[g1b.dropna().index, "camada"] = "G1b crédito exclusivo descontado o repasse"
 
 
 # G4 saldo único: célula com 2+ instrumentos, crédito NC cobrindo o destaque oficial
