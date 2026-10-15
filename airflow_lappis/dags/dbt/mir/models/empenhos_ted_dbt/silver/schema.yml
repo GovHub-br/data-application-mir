@@ -691,3 +691,43 @@ models:
           Descrição, informações complementares (todos os valores distintos) e observações
           dos documentos, em maiúsculas: o texto em que as regras procuram TED, NC, NE de
           referência, processo e contrato.
+
+  - name: ted_credito_instrumento
+    description: >
+      Crédito descentralizado pelo MIR por instrumento, uma linha por movimento de NC, com
+      a célula de crédito (ano x órgão x PTRES x fonte). Porta credito_total.py de
+      analises/ted_execucao a partir de nc_tesouro_mir. origem 'TED': NC com número de
+      transferência (campo, texto da NC ou processo com um único TED), sem as NCs internas
+      do MIR, com o sinal do evento. origem 'tedinho': NC do MIR sem número para outro
+      órgão; anulação e devolução abatem a NC que cancelam (estorno citado, itens
+      idênticos ou mesmo valor total, cada NC uma vez só) e o cancela-e-relança vira um
+      instrumento só ("NC_A / NC_B"). origem 'devolucao': devolução sem número; a que não
+      abate nenhum tedinho fica como '(devolução sem TED)'.
+    columns:
+      - name: origem
+        description: "'TED', 'tedinho' ou 'devolucao'."
+        tests:
+          - accepted_values:
+              values: ["TED", "tedinho", "devolucao"]
+      - name: tipo
+        description: "Só para origem TED: Recebido, Devolvido ou Anulado (pelo evento da NC)."
+      - name: num_transf
+        description: "Só para origem TED: número de transferência do TED."
+      - name: nc
+        description: "NC do SIAFI."
+      - name: ano
+        description: "Ano do movimento (data de emissão ou, sem ela, ano do número da NC)."
+      - name: ug
+        description: "UG executora (o lado da NC que não é o MIR)."
+      - name: orgao_ug
+        description: "Órgão da UG na consulta oficial, ou 'UG <código>' se ela não está nela."
+      - name: ptres
+        description: "PTRES da NC."
+      - name: fonte
+        description: "Fonte de recursos da NC."
+      - name: celula_credito
+        description: "Célula de crédito ano|órgão|PTRES|fonte."
+      - name: instrumento
+        description: "Número do TED, 'tedinho <NC>' ou '(devolução sem TED)'."
+      - name: valor
+        description: "Valor com sinal: crédito positivo; anulação e devolução negativas."
