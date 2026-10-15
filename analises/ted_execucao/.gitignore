@@ -1,0 +1,4 @@
+# dados exportados do DW e páginas baixadas: regenerar com exportar_dados.sh e baixar_govbr.py
+dados/*
+!dados/govbr_processos_manual.csv
+saida/
