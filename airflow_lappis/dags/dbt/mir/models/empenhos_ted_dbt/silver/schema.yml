@@ -636,3 +636,58 @@ models:
         description: "Valor liquidado da NE."
       - name: despesas_pagas
         description: "Valor pago da NE no exercício."
+
+  - name: execucao_ted_ne
+    description: >
+      Base de NEs da execução dos TEDs por instrumento: as NEs de ppa_tesouro recortadas
+      como a consulta oficial "Execução TED por UG" (execucao_ted_ug): resultado EOF 2, sem
+      as UGs e ações que a consulta não traz. Porta a seção "base" de
+      analises/ted_execucao/pipeline.py. Grão: uma linha por NE (cada NE cai numa única
+      célula ano x UG x ação x PO x PTRES x grupo x fonte). A var
+      ted_execucao_corte_emissao corta as NEs emitidas depois da data de posição da
+      consulta oficial, quando as duas extrações não são do mesmo dia.
+    columns:
+      - name: ne_ccor
+        description: "NE (UG + gestão + ano + número)."
+        tests:
+          - unique
+          - not_null
+      - name: ano
+        description: "Ano de emissão da NE (exercício)."
+      - name: ug
+        description: "UG emitente da NE (6 primeiros caracteres de ne_ccor)."
+      - name: orgao_ug
+        description: "Órgão da UG na consulta oficial; nulo se a UG não está nela."
+      - name: acao
+        description: "Ação orçamentária."
+      - name: po
+        description: "Plano orçamentário."
+      - name: ptres
+        description: "PTRES."
+      - name: grupo
+        description: "Grupo de natureza de despesa."
+      - name: fonte
+        description: "Fonte de recursos detalhada."
+      - name: celula_credito
+        description: "Célula de crédito ano|órgão|PTRES|fonte, a chave das regras de crédito."
+      - name: oficial
+        description: "A célula da NE está na consulta oficial (só essas recebem instrumento)."
+      - name: emp
+        description: "Empenhado líquido da NE (anulações negativas)."
+      - name: liq
+        description: "Liquidado no exercício."
+      - name: pag
+        description: "Pago no exercício."
+      - name: tem_movimento
+        description: "Alguma linha da NE tem empenhado, liquidado ou pago diferente de zero."
+      - name: ne_ccor_descricao
+        description: "Descrição da NE."
+      - name: processo
+        description: "Número do processo da NE, só dígitos (nulo quando não informado)."
+      - name: favorecido
+        description: "Nome do favorecido da NE."
+      - name: texto
+        description: >
+          Descrição, informações complementares (todos os valores distintos) e observações
+          dos documentos, em maiúsculas: o texto em que as regras procuram TED, NC, NE de
+          referência, processo e contrato.
