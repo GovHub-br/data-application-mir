@@ -29,6 +29,7 @@ descentralização ("Processo: 21290..."), o tedinho leva o processo no nome.
 
 import itertools
 import math
+import os
 import re
 import unicodedata
 from collections import Counter
@@ -319,7 +320,7 @@ for ne in alvo:
     if ne in achado:
         continue
     t, s, mg = melhor(ne)
-    if t and s >= 0.3 and mg >= 0.1:
+    if t and s >= 0.3 and mg >= 0.1 and not os.environ.get("SEM_SIMILARIDADE"):
         achado[ne] = (t, "F similaridade com objeto do plano")
 
 sem = f.ted.isna()
@@ -482,6 +483,45 @@ def ident_da_celula(df: pd.DataFrame, k: tuple) -> pd.Series:
     return x.groupby("ted").emp.sum()
 
 
+_celulas_do_instrumento = cred.reset_index().groupby("instrumento").size().to_dict()
+_dev_sem_par = (
+    _c[_c.instrumento == "(devolução sem TED)"].groupby(KC + ["nc"]).valor.sum()
+)
+
+
+def saldo_da_celula(df: pd.DataFrame, k: tuple) -> dict[str, float]:
+    """Saldo de cada instrumento da célula: crédito menos o que as NEs atribuídas a ele
+    consumiram, inclusive em outra fonte do mesmo ano/órgão/PTRES em que ele não tem
+    crédito (o órgão remaneja a fonte; ex.: ENAP 2025, 003521 executado na fonte 1000).
+    Devolução sem par que é exatamente o saldo de um único instrumento o zera
+    (ex.: ENAP 2025, devolução de R$ 564,08 = saldo do processo 001553)."""
+    ident_k = ident_da_celula(df, k)
+    a, o, p, fo = k
+    fora = df[(df.ano == a) & df.ted.isin(cred.loc[k].index)]
+    sem_credito = pd.Series(
+        [(*kk, t) not in cred.index for kk, t in zip(fora.k, fora.ted)],
+        index=fora.index,
+        dtype=bool,
+    )
+    fora = fora[sem_credito]
+    # instrumento com crédito só nesta célula: toda execução dele fora dela (outra
+    # fonte do órgão ou repasse a outro órgão) sai daqui; com crédito em várias
+    # células, só a de outra fonte do mesmo órgão e PTRES
+    unica = fora.ted.map(lambda t: _celulas_do_instrumento.get(t, 0) == 1)
+    mesmo_orgao = (fora.orgao_ug == o) & (fora.ptres == p)
+    gasto_fora = fora[unica | mesmo_orgao].groupby("ted").emp.sum()
+    saldo = {
+        str(i): v - ident_k.get(i, 0.0) - gasto_fora.get(i, 0.0)
+        for i, v in cred.loc[k].items()
+    }
+    if k in _dev_sem_par.index.droplevel("nc"):
+        for d in -_dev_sem_par.loc[k]:
+            hit = [i for i, s_ in saldo.items() if abs(s_ - d) < 0.01]
+            if len(hit) == 1:
+                saldo[hit[0]] -= d
+    return saldo
+
+
 def _passo_exato(
     nes: dict[str, float], saldo: dict[str, float], out: dict[str, tuple[str, str]]
 ) -> bool:
@@ -545,7 +585,10 @@ def _passo_subconjunto(
 
 
 def casar_saldos(
-    nes: dict[str, float], grupo: dict[str, str], saldo: dict[str, float]
+    nes: dict[str, float],
+    grupo: dict[str, str],
+    saldo: dict[str, float],
+    aberto: bool = False,
 ) -> dict[str, tuple[str, str]]:
     """Casa NEs pendentes com o saldo dos instrumentos, sem ratear: valor exato, grupo
     de NEs com a mesma NC citada, subconjunto de NEs; por fim, se só um instrumento
@@ -564,9 +607,13 @@ def casar_saldos(
     if nes and len(com_saldo) == 1 and saldo[com_saldo[0]] >= resto - 0.01:
         out.update({ne: (com_saldo[0], "exclusão") for ne in nes})
     elif nes and 2 <= len(com_saldo) <= 3:
+        mesclado = " + ".join(sorted(com_saldo))
         if abs(sum(saldo[i] for i in com_saldo) - resto) < 0.01:
-            mesclado = " + ".join(sorted(com_saldo))
             out.update({ne: (mesclado, "conjunto") for ne in nes})
+        elif aberto and sum(saldo[i] for i in com_saldo) >= resto - 0.01:
+            # conjunto aberto: sem fechamento exato, o pendente fica com a junção dos
+            # instrumentos que ainda têm saldo (ex.: GECC da ENAP em 2026)
+            out.update({ne: (mesclado, "conjunto aberto") for ne in nes})
     return out
 
 
@@ -575,11 +622,12 @@ ROTULO_CELULA = {
     "grupo": "G5 saldo exato da NE na célula",
     "subconjunto": "G5 saldo exato da NE na célula",
     "conjunto": "G5 fechamento conjunto na célula",
+    "conjunto aberto": "G6 conjunto aberto na célula (sem fechamento exato)",
     "exclusão": "G4 saldo único na célula",
 }
 
 
-def aplica_saldo_na_celula() -> None:
+def aplica_saldo_na_celula(aberto: bool = False) -> None:
     """G4/G5: célula com 2+ instrumentos e crédito cobrindo o destaque oficial;
     as NEs pendentes casam com o saldo de cada instrumento (casar_saldos)."""
     pend = f[f.ted.isna()]
@@ -590,9 +638,8 @@ def aplica_saldo_na_celula() -> None:
         if cred_cel.get(k, 0.0) < dest.get(k, 0.0) - 0.01:
             continue
         nes = {n: v for n, v in g.groupby("ne_ccor").emp.sum().items() if abs(v) > 0.005}
-        ident_k = ident_da_celula(f, k)
-        saldo = {str(i): v - ident_k.get(i, 0.0) for i, v in cred.loc[k].items()}
-        for ne, (i, modo) in casar_saldos(nes, {}, saldo).items():
+        saldo = saldo_da_celula(f, k)
+        for ne, (i, modo) in casar_saldos(nes, {}, saldo, aberto).items():
             idx = f[(f.k == k) & (f.ne_ccor == ne) & f.ted.isna()].index
             f.loc[idx, "ted"] = i
             f.loc[idx, "camada"] = ROTULO_CELULA[modo]
@@ -610,8 +657,7 @@ for ne, k, t in (
         continue
     if cred_cel.get(k, 0.0) < dest.get(k, 0.0) - 0.01:
         continue
-    ident_k = ident_da_celula(f[f.ne_ccor != ne], k)
-    saldo = {str(i): v - ident_k.get(i, 0.0) for i, v in cred.loc[k].items()}
+    saldo = saldo_da_celula(f[f.ne_ccor != ne], k)
     v = float(f[(f.ne_ccor == ne) & (f.k == k)].emp.sum())
     pred = casar_saldos({ne: v}, {}, saldo).get(ne)
     if pred is not None and abs(v) > 0.005:
@@ -684,6 +730,37 @@ for ne in sorted(set(f[f.ted.isna()].ne_ccor)):
         & (nc_mir.ptres == linha.ptres)
     ]
     inst = {i for i in set(m.instrumento) if i.startswith("tedinho") or i in teds_mir}
+    rotulo_t = ""
+    if len(inst) != 1:
+        # NC do MIR citada com a UG emitente, mesmo que tenha ido a um intermediário que
+        # repassou (GECC da ENAP): "(238012/000307/233518)", "238012-NC000307-233518"
+        # ou "(233518/000192/238012)"; vale o ano da NE e o PTRES tem de bater
+        cit = [
+            (e, int(q), p_)
+            for e, q, p_ in re.findall(
+                r"\b(238012|810008)[/-](?:NC)?0*([0-9]{1,6})[/-]([0-9]{6})\b", t
+            )
+        ]
+        cit += [
+            (e, int(q), p_)
+            for p_, q, e in re.findall(
+                r"\(([0-9]{6})/0*([0-9]{1,6})/(238012|810008)\)", t
+            )
+        ]
+        m = nc_mir[
+            pd.Series(
+                [
+                    (n[:6], int(sq), pt) in cit
+                    for n, sq, pt in zip(nc_mir.nc, nc_mir.seq, nc_mir.ptres)
+                ],
+                index=nc_mir.index,
+                dtype=bool,
+            )
+            & (nc_mir.ano_nc == str(linha.ano))
+            & (nc_mir.ptres == linha.ptres)
+        ]
+        inst = {i for i in set(m.instrumento) if i.startswith("tedinho") or i in teds_mir}
+        rotulo_t = " (via intermediário)"
     if len(inst) == 1:
         i = inst.pop()
         if i.startswith("tedinho"):
@@ -694,7 +771,8 @@ for ne in sorted(set(f[f.ted.isna()].ne_ccor)):
                 "T tedinho pela NC citada"
                 if i.startswith("tedinho")
                 else "T NC do MIR citada (TED)"
-            ),
+            )
+            + rotulo_t,
         )
         continue
     for e in re.findall(r"[0-9]{4}NC[0-9]{6}\s*\(([0-9]{6})/", t):
@@ -737,6 +815,7 @@ ROTULO_R = {
     "exato": "R saldo exato do intermediário",
     "subconjunto": "R saldo exato do intermediário",
     "conjunto": "R fechamento conjunto no intermediário",
+    "conjunto aberto": "R conjunto aberto no intermediário (sem fechamento exato)",
     "grupo": "R saldo do intermediário por NC citada",
     "exclusão": "R saldo do intermediário por exclusão",
 }
@@ -748,13 +827,41 @@ for ne in sorted(set(f[f.ted.isna()].ne_ccor)):
         _pend.setdefault(inter[0], {})[ne] = float(f[f.ne_ccor == ne].emp.sum())
         _nc_citada[ne] = inter[1]
 for ke, nes in _pend.items():
-    ident_e = ident_da_celula(f, ke)
-    saldo = {str(i): v - ident_e.get(i, 0.0) for i, v in cred.loc[ke].items()}
-    for ne, (i, modo) in casar_saldos(nes, _nc_citada, saldo).items():
+    saldo = saldo_da_celula(f, ke)
+    for ne, (i, modo) in casar_saldos(nes, _nc_citada, saldo, aberto=True).items():
         f.loc[f.ne_ccor == ne, ["ted", "camada"]] = [i, ROTULO_R[modo]]
 
-# segunda passada do saldo na célula: a camada 5 identifica NEs que consomem saldo
-aplica_saldo_na_celula()
+
+# G3b repasse por exclusão: célula sem NC direta do MIR e sem NC citada. Olha o saldo
+# de todos os instrumentos do mesmo ano/PTRES/fonte em outros órgãos; se só um tem
+# saldo, é dele; se 2-3, conjunto aberto (ex.: GECC pagos com crédito da ENAP).
+def saldos_fora(k: tuple) -> dict[str, float]:
+    a, o, p, fo = k
+    acc: dict[str, float] = {}
+    for kc in _com_credito:
+        if kc[0] == a and kc[2] == p and kc[3] == fo and kc[1] != o:
+            for i, s_ in saldo_da_celula(f, kc).items():
+                acc[i] = acc.get(i, 0.0) + s_
+    return acc
+
+
+for kk, g in f[f.ted.isna() & ~f.k.isin(_com_credito)].groupby("k"):
+    k = cast(tuple, kk)
+    nes = {str(n): v for n, v in g.groupby("ne_ccor").emp.sum().items() if abs(v) > 0.005}
+    if not nes:
+        continue
+    for ne, (i, modo) in casar_saldos(nes, {}, saldos_fora(k), aberto=True).items():
+        idx = g[g.ne_ccor == ne].index
+        f.loc[idx, "ted"] = i
+        f.loc[idx, "camada"] = (
+            "G3 repasse por outro órgão (exclusão)"
+            if modo != "conjunto aberto"
+            else "G6 conjunto aberto (repasse sem fechamento exato)"
+        )
+
+# segunda passada do saldo na célula: a camada 5 identifica NEs que consomem saldo;
+# nela o que não fecha vai para o conjunto aberto dos instrumentos com saldo
+aplica_saldo_na_celula(aberto=True)
 
 f["camada"] = f.camada.fillna("6 não identificado")
 GRUPO = {
@@ -788,7 +895,10 @@ f["tipo_instrumento"] = f.ted.map(
         None if pd.isna(t) else ("Tedinho" if str(t).startswith("tedinho") else "TED")
     )
 )
-f.drop(columns=["k"]).to_pickle(SAIDA + "base.pkl")
+f.drop(columns=["k"]).to_pickle(
+    SAIDA
+    + ("base_sem_similaridade.pkl" if os.environ.get("SEM_SIMILARIDADE") else "base.pkl")
+)
 
 # ---------------------------------------------------------------- resumo e saídas
 for metr, col in [("empenhado", "emp"), ("liquidado", "liq"), ("pago", "pag")]:

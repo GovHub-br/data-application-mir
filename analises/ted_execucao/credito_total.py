@@ -179,7 +179,7 @@ def credito() -> pd.DataFrame:
         orgao_ug=orgao(dev.emit),
         valor=dev.v,
     )
-    cols = ["ano", "orgao_ug", "ptres", "fonte", "instrumento", "valor"]
+    cols = ["ano", "orgao_ug", "ptres", "fonte", "instrumento", "valor", "nc"]
     return pd.concat([ted[cols], tdn[cols], dev[cols]])
 
 

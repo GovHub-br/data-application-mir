@@ -17,12 +17,13 @@ oficial em empenhado, liquidado e pago.
 |---|---|---|---|---|---|---|---|
 | 2023 | 32,01 | 17,46 | 9,39 | — | 4,92 | 0,23 | 0,00 |
 | 2024 | 72,89 | 38,44 | 18,51 | 9,79 | 6,15 | — | 0,00 |
-| 2025 | 80,11 | 40,83 | 14,44 | 5,33 | 18,78 | 0,71 | 0,02 |
-| 2026 | 50,12 | 33,97 | 9,82 | 3,22 | 3,08 | 0,03 | 0,01 |
-| **Total** | **235,12** | **130,70** | **52,16** | **18,34** | **32,93** | **0,97** | **0,02 (0,01%)** |
+| 2025 | 80,11 | 40,83 | 14,44 | 5,33 | 18,79 | 0,71 | 0,00 |
+| 2026 | 50,12 | 33,97 | 9,82 | 3,22 | 3,08 | 0,03 | 0,00 |
+| **Total** | **235,12** | **130,70** | **52,16** | **18,34** | **32,94** | **0,97** | **0,00** |
 
-São 90 TEDs e 32 tedinhos com execução no período. Sobram 9 NEs sem instrumento
-identificado (R$ 23.769,36). 2023 e 2024 fecham 100%.
+Toda NE com valor tem instrumento: 90 TEDs e 33 tedinhos. Empenhado, liquidado e
+pago fecham 100% com a consulta oficial nos quatro anos. Dois instrumentos são
+mesclados (ver Pendências).
 
 ## Achados que afetam o pipeline
 
@@ -93,8 +94,8 @@ Cada NE fica com a primeira camada que a resolver.
 | 2 regras | A1 nº do TransfereGov no texto; A2 numeração do MIR ("TED 17/2026") pela página do gov.br; D NC citada; B NE de referência (reforço); C mesmo processo; E mesmo contrato. TED precisa ser do órgão da UG | *leave-one-out*: A1 224/224, A2 30/30, D 2/2, C 137/140 |
 | 3 similaridade | texto da NE x objeto dos planos do órgão (TF-IDF, score ≥ 0,3 e margem ≥ 0,1) | 72/73 na calibração |
 | descarte | número que não é TED do MIR; vínculo que contradiz o crédito da célula (só derruba similaridade, ou crédito exclusivo de outro TED numerado) | 1 conflito em todas as células explicadas pelo crédito |
-| 4 crédito da UG | G1: todo o destaque oficial da célula (ano, órgão, PTRES, fonte) veio de um único instrumento; G1b: idem, descontado o que esse instrumento repassou a outro órgão (repasse atribuído pela G3), ex.: Palmares 2025, TED 966942; G2: o empenho sem TED é o saldo exato do crédito de um TED; G3: a célula não recebeu NC do MIR, e um instrumento do mesmo ano/PTRES/fonte foi para outro órgão, que repassou (crédito menos o que executou) exatamente o destaque da célula; G4/G5: célula com 2+ instrumentos e crédito cobrindo o destaque; saldo de cada instrumento = crédito menos o que as NEs identificadas consumiram; NE com valor igual ao saldo de um único instrumento, ou subconjunto de 2-3 NEs cuja soma é o saldo de um instrumento quando é a única combinação que casa (G5); depois, por exclusão, se só um ainda tem saldo (G4); e, se o pendente é exatamente o saldo somado de 2-3 instrumentos, eles viram um instrumento mesclado ("A + B"). Roda de novo depois da camada 5 | G1 concordou 115/115 onde o TED do texto é real; G3 concordou com a regra S nas 4 NEs que as duas cobrem; G4/G5 *leave-one-out*: exato 36/36, exclusão 3/3 |
-| 5 tedinho / subdescentralização | T: NC do MIR citada no texto, com ano (2025NC000307) ou sem (NC000307 / 233518); se cancelada, vai para a relançada. S: NC citada de outro órgão (ENAP, Palmares) com um único TED com o MIR no ano + PTRES (desempate pela fonte). R: NC citada de um intermediário; saldo de cada instrumento dele (crédito menos o que executou e o já atribuído); casamento exato do valor da NE com um saldo, depois do grupo de NEs que citam a mesma NC do intermediário, e por fim por exclusão. Ex.: ENAP → UnB 2023 e 2025 | — |
+| 4 crédito da UG | Saldo de um instrumento = crédito menos o que as NEs atribuídas a ele consumiram, inclusive em outra fonte do órgão ou, se o crédito está numa célula só, em repasse a outro órgão; devolução sem par igual ao saldo de um instrumento o zera. G1: todo o destaque oficial da célula (ano, órgão, PTRES, fonte) veio de um único instrumento; G1b: idem, descontado o que esse instrumento repassou a outro órgão (repasse atribuído pela G3), ex.: Palmares 2025, TED 966942; G2: o empenho sem TED é o saldo exato do crédito de um TED; G3: a célula não recebeu NC do MIR, e um instrumento do mesmo ano/PTRES/fonte foi para outro órgão, que repassou (crédito menos o que executou) exatamente o destaque da célula; ou, sem NC citada, o único instrumento do mesmo ano/PTRES/fonte em outros órgãos que ainda tem saldo; G4/G5: célula com 2+ instrumentos e crédito cobrindo o destaque; saldo de cada instrumento = crédito menos o que as NEs identificadas consumiram; NE com valor igual ao saldo de um único instrumento, ou subconjunto de 2-3 NEs cuja soma é o saldo de um instrumento quando é a única combinação que casa (G5); depois, por exclusão, se só um ainda tem saldo (G4); e, se o pendente é exatamente o saldo somado de 2-3 instrumentos, eles viram um instrumento mesclado ("A + B"). Roda de novo depois da camada 5, quando o que não fecha vai para o conjunto aberto dos instrumentos com saldo (G6) | G1 concordou 115/115 onde o TED do texto é real; G3 concordou com a regra S nas 4 NEs que as duas cobrem; G4/G5 *leave-one-out*: exato 36/36, exclusão 3/3 |
+| 5 tedinho / subdescentralização | T: NC do MIR citada no texto, com ano (2025NC000307), sem ano (NC000307 / 233518) ou com a UG emitente ("(238012/000307/233518)", inclusive quando a NC foi para um intermediário que repassou); se cancelada, vai para a relançada. S: NC citada de outro órgão (ENAP, Palmares) com um único TED com o MIR no ano + PTRES (desempate pela fonte). R: NC citada de um intermediário; saldo de cada instrumento dele (crédito menos o que executou e o já atribuído); casamento exato do valor da NE com um saldo, depois do grupo de NEs que citam a mesma NC do intermediário, e por fim por exclusão. Ex.: ENAP → UnB 2023 e 2025 | — |
 
 Nada é rateado: o que nenhuma regra resolve fica em "não identificado", no grão da
 UG.
@@ -105,13 +106,31 @@ objetos da página do gov.br. Na calibração acertou 37 de 37 (score ≥ 0,1 e 
 ≥ 0,05), mas resolve só 2 NEs das restantes (R$ 180 mil). Ainda não entra no
 pipeline.
 
-## O que falta (R$ 23.769,36)
+## Verificação da similaridade
 
-São 9 NEs, todas no PTRES 233518, fonte OQ, ligadas ao crédito que a ENAP recebeu
-por tedinho: a própria ENAP (R$ 6.311,56, cita a NC000496, que não é do MIR) e
-repasses da ENAP a IBGE, UTFPR, UFRB, IFBaiano, UFRJ e UFPR (R$ 1.196,38 a R$
-3.549,56). O saldo da ENAP nessas fontes é muito maior que o pendente e está em três
-ou mais processos, então nenhum casamento fecha.
+A camada 3 (similaridade) é estatística. `verifica_similaridade.py` roda o pipeline
+sem ela e compara, NE a NE, com o que as regras determinísticas dão:
+
+| Resultado | NEs | Empenhado |
+|---|---|---|
+| Confirmado: mesmo instrumento (G1 em 13 NEs; G2, G4 e G5 em uma cada) | 16 | R$ 17,82M |
+| Contém: o determinístico só fecha no conjunto "949197 + 986437"; a similaridade dá o 986437, e os R$ 528 mil são exatamente 88% dele (os outros 12% já são do 986437 pelo saldo exato) | 1 | R$ 0,53M |
+| Diverge | 0 | — |
+
+Sem a similaridade, o total identificado é o mesmo: ela só antecipa (e, num caso,
+especifica) o que o crédito já determina.
+
+## Pendências
+
+- **Instrumentos mesclados: definir com o MIR como apresentar.**
+  - "Processo 21290.001550/2025-64 + Processo 21290.001930/2025-07 (ENAP)": R$
+    177.150,00 empenhados pela UnB em 2025, que somam exatamente o saldo dos dois
+    tedinhos (fechamento conjunto, sem dado para separar).
+  - "Processo 21290.001553/2025-06 + TED 01/2026 (ENAP)": R$ 4.658,16 de GECC pagos
+    por UFRJ e UFPR em 2026 (conjunto aberto: os dois ainda têm saldo, sem
+    fechamento exato).
+- O scraper `cliente_transferencias_gov_br.py` descarta as descentralizações sem TED
+  da página.
 
 ## Como rodar
 
@@ -131,6 +150,7 @@ Entradas que não ficam no git:
 python3 baixar_govbr.py        # páginas de transferências do MIR no gov.br
 python3 pipeline.py            # execução por instrumento; saídas em saida/
 python3 similar_celula.py      # opcional: similaridade restrita à célula
+python3 verifica_similaridade.py  # confere a similaridade contra as regras determinísticas
 ```
 
 Saídas em `saida/`:
