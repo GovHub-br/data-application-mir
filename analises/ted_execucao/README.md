@@ -15,14 +15,14 @@ oficial em empenhado, liquidado e pago.
 
 | Ano | Oficial | Cascata dbt | Regras determinísticas | Similaridade | Crédito da UG | Tedinho / subdescentr. | Não identificado |
 |---|---|---|---|---|---|---|---|
-| 2023 | 32,01 | 17,46 | 9,39 | — | 4,21 | 0,24 | 0,70 |
-| 2024 | 72,89 | 38,44 | 18,51 | 9,79 | 6,05 | — | 0,10 |
-| 2025 | 80,11 | 40,83 | 14,44 | 5,33 | 17,63 | 0,53 | 1,35 |
+| 2023 | 32,01 | 17,46 | 9,39 | — | 4,82 | 0,03 | 0,30 |
+| 2024 | 72,89 | 38,44 | 18,51 | 9,79 | 6,15 | — | 0,00 |
+| 2025 | 80,11 | 40,83 | 14,44 | 5,33 | 17,89 | 0,27 | 1,35 |
 | 2026 | 50,12 | 33,97 | 9,82 | 3,22 | 2,65 | 0,03 | 0,43 |
-| **Total** | **235,12** | **130,70** | **52,16** | **18,34** | **30,54** | **0,80** | **2,58 (1,1%)** |
+| **Total** | **235,12** | **130,70** | **52,16** | **18,34** | **31,51** | **0,32** | **2,08 (0,9%)** |
 
-São 86 TEDs e 29 tedinhos com execução no período. Sobram 64 NEs sem instrumento
-identificado.
+São 88 TEDs e 29 tedinhos com execução no período. Sobram 61 NEs sem instrumento
+identificado (R$ 1,30M do liquidado e R$ 0,91M do pago).
 
 ## Achados que afetam o pipeline
 
@@ -61,6 +61,13 @@ identificado.
 6. **A UG que recebe o destaque nem sempre é a que empenha.** A UFF recebe na 153056
    e empenha na 150123, e o CNPq recebe na 364102 e empenha na 364150. Por isso as
    regras de crédito trabalham por órgão.
+7. **Há repasse entre órgãos.** O MIR firma o TED com um órgão que repassa o crédito
+   a outro pelo TED dele, e a NE do executor cita o número do segundo TED. Ex.: TED
+   25/2023 (949807) do MIR com o MinC, repassado à UNIFESP pelo "TED 09/2023,
+   transf. 950762" do MinC; TED 955619 do MIR com o MinC, repassado à UNIRIO; e os
+   repasses da ENAP e da Palmares à UnB. O órgão intermediário pode nem aparecer na
+   consulta oficial (o MinC não executou nada), e o crédito precisa ser mantido
+   mesmo para UGs fora dela.
 
 ## Método
 
@@ -72,7 +79,7 @@ Cada NE fica com a primeira camada que a resolver.
 | 2 regras | A1 nº do TransfereGov no texto; A2 numeração do MIR ("TED 17/2026") pela página do gov.br; D NC citada; B NE de referência (reforço); C mesmo processo; E mesmo contrato. TED precisa ser do órgão da UG | *leave-one-out*: A1 224/224, A2 30/30, D 2/2, C 137/140 |
 | 3 similaridade | texto da NE x objeto dos planos do órgão (TF-IDF, score ≥ 0,3 e margem ≥ 0,1) | 72/73 na calibração |
 | descarte | número que não é TED do MIR; vínculo que contradiz o crédito da célula (só derruba similaridade, ou crédito exclusivo de outro TED numerado) | 1 conflito em todas as células explicadas pelo crédito |
-| 4 crédito da UG | G1: todo o destaque oficial da célula (ano, órgão, PTRES, fonte) veio de um único instrumento; G2: o empenho sem TED é o saldo exato do crédito de um TED | G1 concordou 115/115 onde o TED do texto é real |
+| 4 crédito da UG | G1: todo o destaque oficial da célula (ano, órgão, PTRES, fonte) veio de um único instrumento; G2: o empenho sem TED é o saldo exato do crédito de um TED; G3: a célula não recebeu NC do MIR, e um instrumento do mesmo ano/PTRES/fonte foi para outro órgão, que repassou (crédito menos o que executou) exatamente o destaque da célula | G1 concordou 115/115 onde o TED do texto é real; G3 concordou com a regra S nas 4 NEs que as duas cobrem |
 | 5 tedinho / subdescentralização | T: NC do MIR citada no texto, com ano (2025NC000307) ou sem (NC000307 / 233518); S: NC citada de outro órgão (ENAP, Palmares) com um único TED com o MIR no ano + PTRES (desempate pela fonte) | — |
 
 Nada é rateado: o que nenhuma regra resolve fica em "não identificado", no grão da
@@ -84,13 +91,13 @@ objetos da página do gov.br. Na calibração acertou 37 de 37 (score ≥ 0,1 e 
 ≥ 0,05), mas resolve só 2 NEs das restantes (R$ 180 mil). Ainda não entra no
 pipeline.
 
-## O que falta (R$ 2,58M)
+## O que falta (R$ 2,08M)
 
-| Situação | NEs | Empenhado |
-|---|---|---|
-| 2 ou mais instrumentos na célula e texto genérico (UFF energia/água, UFC, campi do IFBA) | 55 | R$ 1,20M |
-| nenhuma NC do MIR para o órgão: crédito repassado por outro órgão (UnB via ENAP, UNIFESP, UNIRIO) | 17 | R$ 1,03M |
-| 1 instrumento na célula, mas crédito diferente do destaque (Palmares repassou parte à UnB; UnB 2023) | 52 | R$ 0,35M |
+| Situação | Empenhado |
+|---|---|
+| 2 ou mais instrumentos na célula e texto genérico (UFF energia/água, UFC, campi do IFBA) | R$ 1,20M |
+| nenhuma NC do MIR para o órgão e repasse sem casamento exato (UnB via tedinhos da ENAP em 2025; valores pequenos de IBGE, UTFPR, UFRB, UFPR e UFRJ) | R$ 0,53M |
+| 1 instrumento na célula, mas crédito diferente do destaque (Palmares repassou parte à UnB; UnB 2023) | R$ 0,35M |
 
 ## Como rodar
 

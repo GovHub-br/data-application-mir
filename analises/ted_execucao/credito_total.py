@@ -11,6 +11,12 @@ orgao_da_ug = ug.drop_duplicates("ug").set_index("ug").orgao.to_dict()
 MIR = ("238", "810008", "240", "230002")  # UGs emitentes do MIR
 
 
+def orgao(ugs: pd.Series) -> pd.Series:
+    """Órgão da UG pela consulta oficial; UG fora dela (ex.: MinC, que só repassou)
+    fica com a própria UG, para não sumir nos agrupamentos."""
+    return ugs.map(orgao_da_ug).fillna("UG " + ugs)
+
+
 def valor_com_sinal(s: pd.Series) -> pd.Series:
     """Valor do Tesouro Gerencial (1.234,56 / -1.234,56 / (1.234,56)) com sinal."""
     neg = s.str.startswith("(") | s.str.startswith("-")
@@ -31,7 +37,7 @@ def credito() -> pd.DataFrame:
     ted = ted.assign(
         ano=ted.ano.astype(int),
         instrumento=ted.num_transf,
-        orgao_ug=ted.ug.map(orgao_da_ug),
+        orgao_ug=orgao(ted.ug),
     )
 
     r = pd.concat([ref("nc_raw1.csv"), ref("nc_raw2.csv")])
@@ -45,7 +51,7 @@ def credito() -> pd.DataFrame:
         & ~r.fav.str.startswith(MIR)
     ]
     tdn = tdn.assign(
-        instrumento="tedinho " + tdn.nc, orgao_ug=tdn.fav.map(orgao_da_ug), valor=tdn.v
+        instrumento="tedinho " + tdn.nc, orgao_ug=orgao(tdn.fav), valor=tdn.v
     )
     dev = r[
         (r.nc_transferencia == "-8")
@@ -54,7 +60,7 @@ def credito() -> pd.DataFrame:
         & ~r.emit.str.startswith(MIR)
     ]
     dev = dev.assign(
-        instrumento="(devolução sem TED)", orgao_ug=dev.emit.map(orgao_da_ug), valor=dev.v
+        instrumento="(devolução sem TED)", orgao_ug=orgao(dev.emit), valor=dev.v
     )
     cols = ["ano", "orgao_ug", "ptres", "fonte", "instrumento", "valor"]
     return pd.concat([ted[cols], tdn[cols], dev[cols]])

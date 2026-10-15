@@ -406,6 +406,40 @@ for kk, v in f[f.ted.isna()].groupby("k").emp.sum().items():
         f.loc[idx, "ted"] = hit[0]
         f.loc[idx, "camada"] = "G2 saldo exato de um TED"
 
+# G3 repasse por outro órgão: a célula não recebeu NC do MIR, mas um instrumento do MIR
+# do mesmo ano/PTRES/fonte foi para outro órgão, que repassou (crédito recebido menos
+# o destaque que executou) exatamente o destaque da célula. Ex.: TED 949807, MIR ->
+# MinC (UG 540026, sem execução) -> UNIFESP, R$ 400 mil.
+_rep = cred.reset_index()
+_rep["repassado"] = _rep.valor - [
+    dest.get((a, o, p, fo), 0.0)
+    for a, o, p, fo in zip(_rep.ano, _rep.orgao_ug, _rep.ptres, _rep.fonte)
+]
+_rep = _rep[_rep.repassado > 0.005]
+_com_credito = set(cred.index.droplevel("instrumento"))
+
+
+def repasse(k: tuple) -> str | None:
+    if k in _com_credito or abs(dest.get(k, 0.0)) < 0.005:
+        return None
+    a, o, p, fo = k
+    c = _rep[
+        (_rep.ano == a) & (_rep.ptres == p) & (_rep.fonte == fo) & (_rep.orgao_ug != o)
+    ]
+    hit = set(c[(c.repassado - dest[k]).abs() < 0.01].instrumento)
+    return str(hit.pop()) if len(hit) == 1 else None
+
+
+_val = f[f.ted.notna() & ~f.k.isin(_com_credito)].drop_duplicates("ne_ccor")
+_ok = [(t, r) for t, r in zip(_val.ted, _val.k.map(repasse)) if r is not None]
+print(
+    f"G3 validação (NEs já ligadas): {sum(t == r for t, r in _ok)}/{len(_ok)} concordam"
+)
+sem = f.ted.isna()
+g3 = f.loc[sem, "k"].map(repasse)
+f.loc[g3.dropna().index, "ted"] = g3.dropna()
+f.loc[g3.dropna().index, "camada"] = "G3 repasse por outro órgão"
+
 # ---------------------------------------------- 5 tedinho / subdescentralização
 # NCs do MIR para fora do MIR, com o instrumento (TED ou tedinho = a própria NC)
 nc_mir = nc_raw[
