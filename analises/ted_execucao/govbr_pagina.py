@@ -142,6 +142,11 @@ ESCOLA ESTADO FEDERAIS CAMPUS REITORIA ADMINISTRACAO PUBLICA DESENVOLVIMENTO""".
 )
 
 
+def _norm(nome: object) -> str:
+    s = unicodedata.normalize("NFKD", str(nome or "")).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]", "", s.lower())
+
+
 def _palavras(nome: str) -> set[str]:
     s = unicodedata.normalize("NFKD", nome).encode("ascii", "ignore").decode().upper()
     return {w for w in re.findall(r"[A-Z]{5,}", s) if w not in GENERICAS}
@@ -181,7 +186,7 @@ def _alvos(
     """Instrumento(s) de uma entrada da página."""
     if x.tipo != "TED":
         return _tedinhos_com_valor(nc_val, x.valor, x.pagina, orgaos) if x.valor else []
-    t = x.num_transf or num_por_numero.get(x.numero_ted)
+    t = x.num_transf or num_por_numero.get((x.numero_ted, _norm(x.parceiro)))
     if t:
         return [str(t)]
     if not x.valor:
@@ -205,8 +210,12 @@ def _alvos(
 def instrumentos_da_pagina() -> pd.DataFrame:
     """Entradas da página ligadas ao instrumento: nº do TED no TransfereGov ou, para
     as descentralizações sem TED, 'tedinho <NC>' pela NC do MIR de mesmo valor."""
+    # nº do TED (ex.: 01/2025) -> nº do TransfereGov, por parceiro: a página repete
+    # números entre parceiros (01/2025 é da UFF e também do IFNMG)
     gov = ref("govbr.csv").dropna(subset=["num_transf"])
-    num_por_numero = gov.groupby("numero_ted").num_transf.first().to_dict()
+    num_por_numero = {
+        (n, _norm(p)): t for n, p, t in zip(gov.numero_ted, gov.parceiro, gov.num_transf)
+    }
     orgao_da_ug = load_ug().drop_duplicates("ug").set_index("ug").orgao.to_dict()
     nc_val = _ncs_do_mir()
     nc_val["orgao"] = nc_val.fav.map(orgao_da_ug)
