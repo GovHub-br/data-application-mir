@@ -1,0 +1,3 @@
+# dados exportados do DW e páginas do gov.br: regenerar com exportar_dados.sh e baixar_govbr.py
+dados/
+saida/

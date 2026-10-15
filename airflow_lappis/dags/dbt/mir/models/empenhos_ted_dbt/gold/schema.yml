@@ -459,3 +459,66 @@ models:
         description: "Soma de despesas_liquidadas."
       - name: pago
         description: "Soma de despesas_pagas do exercício."
+
+  - name: ted_execucao_por_instrumento
+    description: >
+      Execução dos TEDs do MIR por instrumento: a consulta oficial "Execução TED por UG"
+      aberta por TED ou tedinho, a partir das NEs (execucao_ted_ne_vinculo). Grão: ano x
+      instrumento. O que nenhuma regra resolveu fica em '(não identificado)', sem rateio;
+      a soma por ano reproduz o empenhado, liquidado e pago das NEs da consulta oficial.
+    columns:
+      - name: ano
+        description: "Ano de emissão da NE."
+      - name: instrumento
+        description: "Número do TED, 'tedinho <NC>', junção ('A + B') ou '(não identificado)'."
+      - name: tipo_instrumento
+        description: "TED ou Tedinho (nulo para não identificado)."
+      - name: empenhado
+        description: "Empenhado líquido."
+      - name: liquidado
+        description: "Liquidado no exercício."
+      - name: pago
+        description: "Pago no exercício."
+      - name: empenhado_cascata_dbt
+        description: "Parte do empenhado ligada pela cascata dbt (empenhos_por_plano_acao)."
+      - name: empenhado_regras_deterministicas
+        description: "Parte ligada pelas regras de texto (A1, A2, D, B, C, E)."
+      - name: empenhado_credito_ug
+        description: "Parte ligada pelo crédito da célula (G1 a G6)."
+      - name: empenhado_tedinho_subdescentralizacao
+        description: "Parte ligada por NC citada, subdescentralização ou intermediário (T, S, R)."
+      - name: empenhado_nao_identificado
+        description: "Parte sem instrumento."
+      - name: parceiro
+        description: "Sigla da unidade descentralizada do plano de ação (só TED com plano)."
+      - name: objeto
+        description: "Objeto do plano de ação (200 primeiros caracteres)."
+
+  - name: ted_execucao_por_ne
+    description: >
+      Cada NE da consulta oficial "Execução TED por UG" com o instrumento e a regra que o
+      identificou (detalhe de ted_execucao_por_instrumento). Filtrar
+      grupo_regra = '6 não identificado' dá as NEs ainda sem instrumento. Grão: uma linha
+      por NE.
+    columns:
+      - name: ne_ccor
+        description: "NE."
+        tests:
+          - unique
+          - not_null
+      - name: ug_nome
+        description: "Nome da UG executora na consulta oficial."
+      - name: orgao_nome
+        description: "Nome do órgão na consulta oficial."
+      - name: instrumento
+        description: "Instrumento (nulo se não identificado)."
+      - name: regra
+        description: "Regra que identificou o instrumento."
+      - name: grupo_regra
+        description: "Camada da regra."
+      - name: empenhado
+        description: "Empenhado líquido da NE."
+      - name: liquidado
+        description: "Liquidado no exercício."
+      - name: pago
+        description: "Pago no exercício."
