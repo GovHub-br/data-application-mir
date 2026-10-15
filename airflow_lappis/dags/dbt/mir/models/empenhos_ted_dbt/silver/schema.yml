@@ -731,3 +731,29 @@ models:
         description: "Número do TED, 'tedinho <NC>' ou '(devolução sem TED)'."
       - name: valor
         description: "Valor com sinal: crédito positivo; anulação e devolução negativas."
+
+  - name: execucao_ted_ne_regras
+    description: >
+      Camadas 1 e 2 da execução dos TEDs por instrumento (pipeline.py até o descarte por
+      crédito). 1 cascata dbt (empenhos_por_plano_acao); para as NEs que ela não ligou, A1
+      número do TransfereGov no texto, A2 numeração do MIR pela página do gov.br, D NC
+      citada, e propagação por B NE de referência, C mesmo processo e E mesmo contrato, em
+      rodadas fixas (var ted_execucao_rodadas). O TED precisa ser do órgão da NE e o
+      candidato, único. Depois descarta o número que não é TED do MIR e o vínculo que
+      contradiz o crédito da célula. Grão: uma linha por NE da consulta oficial.
+    columns:
+      - name: ne_ccor
+        description: "NE."
+        tests:
+          - unique
+          - not_null
+      - name: instrumento_bruto
+        description: "Instrumento antes dos descartes."
+      - name: regra_bruta
+        description: "Regra antes dos descartes."
+      - name: instrumento
+        description: "Instrumento depois dos descartes (nulo: vai para as regras de crédito)."
+      - name: regra
+        description: "Regra que ligou a NE."
+      - name: rodada_propagacao
+        description: "Rodada em que a propagação B/C/E ligou a NE (0 = primeira)."
