@@ -36,7 +36,7 @@ from typing import Callable, cast
 import pandas as pd
 
 from carga import K, SAIDA, load_ne_antigo, load_ne_reais, load_ug, ref
-from credito_total import credito
+from credito_total import credito, valor_com_sinal
 from govbr_pagina import instrumentos_da_pagina
 
 EXCL_UG = {"810008", "170607", "170605", "201057", "230003", "810005", "238012"}
@@ -539,6 +539,46 @@ nc_mir["instrumento"] = nc_mir.nc_transferencia.where(
 )
 nc_mir["ano_nc"] = nc_mir.nc.str[11:15]
 nc_mir["seq"] = nc_mir.nc.str[-6:]
+nc_mir["orgao"] = nc_mir.fav.map(orgao_da_ug)
+
+# NC cancelada e relançada: a NC citada foi anulada/devolvida por inteiro (crédito
+# líquido zero) e o MIR mandou outra NC sem nº, ao mesmo órgão, no mesmo ano e com o
+# mesmo valor bruto: a NE vai para a NC relançada (ex.: ENAP, NC000002 -> NC000003)
+_liq_tedinho = (
+    _c[_c.instrumento.str.startswith("tedinho")]
+    .groupby(["orgao_ug", "ano", "instrumento"])
+    .valor.sum()
+)
+_bruto = (
+    nc_mir[(nc_mir.nc_transferencia == "-8")]
+    .assign(v=lambda d: valor_com_sinal(d.valor.fillna("0")))
+    .query("v > 0")
+    .groupby(["nc", "orgao", "ano_nc"])
+    .v.sum()
+    .reset_index()
+)
+
+
+def relancada(i: str, o: str | None, ano: int) -> str:
+    if _liq_tedinho.get((o, ano, i), 0.0) > 0.01:
+        return i
+    b = _bruto[_bruto.nc == i[8:]]
+    if b.empty:
+        return i
+    c = _bruto[
+        (_bruto.orgao == o)
+        & (_bruto.ano_nc == str(ano))
+        & (_bruto.nc != i[8:])
+        & ((_bruto.v - b.v.iloc[0]).abs() < 0.01)
+    ]
+    c = [
+        "tedinho " + n
+        for n in c.nc
+        if _liq_tedinho.get((o, ano, "tedinho " + n), 0.0) > 0.01
+    ]
+    return c[0] if len(c) == 1 else i
+
+
 for ne in sorted(set(f[f.ted.isna()].ne_ccor)):
     t = texto.get(ne, "")
     linha = f[f.ne_ccor == ne].iloc[0]
@@ -555,6 +595,8 @@ for ne in sorted(set(f[f.ted.isna()].ne_ccor)):
     inst = {i for i in set(m.instrumento) if i.startswith("tedinho") or i in teds_mir}
     if len(inst) == 1:
         i = inst.pop()
+        if i.startswith("tedinho"):
+            i = relancada(i, org(ne), int(linha.ano))
         achado[ne] = (
             i,
             (
@@ -580,6 +622,53 @@ f.loc[sem, "camada"] = f.loc[sem, "ne_ccor"].map(
     lambda x: camada5.get(x, (None, None))[1]
 )
 f.loc[sem, "ted"] = f.loc[sem, "ne_ccor"].map(lambda x: camada5.get(x, (None, None))[0])
+
+
+# R saldo do intermediário: a NE cita a NC de outro órgão (intermediário) que recebeu
+# crédito do MIR na mesma célula (ano, PTRES, fonte). Saldo de cada instrumento do
+# intermediário = crédito - o que ele executou - o que já foi atribuído. Primeiro os
+# casamentos exatos (valor da NE = saldo de um único instrumento); depois, por
+# exclusão, se só um instrumento ainda tem saldo, as NEs restantes são dele.
+# Ex.: ENAP -> UnB 2023: 60.000 (NC000152), 85.005 (NC000001), 59.375 (NC000003).
+def intermediario(ne: str) -> tuple | None:
+    linha = f[f.ne_ccor == ne].iloc[0]
+    for e in re.findall(r"[0-9]{4}NC[0-9]{6}\s*\(([0-9]{6})/", texto.get(ne, "")):
+        oe = orgao_da_ug.get(e)
+        if oe is not None and oe != org(ne):
+            return (linha.ano, oe, linha.ptres, linha.fonte)
+    return None
+
+
+_pend: dict[tuple, dict[str, float]] = {}
+for ne in sorted(set(f[f.ted.isna()].ne_ccor)):
+    ke = intermediario(ne)
+    if ke is not None and ke in _com_credito:
+        _pend.setdefault(ke, {})[ne] = float(f[f.ne_ccor == ne].emp.sum())
+for ke, nes in _pend.items():
+    saldo = {
+        str(i): v - ident_da_celula(f, ke).get(i, 0.0) for i, v in cred.loc[ke].items()
+    }
+    mudou = True
+    while mudou and nes:
+        mudou = False
+        for ne, v in list(nes.items()):
+            hit = [i for i, s_ in saldo.items() if abs(s_ - v) < 0.01]
+            if len(hit) == 1:
+                f.loc[f.ne_ccor == ne, ["ted", "camada"]] = [
+                    hit[0],
+                    "R saldo exato do intermediário",
+                ]
+                saldo[hit[0]] -= v
+                del nes[ne]
+                mudou = True
+    com_saldo = [i for i, s_ in saldo.items() if s_ > 0.01]
+    if nes and len(com_saldo) == 1 and saldo[com_saldo[0]] >= sum(nes.values()) - 0.01:
+        for ne in nes:
+            f.loc[f.ne_ccor == ne, ["ted", "camada"]] = [
+                com_saldo[0],
+                "R saldo do intermediário por exclusão",
+            ]
+
 # segunda passada do saldo único: a camada 5 identifica NEs que consomem saldo
 aplica_saldo_unico()
 
@@ -595,6 +684,7 @@ GRUPO = {
     "G": "4 crédito da UG",
     "T": "5 tedinho / subdescentralização",
     "S": "5 tedinho / subdescentralização",
+    "R": "5 tedinho / subdescentralização",
     "6": "6 não identificado",
 }
 f["grupo_camada"] = f.camada.str[0].map(GRUPO)

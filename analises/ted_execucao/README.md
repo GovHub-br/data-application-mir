@@ -15,14 +15,14 @@ oficial em empenhado, liquidado e pago.
 
 | Ano | Oficial | Cascata dbt | Regras determinísticas | Similaridade | Crédito da UG | Tedinho / subdescentr. | Não identificado |
 |---|---|---|---|---|---|---|---|
-| 2023 | 32,01 | 17,46 | 9,39 | — | 4,92 | 0,03 | 0,20 |
+| 2023 | 32,01 | 17,46 | 9,39 | — | 4,92 | 0,23 | 0,00 |
 | 2024 | 72,89 | 38,44 | 18,51 | 9,79 | 6,15 | — | 0,00 |
-| 2025 | 80,11 | 40,83 | 14,44 | 5,33 | 18,06 | 0,27 | 1,18 |
+| 2025 | 80,11 | 40,83 | 14,44 | 5,33 | 18,14 | 0,19 | 1,17 |
 | 2026 | 50,12 | 33,97 | 9,82 | 3,22 | 2,65 | 0,03 | 0,43 |
-| **Total** | **235,12** | **130,70** | **52,16** | **18,34** | **31,78** | **0,32** | **1,81 (0,8%)** |
+| **Total** | **235,12** | **130,70** | **52,16** | **18,34** | **31,86** | **0,45** | **1,60 (0,7%)** |
 
-São 88 TEDs e 30 tedinhos com execução no período. Sobram 35 NEs sem instrumento
-identificado.
+São 88 TEDs e 29 tedinhos com execução no período. Sobram 28 NEs sem instrumento
+identificado (R$ 0,94M do liquidado e R$ 0,70M do pago). 2023 e 2024 fecham 100%.
 
 ## Achados que afetam o pipeline
 
@@ -52,16 +52,22 @@ identificado.
    ambíguas (duas NCs de mesmo valor). O tedinho ligado leva o processo no nome. O
    scraper `cliente_transferencias_gov_br.py` só abre bloco em "Termo de Execução
    Descentralizada nº" ou "TED nº" e descarta essas entradas.
-4. **Nem toda NC sem número é tedinho.** No INCRA, a NC 810008 2023NC000015 veio
+4. **NC cancelada e relançada.** É comum o MIR anular uma NC (ou o recebedor
+   devolvê-la) e lançar outra, às vezes com outro PTRES ou outra fonte. A
+   anulação/devolução abate a NC de itens idênticos (ou, sem isso, a única de mesmo
+   valor total ainda não abatida). Se uma NE cita a NC cancelada, ela vai para a NC
+   relançada: mesmo órgão, mesmo ano, mesmo valor bruto. Ex.: ENAP 2023, NC000002
+   devolvida item por item e relançada como NC000003.
+5. **Nem toda NC sem número é tedinho.** No INCRA, a NC 810008 2023NC000015 veio
    sem número, mas as NEs citam o TED 698627. Quando o texto da NE cita um TED do
    órgão, ele prevalece sobre a ausência de número na NC.
-5. **NC desde 2026: só o lado DESTINO é crédito do recebedor.** Em
+6. **NC desde 2026: só o lado DESTINO é crédito do recebedor.** Em
    `siafi.nc_tesouro_desde_2026` cada célula vem com ORIGEM (lado do MIR) e DESTINO;
    somar os dois dobra o valor. A bronze `nc_tesouro_mir` já filtra o DESTINO.
-6. **A UG que recebe o destaque nem sempre é a que empenha.** A UFF recebe na 153056
+7. **A UG que recebe o destaque nem sempre é a que empenha.** A UFF recebe na 153056
    e empenha na 150123, e o CNPq recebe na 364102 e empenha na 364150. Por isso as
    regras de crédito trabalham por órgão.
-7. **Há repasse entre órgãos.** O MIR firma o TED com um órgão que repassa o crédito
+8. **Há repasse entre órgãos.** O MIR firma o TED com um órgão que repassa o crédito
    a outro pelo TED dele, e a NE do executor cita o número do segundo TED. Ex.: TED
    25/2023 (949807) do MIR com o MinC, repassado à UNIFESP pelo "TED 09/2023,
    transf. 950762" do MinC; TED 955619 do MIR com o MinC, repassado à UNIRIO; e os
@@ -80,7 +86,7 @@ Cada NE fica com a primeira camada que a resolver.
 | 3 similaridade | texto da NE x objeto dos planos do órgão (TF-IDF, score ≥ 0,3 e margem ≥ 0,1) | 72/73 na calibração |
 | descarte | número que não é TED do MIR; vínculo que contradiz o crédito da célula (só derruba similaridade, ou crédito exclusivo de outro TED numerado) | 1 conflito em todas as células explicadas pelo crédito |
 | 4 crédito da UG | G1: todo o destaque oficial da célula (ano, órgão, PTRES, fonte) veio de um único instrumento; G1b: idem, descontado o que esse instrumento repassou a outro órgão (repasse atribuído pela G3), ex.: Palmares 2025, TED 966942; G2: o empenho sem TED é o saldo exato do crédito de um TED; G3: a célula não recebeu NC do MIR, e um instrumento do mesmo ano/PTRES/fonte foi para outro órgão, que repassou (crédito menos o que executou) exatamente o destaque da célula; G4: célula com 2+ instrumentos, crédito cobrindo o destaque e só um instrumento com saldo depois do que as NEs identificadas consumiram (roda de novo depois da camada 5) | G1 concordou 115/115 onde o TED do texto é real; G3 concordou com a regra S nas 4 NEs que as duas cobrem; G4 *leave-one-out* 35/35 |
-| 5 tedinho / subdescentralização | T: NC do MIR citada no texto, com ano (2025NC000307) ou sem (NC000307 / 233518); S: NC citada de outro órgão (ENAP, Palmares) com um único TED com o MIR no ano + PTRES (desempate pela fonte) | — |
+| 5 tedinho / subdescentralização | T: NC do MIR citada no texto, com ano (2025NC000307) ou sem (NC000307 / 233518); se cancelada, vai para a relançada. S: NC citada de outro órgão (ENAP, Palmares) com um único TED com o MIR no ano + PTRES (desempate pela fonte). R: NC citada de um intermediário; saldo de cada instrumento dele (crédito menos o que executou e o já atribuído); casamento exato do valor da NE com um saldo e, depois, por exclusão, se só um instrumento ainda tem saldo. Ex.: ENAP → UnB 2023 | — |
 
 Nada é rateado: o que nenhuma regra resolve fica em "não identificado", no grão da
 UG.
@@ -91,13 +97,12 @@ objetos da página do gov.br. Na calibração acertou 37 de 37 (score ≥ 0,1 e 
 ≥ 0,05), mas resolve só 2 NEs das restantes (R$ 180 mil). Ainda não entra no
 pipeline.
 
-## O que falta (R$ 1,81M)
+## O que falta (R$ 1,60M)
 
 | Situação | Empenhado |
 |---|---|
-| 2 ou mais instrumentos com saldo na célula e texto genérico (UFF energia/água, UFC, ENAP, campi do IFBA) | R$ 1,08M |
+| 2 ou mais instrumentos com saldo na célula e texto genérico (UFF energia/água, UFC, ENAP) | R$ 1,07M |
 | nenhuma NC do MIR para o órgão e repasse sem casamento exato (UnB via tedinhos da ENAP em 2025; valores pequenos de IBGE, UTFPR, UFRB, UFPR e UFRJ) | R$ 0,53M |
-| 1 instrumento na célula, mas destaque maior que o crédito direto (UnB 2023: repasse da ENAP vindo de vários tedinhos) | R$ 0,20M |
 
 ## Como rodar
 
