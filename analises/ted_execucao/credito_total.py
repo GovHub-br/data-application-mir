@@ -11,7 +11,8 @@ orgao_da_ug = ug.drop_duplicates("ug").set_index("ug").orgao.to_dict()
 MIR = ("238", "810008", "240", "230002")  # UGs emitentes do MIR
 
 
-def _v(s: pd.Series) -> pd.Series:
+def valor_com_sinal(s: pd.Series) -> pd.Series:
+    """Valor do Tesouro Gerencial (1.234,56 / -1.234,56 / (1.234,56)) com sinal."""
     neg = s.str.startswith("(") | s.str.startswith("-")
     x = (
         s.str.strip("()-")
@@ -33,8 +34,8 @@ def credito() -> pd.DataFrame:
         orgao_ug=ted.ug.map(orgao_da_ug),
     )
 
-    r = pd.concat([ref("nc_raw1.csv"), ref("nc_raw2.csv")]).drop_duplicates()
-    r["v"] = _v(r.valor.fillna("0"))
+    r = pd.concat([ref("nc_raw1.csv"), ref("nc_raw2.csv")])
+    r["v"] = valor_com_sinal(r.valor.fillna("0"))
     r["ano"] = r.nc.str[11:15].astype(int)
     r["emit"] = r.nc.str[:6]
     tdn = r[

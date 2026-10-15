@@ -24,7 +24,7 @@ Camadas de identificação, em ordem (cada NE fica com a primeira que a resolver
   6 não identificado
 
 Tedinho = NC do MIR sem nº de transferência. Quando a página do gov.br lista a
-descentralização (dados/govbr_processos_manual.csv), o tedinho leva o processo no nome.
+descentralização ("Processo: 21290..."), o tedinho leva o processo no nome.
 """
 
 import math
@@ -35,8 +35,9 @@ from typing import Callable, cast
 
 import pandas as pd
 
-from carga import DADOS, K, SAIDA, load_ne_antigo, load_ne_reais, load_ug, ref, tuplas
+from carga import K, SAIDA, load_ne_antigo, load_ne_reais, load_ug, ref
 from credito_total import credito
+from govbr_pagina import instrumentos_da_pagina
 
 EXCL_UG = {"810008", "170607", "170605", "201057", "230003", "810005", "238012"}
 EXCL_ACAO = {"2000", "216H", "4641"}
@@ -472,14 +473,11 @@ GRUPO = {
     "6": "6 não identificado",
 }
 f["grupo_camada"] = f.camada.str[0].map(GRUPO)
-# tedinho com processo conhecido (página do gov.br, levantamento manual): nome = processo
-proc_manual = pd.read_csv(DADOS + "govbr_processos_manual.csv", sep=";", dtype=str)
-rotulo = {
-    "tedinho " + r.nc: f"tedinho {r.referencia_pagina} ({r.orgao_parceiro})"
-    for r in tuplas(proc_manual)
-    if r.referencia_pagina.startswith(("Processo", "TED 1/2026"))
-}
-f["ted"] = f.ted.map(lambda t: rotulo.get(t, t))
+# tedinho listado na página do gov.br: o nome passa a ser o processo (ou o nº do TED
+# sem Transferegov); NCs do mesmo processo viram um instrumento só
+_pag = instrumentos_da_pagina()
+rotulo = dict(zip(_pag.instrumento, _pag.rotulo))
+f["ted"] = f.ted.map(lambda t: rotulo.get(t, t) if str(t).startswith("tedinho") else t)
 f["tipo_instrumento"] = f.ted.map(
     lambda t: (
         None if pd.isna(t) else ("Tedinho" if str(t).startswith("tedinho") else "TED")

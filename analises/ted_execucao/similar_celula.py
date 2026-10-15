@@ -5,7 +5,6 @@ fonte) da NE. Calibra nas NEs já identificadas por evidência e lista os candid
 para as não identificadas.
 """
 
-import itertools
 import math
 import re
 import unicodedata
@@ -15,7 +14,7 @@ import pandas as pd
 
 from carga import SAIDA, ref, tuplas
 from credito_total import credito
-from govbr_pagina import entradas
+from govbr_pagina import instrumentos_da_pagina
 
 KC = ["ano", "orgao_ug", "ptres", "fonte"]
 
@@ -27,52 +26,10 @@ pos = pos[pos > 0.005]
 cand_celula = pos.reset_index().groupby(KC).instrumento.agg(list).to_dict()
 
 pa = ref("pa.csv").dropna(subset=["num_transf"]).drop_duplicates("num_transf")
-gov = ref("govbr.csv").dropna(subset=["num_transf"])
-num_por_numero = gov.groupby("numero_ted").num_transf.first().to_dict()
 
-r = pd.concat([ref("nc_raw1.csv"), ref("nc_raw2.csv")]).drop_duplicates(
-    ["nc", "ptres", "fonte", "valor"]
-)
-r["v"] = (
-    r.valor.str.strip("()-")
-    .str.replace(".", "", regex=False)
-    .str.replace(",", ".", regex=False)
-    .astype(float)
-)
-r = r[r.nc.str[:6].isin(["238012", "810008"]) & (r.relatorio == "enviadas")]
-nc_val = r.groupby(["nc", "nc_transferencia"]).v.sum().reset_index()
-
-e = entradas()
 obj: dict[str, list[str]] = {}  # instrumento -> textos de objeto
-for x in tuplas(e):
-    alvo: list[str] = []
-    if x.tipo == "TED":
-        t = x.num_transf or num_por_numero.get(x.numero_ted)
-        if t:
-            alvo = [t]
-        elif x.valor:  # TED sem nº na página: NC com nº de transferência e mesmo valor
-            alvo = list(
-                set(nc_val[(nc_val.v - x.valor).abs() < 0.01].nc_transferencia) - {"-8"}
-            )
-    elif (
-        x.valor
-    ):  # descentralização: NC sem nº de transferência com o mesmo valor (ou soma de duas)
-        td = nc_val[nc_val.nc_transferencia == "-8"]
-        ano_pag = int(x.pagina[:4])
-        td = td[
-            td.nc.str[11:15].astype(int).isin([ano_pag, ano_pag + 1])
-        ]  # NC do ano da página (ou do seguinte)
-        hit = list(td[(td.v - x.valor).abs() < 0.01].nc)
-        if not hit:
-            hit = [
-                n
-                for a, b in itertools.combinations(tuplas(td), 2)
-                if abs(a.v + b.v - x.valor) < 0.01
-                for n in (a.nc, b.nc)
-            ]
-        alvo = ["tedinho " + n for n in hit]
-    for t in set(alvo):
-        obj.setdefault(t, []).append(x.objeto)
+for x in tuplas(instrumentos_da_pagina()):
+    obj.setdefault(x.instrumento, []).append(str(x.objeto))
 for p in tuplas(pa):
     obj.setdefault(p.num_transf, []).append(str(p.objeto))
 
@@ -154,9 +111,9 @@ if __name__ == "__main__":
     )
     linhas = []
     for z in tuplas(det):
-        t, s, m, n = prever(z.ne_ccor, z.k)
-        if t is not None and z.ted in cand_celula.get(z.k, []):
-            linhas.append((z.ne_ccor, z.ted, t, s, m))
+        pred, s, m, n = prever(z.ne_ccor, z.k)
+        if pred is not None and z.ted in cand_celula.get(z.k, []):
+            linhas.append((z.ne_ccor, z.ted, pred, s, m))
     cal = pd.DataFrame(linhas, columns=["ne", "verdade", "pred", "score", "margem"])
     cal["ok"] = cal.pred == cal.verdade
     print("\ncalibração (NEs com instrumento conhecido em células com 2+ instrumentos):")
@@ -179,8 +136,8 @@ if __name__ == "__main__":
     g = u.groupby(["ne_ccor", "k", "ug"]).emp.sum().reset_index()
     aplic = []
     for z in tuplas(g):
-        t, s, m, n = prever(z.ne_ccor, z.k)
-        aplic.append((z.ne_ccor, z.ug, z.k, z.emp, n, t, round(s, 3), round(m, 3)))
+        pred, s, m, n = prever(z.ne_ccor, z.k)
+        aplic.append((z.ne_ccor, z.ug, z.k, z.emp, n, pred, round(s, 3), round(m, 3)))
     ap = pd.DataFrame(
         aplic, columns=["ne", "ug", "celula", "emp", "n_cand", "pred", "score", "margem"]
     )

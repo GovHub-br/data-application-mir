@@ -5,12 +5,16 @@ Cobre os TEDs e as descentralizações sem TED (tedinhos).
 
 import glob
 import html
+import itertools
 import os
 import re
+import unicodedata
+from typing import Any, Callable
 
 import pandas as pd
 
-from carga import DADOS
+from carga import DADOS, load_ug, ref, tuplas
+from credito_total import valor_com_sinal
 
 PASTA = DADOS + "govbr_html/"
 NUM_TRANSF = r"(?<![0-9A-Z])(\d{6}|\d[A-Z0-9]{5})(?![0-9A-Z])"
@@ -94,6 +98,142 @@ def entradas() -> pd.DataFrame:
                 )
             )
             titulo = None
+    return pd.DataFrame(out)
+
+
+def _ncs_do_mir() -> pd.DataFrame:
+    """NCs enviadas pelo MIR, com o valor total por NC e o nº de transferência."""
+    r = pd.concat([ref("nc_raw1.csv"), ref("nc_raw2.csv")])
+    r["v"] = valor_com_sinal(r.valor.fillna("0"))  # anulação entra negativa
+    r = r[r.nc.str[:6].isin(["238012", "810008"]) & (r.relatorio == "enviadas")]
+    return r.groupby(["nc", "nc_transferencia", "fav"]).v.sum().reset_index()
+
+
+def _tedinhos_com_valor(
+    nc_val: pd.DataFrame, valor: float, pagina: str, orgaos: set[str]
+) -> list[str]:
+    """NC sem nº de transferência do ano da página (ou do seguinte) com o valor exato,
+    ou par de NCs cuja soma dá o valor. Se o órgão do parceiro é conhecido, só NCs
+    para ele. Só vale se o casamento for único."""
+    ano = int(pagina[:4])
+    td = nc_val[
+        (nc_val.nc_transferencia == "-8")
+        & nc_val.nc.str[11:15].astype(int).isin([ano, ano + 1])
+        & (nc_val.v > 0.005)
+    ]
+    if orgaos:
+        td = td[td.orgao.isin(orgaos)]
+    hit = list(td[(td.v - valor).abs() < 0.01].nc)
+    if len(hit) == 1:
+        return ["tedinho " + hit[0]]
+    if hit:  # mesmo valor em mais de uma NC: ambíguo
+        return []
+    pares = [
+        (a.nc, b.nc)
+        for a, b in itertools.combinations(tuplas(td), 2)
+        if abs(a.v + b.v - valor) < 0.01
+    ]
+    return ["tedinho " + n for n in pares[0]] if len(pares) == 1 else []
+
+
+GENERICAS = set(
+    """INSTITUTO FEDERAL UNIVERSIDADE FUNDACAO EDUCACAO CIENCIA TECNOLOGIA NACIONAL
+ESCOLA ESTADO FEDERAIS CAMPUS REITORIA ADMINISTRACAO PUBLICA DESENVOLVIMENTO""".split()
+)
+
+
+def _palavras(nome: str) -> set[str]:
+    s = unicodedata.normalize("NFKD", nome).encode("ascii", "ignore").decode().upper()
+    return {w for w in re.findall(r"[A-Z]{5,}", s) if w not in GENERICAS}
+
+
+def _resolvedor_de_orgaos() -> Callable[[str], set[str]]:
+    """Órgãos do parceiro: pela sigla no fim do nome (planos de ação) ou, para
+    parceiro sem TED, pelas palavras distintivas do nome (ex.: "... de Pelotas")."""
+    ug = load_ug()
+    orgao_da_ug = ug.drop_duplicates("ug").set_index("ug").orgao.to_dict()
+    palavras_orgao = {
+        str(o): _palavras(
+            " ".join(g.orgao_nome.unique()) + " " + " ".join(g.ug_nome.unique())
+        )
+        for o, g in ug.groupby("orgao")
+    }
+    pa = ref("pa.csv").dropna(subset=["sigla", "ug_rec"])
+    orgaos_da_sigla: dict[str, set[str]] = {}
+    for sg, u in zip(pa.sigla.str.upper(), pa.ug_rec):
+        if u in orgao_da_ug:
+            orgaos_da_sigla.setdefault(sg, set()).add(orgao_da_ug[u])
+
+    def resolve(parceiro: str) -> set[str]:
+        nome, _, sigla = parceiro.rpartition(" - ")
+        orgaos = orgaos_da_sigla.get(sigla.strip().upper(), set())
+        if not orgaos:
+            pp = _palavras(nome or parceiro)
+            orgaos = {o for o, pw in palavras_orgao.items() if pp and pp <= pw}
+        return orgaos
+
+    return resolve
+
+
+def _alvos(
+    x: Any, num_por_numero: dict, nc_val: pd.DataFrame, orgaos: set[str]
+) -> list[str]:
+    """Instrumento(s) de uma entrada da página."""
+    if x.tipo != "TED":
+        return _tedinhos_com_valor(nc_val, x.valor, x.pagina, orgaos) if x.valor else []
+    t = x.num_transf or num_por_numero.get(x.numero_ted)
+    if t:
+        return [str(t)]
+    if not x.valor:
+        return []
+    # TED sem nº do TransfereGov na página: nº do SIAFI cujo líquido (NCs menos
+    # anulações) é o valor da página; senão, se a página dá o nº do TED, tedinho
+    com_num = nc_val[nc_val.nc_transferencia != "-8"]
+    liq = com_num[com_num.orgao.isin(orgaos)] if orgaos else com_num
+    hit = [
+        str(n)
+        for n, v in liq.groupby("nc_transferencia").v.sum().items()
+        if abs(v - x.valor) < 0.01
+    ]
+    if len(hit) == 1:
+        return hit
+    if not hit and x.numero_ted:
+        return _tedinhos_com_valor(nc_val, x.valor, x.pagina, orgaos)
+    return []
+
+
+def instrumentos_da_pagina() -> pd.DataFrame:
+    """Entradas da página ligadas ao instrumento: nº do TED no TransfereGov ou, para
+    as descentralizações sem TED, 'tedinho <NC>' pela NC do MIR de mesmo valor."""
+    gov = ref("govbr.csv").dropna(subset=["num_transf"])
+    num_por_numero = gov.groupby("numero_ted").num_transf.first().to_dict()
+    orgao_da_ug = load_ug().drop_duplicates("ug").set_index("ug").orgao.to_dict()
+    nc_val = _ncs_do_mir()
+    nc_val["orgao"] = nc_val.fav.map(orgao_da_ug)
+    orgaos_do_parceiro = _resolvedor_de_orgaos()
+    out = []
+    for x in tuplas(entradas()):
+        parceiro = str(x.parceiro or "")
+        sigla = parceiro.rpartition(" - ")[2] or parceiro
+        alvo = _alvos(x, num_por_numero, nc_val, orgaos_do_parceiro(parceiro))
+        if x.processo and x.tipo != "TED":
+            referencia = f"Processo {x.processo}"
+        else:
+            referencia = f"TED {x.numero_ted} (sem nº Transferegov)"
+        for t in sorted(set(alvo)):
+            out.append(
+                dict(
+                    instrumento=t,
+                    rotulo=f"tedinho {referencia} ({sigla})",
+                    pagina=x.pagina,
+                    tipo=x.tipo,
+                    numero_ted=x.numero_ted,
+                    processo=x.processo,
+                    parceiro=x.parceiro,
+                    valor=x.valor,
+                    objeto=x.objeto,
+                )
+            )
     return pd.DataFrame(out)
 
 

@@ -46,12 +46,19 @@ identificado.
 3. **Tedinho tem crédito e pode ser identificado.** NC do MIR com
    `nc_transferencia = -8` é um tedinho. Na página do gov.br ele aparece como
    "Descentralização de Crédito ... Processo: 21290.xxxxxx/AAAA-xx", com valor igual
-   ao da NC. O scraper `cliente_transferencias_gov_br.py` só abre bloco em
-   "Termo de Execução Descentralizada nº" ou "TED nº" e descarta essas entradas.
+   ao da NC (ou à soma de duas NCs). `govbr_pagina.py` extrai essas entradas e liga
+   cada uma à NC pelo valor, só entre NCs para o órgão do parceiro, e só quando o
+   casamento é único: 16 das 18 descentralizações da página; Fiocruz e UFC ficam
+   ambíguas (duas NCs de mesmo valor). O tedinho ligado leva o processo no nome. O
+   scraper `cliente_transferencias_gov_br.py` só abre bloco em "Termo de Execução
+   Descentralizada nº" ou "TED nº" e descarta essas entradas.
 4. **Nem toda NC sem número é tedinho.** No INCRA, a NC 810008 2023NC000015 veio
    sem número, mas as NEs citam o TED 698627. Quando o texto da NE cita um TED do
    órgão, ele prevalece sobre a ausência de número na NC.
-5. **A UG que recebe o destaque nem sempre é a que empenha.** A UFF recebe na 153056
+5. **NC desde 2026: só o lado DESTINO é crédito do recebedor.** Em
+   `siafi.nc_tesouro_desde_2026` cada célula vem com ORIGEM (lado do MIR) e DESTINO;
+   somar os dois dobra o valor. A bronze `nc_tesouro_mir` já filtra o DESTINO.
+6. **A UG que recebe o destaque nem sempre é a que empenha.** A UFF recebe na 153056
    e empenha na 150123, e o CNPq recebe na 364102 e empenha na 364150. Por isso as
    regras de crédito trabalham por órgão.
 
@@ -73,7 +80,7 @@ UG.
 
 `similar_celula.py` testa uma variação da similaridade: compara a NE só com o
 objeto dos instrumentos que mandaram crédito para a célula dela, usando também os
-objetos da página do gov.br. Na calibração acertou 39 de 39 (score ≥ 0,1 e margem
+objetos da página do gov.br. Na calibração acertou 37 de 37 (score ≥ 0,1 e margem
 ≥ 0,05), mas resolve só 2 NEs das restantes (R$ 180 mil). Ainda não entra no
 pipeline.
 
@@ -96,8 +103,7 @@ Entradas que não ficam no git:
     UO 67101, sem filtro de saldo;
   - `2023.csv` … `2026.csv`: o relatório antigo, usado só para listar as UGs.
 - `dados/`: tabelas do data warehouse e páginas do gov.br, regeneradas pelos
-  scripts abaixo. Só `dados/govbr_processos_manual.csv` é versionado: é o
-  levantamento manual dos tedinhos da ENAP na página do gov.br (processo → NC).
+  scripts abaixo.
 
 ```bash
 ./exportar_dados.sh            # tabelas do DW (padrão: container mir-dump-pg17, banco analytics)

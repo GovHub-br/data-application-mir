@@ -31,10 +31,12 @@ exporta "select numero_ted, ano_ted, id_plano_acao, num_transf, processo, parcei
 exporta "select distinct nc, ug_emitente, favorecido_doc, relatorio, id_plano_acao,
                 nc_transferencia, emissao_ano
          from siafi_dbt.nc_plano_acao" ncpa.csv
-# NCs brutas do SIAFI (inclui as sem nº de transferência = tedinhos)
-exporta "select distinct nc, nc_transferencia, ptres, fonte_recursos fonte, favorecido_doc fav,
+# NCs brutas do SIAFI (inclui as sem nº de transferência = tedinhos). Sem distinct:
+# itens idênticos da mesma NC são linhas legítimas. Desde 2026 cada célula vem com
+# ORIGEM e DESTINO; o crédito do recebedor é o DESTINO (como na bronze nc_tesouro_mir).
+exporta "select nc, nc_transferencia, ptres, fonte_recursos fonte, favorecido_doc fav,
                 plano_interno pi, relatorio, movimento_liquido_moeda_origem valor
          from siafi.nc_tesouro_ate_2025" nc_raw1.csv
-exporta "select distinct nc, nc_transferencia, ptres, fonte_codigo fonte, favorecido_codigo fav,
+exporta "select nc, nc_transferencia, ptres, fonte_codigo fonte, favorecido_codigo fav,
                 pi_codigo pi, relatorio, valor_celula valor
-         from siafi.nc_tesouro_desde_2026" nc_raw2.csv
+         from siafi.nc_tesouro_desde_2026 where dc = 'DESTINO'" nc_raw2.csv
