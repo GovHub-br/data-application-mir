@@ -14,7 +14,7 @@ from typing import Any, Callable
 import pandas as pd
 
 from carga import DADOS, load_ug, ref, tuplas
-from credito_total import valor_com_sinal
+from credito_total import instrumento_da_nc, valor_com_sinal
 
 PASTA = DADOS + "govbr_html/"
 NUM_TRANSF = r"(?<![0-9A-Z])(\d{6}|\d[A-Z0-9]{5})(?![0-9A-Z])"
@@ -123,17 +123,18 @@ def _tedinhos_com_valor(
     ]
     if orgaos:
         td = td[td.orgao.isin(orgaos)]
-    hit = list(td[(td.v - valor).abs() < 0.01].nc)
+    # NCs de mesmo valor fundidas como cancela-e-relança são um instrumento só
+    hit = sorted({instrumento_da_nc(n) for n in td[(td.v - valor).abs() < 0.01].nc})
     if len(hit) == 1:
-        return ["tedinho " + hit[0]]
-    if hit:  # mesmo valor em mais de uma NC: ambíguo
+        return hit
+    if hit:  # mesmo valor em instrumentos diferentes: ambíguo
         return []
     pares = [
         (a.nc, b.nc)
         for a, b in itertools.combinations(tuplas(td), 2)
         if abs(a.v + b.v - valor) < 0.01
     ]
-    return ["tedinho " + n for n in pares[0]] if len(pares) == 1 else []
+    return [instrumento_da_nc(n) for n in pares[0]] if len(pares) == 1 else []
 
 
 GENERICAS = set(

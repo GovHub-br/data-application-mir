@@ -36,7 +36,7 @@ from typing import Callable, cast
 import pandas as pd
 
 from carga import K, SAIDA, load_ne_antigo, load_ne_reais, load_ug, ref
-from credito_total import credito, valor_com_sinal
+from credito_total import credito, instrumento_da_nc, valor_com_sinal
 from govbr_pagina import instrumentos_da_pagina
 
 EXCL_UG = {"810008", "170607", "170605", "201057", "230003", "810005", "238012"}
@@ -476,58 +476,96 @@ f.loc[g1b.dropna().index, "ted"] = g1b.dropna()
 f.loc[g1b.dropna().index, "camada"] = "G1b crédito exclusivo descontado o repasse"
 
 
-# G4 saldo único: célula com 2+ instrumentos, crédito NC cobrindo o destaque oficial
-# (nada de origem desconhecida), e só um instrumento com saldo depois do que as NEs
-# identificadas consumiram. O empenho sem TED só pode ser desse instrumento.
-def saldo_unico(k: tuple, sem_ted: float, ident_k: pd.Series) -> str | None:
-    if k not in _com_credito or len(cred.loc[k]) < 2:
-        return None
-    if cred_cel.get(k, 0.0) < dest.get(k, 0.0) - 0.01:
-        return None
-    saldo = {t: v - ident_k.get(t, 0.0) for t, v in cred.loc[k].items()}
-    com_saldo = [t for t, s in saldo.items() if s > 0.01]
-    if len(com_saldo) == 1 and saldo[com_saldo[0]] >= sem_ted - 0.01:
-        return str(com_saldo[0])
-    return None
-
-
 def ident_da_celula(df: pd.DataFrame, k: tuple) -> pd.Series:
     x = df[(df.k == k) & df.ted.notna()]
     return x.groupby("ted").emp.sum()
 
 
-# validação leave-one-out: esconde cada NE ligada por texto numa célula de 2+
-# instrumentos e vê se o saldo único aponta o mesmo TED
-_acertos = _testes = 0
+def casar_saldos(
+    nes: dict[str, float], grupo: dict[str, str], saldo: dict[str, float]
+) -> dict[str, tuple[str, str]]:
+    """Casa NEs pendentes com o saldo dos instrumentos, sem ratear:
+    1) NE cujo valor é o saldo de um único instrumento ("exato");
+    2) grupo de NEs (mesma NC citada) cuja soma é o saldo de um único instrumento;
+    3) por exclusão, se só um instrumento ainda tem saldo e ele cobre o resto."""
+    nes, saldo, out = dict(nes), dict(saldo), {}
+    mudou = True
+    while mudou and nes:
+        mudou = False
+        for ne, v in list(nes.items()):
+            hit = [i for i, s_ in saldo.items() if abs(s_ - v) < 0.01]
+            if len(hit) == 1:
+                out[ne] = (hit[0], "exato")
+                saldo[hit[0]] -= v
+                del nes[ne]
+                mudou = True
+        grupos: dict[str, list[str]] = {}
+        for ne in nes:
+            if grupo.get(ne):
+                grupos.setdefault(grupo[ne], []).append(ne)
+        for membros in grupos.values():
+            soma = sum(nes[ne] for ne in membros)
+            hit = [i for i, s_ in saldo.items() if abs(s_ - soma) < 0.01]
+            if len(membros) > 1 and len(hit) == 1:
+                for ne in membros:
+                    out[ne] = (hit[0], "grupo")
+                    del nes[ne]
+                saldo[hit[0]] -= soma
+                mudou = True
+    com_saldo = [i for i, s_ in saldo.items() if s_ > 0.01]
+    if nes and len(com_saldo) == 1 and saldo[com_saldo[0]] >= sum(nes.values()) - 0.01:
+        out.update({ne: (com_saldo[0], "exclusão") for ne in nes})
+    return out
+
+
+ROTULO_CELULA = {
+    "exato": "G5 saldo exato da NE na célula",
+    "grupo": "G5 saldo exato da NE na célula",
+    "exclusão": "G4 saldo único na célula",
+}
+
+
+def aplica_saldo_na_celula() -> None:
+    """G4/G5: célula com 2+ instrumentos e crédito cobrindo o destaque oficial;
+    as NEs pendentes casam com o saldo de cada instrumento (casar_saldos)."""
+    pend = f[f.ted.isna()]
+    for kk, g in pend.groupby("k"):
+        k = cast(tuple, kk)
+        if k not in _com_credito or len(cred.loc[k]) < 2:
+            continue
+        if cred_cel.get(k, 0.0) < dest.get(k, 0.0) - 0.01:
+            continue
+        nes = {n: v for n, v in g.groupby("ne_ccor").emp.sum().items() if abs(v) > 0.005}
+        ident_k = ident_da_celula(f, k)
+        saldo = {str(i): v - ident_k.get(i, 0.0) for i, v in cred.loc[k].items()}
+        for ne, (i, modo) in casar_saldos(nes, {}, saldo).items():
+            idx = f[(f.k == k) & (f.ne_ccor == ne) & f.ted.isna()].index
+            f.loc[idx, "ted"] = i
+            f.loc[idx, "camada"] = ROTULO_CELULA[modo]
+
+
+# validação leave-one-out de G4/G5: esconde cada NE ligada por texto numa célula de 2+
+# instrumentos com crédito cobrindo o destaque e vê se o saldo aponta o mesmo TED
+_res: dict[str, list[bool]] = {"exato": [], "exclusão": []}
 for ne, k, t in (
     f[f.ted.notna() & f.camada.str[0].isin(list("1ABCDE"))]
-    .drop_duplicates("ne_ccor")[["ne_ccor", "k", "ted"]]
+    .drop_duplicates(["ne_ccor", "k"])[["ne_ccor", "k", "ted"]]
     .itertuples(index=False)
 ):
     if k not in _com_credito or len(cred.loc[k]) < 2:
         continue
-    sem_ne = f[f.ne_ccor != ne]
-    v = f[(f.ne_ccor == ne) & (f.k == k)].emp.sum()
-    p = saldo_unico(k, v, ident_da_celula(sem_ne, k))
-    if p is not None:
-        _testes += 1
-        _acertos += p == t
-print(f"G4 validação leave-one-out: {_acertos}/{_testes} concordam")
+    if cred_cel.get(k, 0.0) < dest.get(k, 0.0) - 0.01:
+        continue
+    ident_k = ident_da_celula(f[f.ne_ccor != ne], k)
+    saldo = {str(i): v - ident_k.get(i, 0.0) for i, v in cred.loc[k].items()}
+    v = float(f[(f.ne_ccor == ne) & (f.k == k)].emp.sum())
+    pred = casar_saldos({ne: v}, {}, saldo).get(ne)
+    if pred is not None and abs(v) > 0.005:
+        _res["exclusão" if pred[1] == "exclusão" else "exato"].append(pred[0] == t)
+for modo, lst in _res.items():
+    print(f"G4/G5 validação leave-one-out ({modo}): {sum(lst)}/{len(lst)} concordam")
 
-
-def aplica_saldo_unico() -> None:
-    for kk, v in f[f.ted.isna()].groupby("k").emp.sum().items():
-        k = cast(tuple, kk)
-        if abs(v) < 0.005:
-            continue
-        p = saldo_unico(k, v, ident_da_celula(f, k))
-        if p is not None:
-            idx = f[(f.k == k) & f.ted.isna()].index
-            f.loc[idx, "ted"] = p
-            f.loc[idx, "camada"] = "G4 saldo único na célula"
-
-
-aplica_saldo_unico()
+aplica_saldo_na_celula()
 
 # ---------------------------------------------- 5 tedinho / subdescentralização
 # NCs do MIR para fora do MIR, com o instrumento (TED ou tedinho = a própria NC)
@@ -535,7 +573,7 @@ nc_mir = nc_raw[
     nc_raw.nc.str[:6].isin(["238012", "810008"]) & (nc_raw.relatorio == "enviadas")
 ].copy()
 nc_mir["instrumento"] = nc_mir.nc_transferencia.where(
-    nc_mir.nc_transferencia != "-8", "tedinho " + nc_mir.nc
+    nc_mir.nc_transferencia != "-8", nc_mir.nc.map(instrumento_da_nc)
 )
 nc_mir["ano_nc"] = nc_mir.nc.str[11:15]
 nc_mir["seq"] = nc_mir.nc.str[-6:]
@@ -630,47 +668,38 @@ f.loc[sem, "ted"] = f.loc[sem, "ne_ccor"].map(lambda x: camada5.get(x, (None, No
 # casamentos exatos (valor da NE = saldo de um único instrumento); depois, por
 # exclusão, se só um instrumento ainda tem saldo, as NEs restantes são dele.
 # Ex.: ENAP -> UnB 2023: 60.000 (NC000152), 85.005 (NC000001), 59.375 (NC000003).
-def intermediario(ne: str) -> tuple | None:
+def intermediario(ne: str) -> tuple[tuple, str] | None:
+    """Célula do intermediário (ano, órgão, PTRES, fonte da NE) e a NC dele citada."""
     linha = f[f.ne_ccor == ne].iloc[0]
-    for e in re.findall(r"[0-9]{4}NC[0-9]{6}\s*\(([0-9]{6})/", texto.get(ne, "")):
+    for nc_cit, e in re.findall(
+        r"([0-9]{4}NC[0-9]{6}(?:/[0-9]{3,6})?)\s*\(([0-9]{6})/", texto.get(ne, "")
+    ):
         oe = orgao_da_ug.get(e)
         if oe is not None and oe != org(ne):
-            return (linha.ano, oe, linha.ptres, linha.fonte)
+            return (linha.ano, oe, linha.ptres, linha.fonte), f"{e}:{nc_cit}"
     return None
 
 
+ROTULO_R = {
+    "exato": "R saldo exato do intermediário",
+    "grupo": "R saldo do intermediário por NC citada",
+    "exclusão": "R saldo do intermediário por exclusão",
+}
 _pend: dict[tuple, dict[str, float]] = {}
+_nc_citada: dict[str, str] = {}
 for ne in sorted(set(f[f.ted.isna()].ne_ccor)):
-    ke = intermediario(ne)
-    if ke is not None and ke in _com_credito:
-        _pend.setdefault(ke, {})[ne] = float(f[f.ne_ccor == ne].emp.sum())
+    inter = intermediario(ne)
+    if inter is not None and inter[0] in _com_credito:
+        _pend.setdefault(inter[0], {})[ne] = float(f[f.ne_ccor == ne].emp.sum())
+        _nc_citada[ne] = inter[1]
 for ke, nes in _pend.items():
-    saldo = {
-        str(i): v - ident_da_celula(f, ke).get(i, 0.0) for i, v in cred.loc[ke].items()
-    }
-    mudou = True
-    while mudou and nes:
-        mudou = False
-        for ne, v in list(nes.items()):
-            hit = [i for i, s_ in saldo.items() if abs(s_ - v) < 0.01]
-            if len(hit) == 1:
-                f.loc[f.ne_ccor == ne, ["ted", "camada"]] = [
-                    hit[0],
-                    "R saldo exato do intermediário",
-                ]
-                saldo[hit[0]] -= v
-                del nes[ne]
-                mudou = True
-    com_saldo = [i for i, s_ in saldo.items() if s_ > 0.01]
-    if nes and len(com_saldo) == 1 and saldo[com_saldo[0]] >= sum(nes.values()) - 0.01:
-        for ne in nes:
-            f.loc[f.ne_ccor == ne, ["ted", "camada"]] = [
-                com_saldo[0],
-                "R saldo do intermediário por exclusão",
-            ]
+    ident_e = ident_da_celula(f, ke)
+    saldo = {str(i): v - ident_e.get(i, 0.0) for i, v in cred.loc[ke].items()}
+    for ne, (i, modo) in casar_saldos(nes, _nc_citada, saldo).items():
+        f.loc[f.ne_ccor == ne, ["ted", "camada"]] = [i, ROTULO_R[modo]]
 
-# segunda passada do saldo único: a camada 5 identifica NEs que consomem saldo
-aplica_saldo_unico()
+# segunda passada do saldo na célula: a camada 5 identifica NEs que consomem saldo
+aplica_saldo_na_celula()
 
 f["camada"] = f.camada.fillna("6 não identificado")
 GRUPO = {

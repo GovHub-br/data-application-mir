@@ -44,41 +44,39 @@ def _itens(df: pd.DataFrame, contraparte: str) -> pd.DataFrame:
 
 
 def casar_negativas(tdn: pd.DataFrame, dev: pd.DataFrame) -> dict[str, str]:
-    """Anulação (NC do MIR negativa) ou devolução (NC do recebedor para o MIR) sem nº
-    de transferência -> NC positiva do MIR que ela abate: a de itens idênticos ou, se
-    não houver, a única de mesmo valor total, para a mesma UG e o mesmo ano."""
+    """NC sem nº de transferência -> instrumento (NC que ela é, ou que ela abate).
+
+    Anulação (NC do MIR negativa) ou devolução (NC do recebedor para o MIR) abate a NC
+    positiva de itens idênticos ou, se não houver, a de mesmo valor total, para a mesma
+    UG e o mesmo ano; cada NC positiva é cancelada uma vez só. Se o valor total empata
+    entre NCs positivas, elas são um cancela-e-relança da mesma descentralização e
+    viram um instrumento só ("NC_A / NC_B")."""
     pos = _itens(tdn, "fav")
     neg = pd.concat([_itens(tdn, "fav"), _itens(dev, "emit")])
     pos = pos[pos.total > 0.005]
     neg = neg[neg.total < -0.005]
-    casamento: dict[str, str] = {}
-    abatidas: set[str] = set()  # uma NC positiva só é cancelada uma vez
+    mapa: dict[str, str] = {}
+    abatidas: set[str] = set()
     for por_itens in (True, False):  # primeiro itens idênticos, depois valor total
         for n in tuplas(neg):
-            if str(n.nc) in casamento:
+            if str(n.nc) in mapa:
                 continue
             cand = pos[(pos.ug == n.ug) & (pos.ano == n.ano) & ~pos.nc.isin(abatidas)]
             if por_itens:
                 hit = cand[cand.itens == n.itens]
             else:
                 hit = cand[(cand.total + n.total).abs() < 0.01]
-            if len(hit) == 1:
-                casamento[str(n.nc)] = str(hit.nc.iloc[0])
-                abatidas.add(str(hit.nc.iloc[0]))
-    return casamento
+            if len(hit) == 1 or (not por_itens and 2 <= len(hit) <= 3):
+                rotulo = " / ".join(sorted(hit.nc.astype(str)))
+                mapa[str(n.nc)] = rotulo
+                for p in hit.nc.astype(str):
+                    mapa[p] = rotulo
+                    abatidas.add(p)
+    return mapa
 
 
-def credito() -> pd.DataFrame:
-    ted = ref("nc.csv")
-    ted["valor"] = ted.valor.astype(float) * ted.tipo.map(
-        {"Recebido": 1, "Devolvido": -1, "Anulado": -1}
-    )
-    ted = ted.assign(
-        ano=ted.ano.astype(int),
-        instrumento=ted.num_transf,
-        orgao_ug=orgao(ted.ug),
-    )
-
+def _ncs_sem_numero() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """NCs do MIR sem nº de transferência (enviadas) e devoluções sem nº ao MIR."""
     r = pd.concat([ref("nc_raw1.csv"), ref("nc_raw2.csv")])
     r["v"] = valor_com_sinal(r.valor.fillna("0"))
     r["ano"] = r.nc.str[11:15].astype(int)
@@ -95,17 +93,38 @@ def credito() -> pd.DataFrame:
         & r.fav.str.startswith(MIR)
         & ~r.emit.str.startswith(MIR)
     ]
-    # anulação/devolução abate a NC que ela cancela (cancela e relança é comum)
-    abate = casar_negativas(tdn, dev)
-    tdn = tdn.assign(
-        instrumento="tedinho " + tdn.nc.map(lambda n: abate.get(n, n)),
-        orgao_ug=orgao(tdn.fav),
-        valor=tdn.v,
+    return tdn, dev
+
+
+_MAPA: dict[str, str] | None = None
+
+
+def instrumento_da_nc(nc: str) -> str:
+    """Nome do instrumento de uma NC do MIR sem nº ("tedinho <NC>" ou o par fundido)."""
+    global _MAPA
+    if _MAPA is None:
+        _MAPA = casar_negativas(*_ncs_sem_numero())
+    return "tedinho " + _MAPA.get(nc, nc)
+
+
+def credito() -> pd.DataFrame:
+    ted = ref("nc.csv")
+    ted["valor"] = ted.valor.astype(float) * ted.tipo.map(
+        {"Recebido": 1, "Devolvido": -1, "Anulado": -1}
     )
+    ted = ted.assign(
+        ano=ted.ano.astype(int),
+        instrumento=ted.num_transf,
+        orgao_ug=orgao(ted.ug),
+    )
+    tdn, dev = _ncs_sem_numero()
+    # anulação/devolução abate a NC que ela cancela (cancela e relança é comum)
+    tdn = tdn.assign(
+        instrumento=tdn.nc.map(instrumento_da_nc), orgao_ug=orgao(tdn.fav), valor=tdn.v
+    )
+    abatida = dev.nc.map(lambda n: instrumento_da_nc(n) != "tedinho " + n)
     dev = dev.assign(
-        instrumento=dev.nc.map(
-            lambda n: "tedinho " + abate[n] if n in abate else "(devolução sem TED)"
-        ),
+        instrumento=dev.nc.map(instrumento_da_nc).where(abatida, "(devolução sem TED)"),
         orgao_ug=orgao(dev.emit),
         valor=dev.v,
     )
