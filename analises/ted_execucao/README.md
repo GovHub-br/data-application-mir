@@ -5,8 +5,9 @@ Análise exploratória que abre a consulta oficial do MIR **"Execução TED por 
 (descentralização de crédito sem TED registrado no TransfereGov). O valor de cada
 instrumento sai das notas de empenho (NE) e soma, no centavo, o valor oficial.
 
-Os scripts são o gabarito para levar as regras para a cascata do dbt
-(`empenhos_ted_dbt`). Eles ainda não alteram o pipeline nem o painel.
+Os scripts são o gabarito das regras, que já foram levadas para o dbt
+(`empenhos_ted_dbt`; ver [Modelos dbt](#modelos-dbt)). O painel ainda não usa esses
+modelos.
 
 ## Resultado
 
@@ -131,6 +132,37 @@ especifica) o que o crédito já determina.
     fechamento exato).
 - O scraper `cliente_transferencias_gov_br.py` descarta as descentralizações sem TED
   da página.
+
+## Modelos dbt
+
+| Script | Modelo |
+|---|---|
+| `carga.py` (consulta oficial e NEs) | `execucao_ted_ug` (bronze) e `execucao_ted_ne` |
+| `credito_total.py` | `ted_credito_instrumento` |
+| `pipeline.py`, camadas 1 e 2 e descartes | `execucao_ted_ne_regras` |
+| `pipeline.py`, camadas 4 e 5 | `execucao_ted_ne_vinculo` |
+| `execucao_por_ted.csv` e `execucao_por_ne.csv` | `ted_execucao_por_instrumento` e `ted_execucao_por_ne` |
+
+Ficam de fora a similaridade (camada 3: sem ela o total identificado é o mesmo, ver
+[Verificação da similaridade](#verificação-da-similaridade)) e o nome do tedinho pela
+página do gov.br (`govbr_pagina.py`), que depende de o scraper ler as descentralizações.
+
+Diferenças em relação aos scripts:
+
+- O texto da NE junta todas as informações complementares distintas. O script pegava
+  a da primeira linha, e o resultado dependia da ordem do CSV.
+- Nas NCs de TED, o lado do MIR vem do seed `ugs_mir`, como no `ted_credito_nc` que o
+  script lê. Os prefixos de `credito_total.py`, que incluem os postos do MRE no
+  exterior (240xxx), só separam tedinho e devolução: a 240025 (Agência Brasileira de
+  Cooperação) recebe TED do MIR.
+- As NEs de uma célula são casadas em rodadas, não uma a uma. O teste
+  `test_execucao_ted_ne_vinculo_convergiu` falha se as rodadas não bastarem.
+
+Com os mesmos insumos (banco local de 15/10/2026, sem a similaridade), os modelos
+reproduzem os scripts NE a NE (755 de 755: instrumento, regra, empenhado, liquidado e
+pago) e por instrumento (148 de 148 linhas ano × instrumento). O crédito de TED bate
+com a lógica do `ted_credito_nc` em 126 de 126 células. Esses dados não exercitam as
+regras D, E, S, R (exato e exclusão), T via TED e G6 na célula.
 
 ## Como rodar
 
