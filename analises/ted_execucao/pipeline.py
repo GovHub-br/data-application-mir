@@ -440,6 +440,60 @@ g3 = f.loc[sem, "k"].map(repasse)
 f.loc[g3.dropna().index, "ted"] = g3.dropna()
 f.loc[g3.dropna().index, "camada"] = "G3 repasse por outro órgão"
 
+
+# G4 saldo único: célula com 2+ instrumentos, crédito NC cobrindo o destaque oficial
+# (nada de origem desconhecida), e só um instrumento com saldo depois do que as NEs
+# identificadas consumiram. O empenho sem TED só pode ser desse instrumento.
+def saldo_unico(k: tuple, sem_ted: float, ident_k: pd.Series) -> str | None:
+    if k not in _com_credito or len(cred.loc[k]) < 2:
+        return None
+    if cred_cel.get(k, 0.0) < dest.get(k, 0.0) - 0.01:
+        return None
+    saldo = {t: v - ident_k.get(t, 0.0) for t, v in cred.loc[k].items()}
+    com_saldo = [t for t, s in saldo.items() if s > 0.01]
+    if len(com_saldo) == 1 and saldo[com_saldo[0]] >= sem_ted - 0.01:
+        return str(com_saldo[0])
+    return None
+
+
+def ident_da_celula(df: pd.DataFrame, k: tuple) -> pd.Series:
+    x = df[(df.k == k) & df.ted.notna()]
+    return x.groupby("ted").emp.sum()
+
+
+# validação leave-one-out: esconde cada NE ligada por texto numa célula de 2+
+# instrumentos e vê se o saldo único aponta o mesmo TED
+_acertos = _testes = 0
+for ne, k, t in (
+    f[f.ted.notna() & f.camada.str[0].isin(list("1ABCDE"))]
+    .drop_duplicates("ne_ccor")[["ne_ccor", "k", "ted"]]
+    .itertuples(index=False)
+):
+    if k not in _com_credito or len(cred.loc[k]) < 2:
+        continue
+    sem_ne = f[f.ne_ccor != ne]
+    v = f[(f.ne_ccor == ne) & (f.k == k)].emp.sum()
+    p = saldo_unico(k, v, ident_da_celula(sem_ne, k))
+    if p is not None:
+        _testes += 1
+        _acertos += p == t
+print(f"G4 validação leave-one-out: {_acertos}/{_testes} concordam")
+
+
+def aplica_saldo_unico() -> None:
+    for kk, v in f[f.ted.isna()].groupby("k").emp.sum().items():
+        k = cast(tuple, kk)
+        if abs(v) < 0.005:
+            continue
+        p = saldo_unico(k, v, ident_da_celula(f, k))
+        if p is not None:
+            idx = f[(f.k == k) & f.ted.isna()].index
+            f.loc[idx, "ted"] = p
+            f.loc[idx, "camada"] = "G4 saldo único na célula"
+
+
+aplica_saldo_unico()
+
 # ---------------------------------------------- 5 tedinho / subdescentralização
 # NCs do MIR para fora do MIR, com o instrumento (TED ou tedinho = a própria NC)
 nc_mir = nc_raw[
@@ -491,6 +545,8 @@ f.loc[sem, "camada"] = f.loc[sem, "ne_ccor"].map(
     lambda x: camada5.get(x, (None, None))[1]
 )
 f.loc[sem, "ted"] = f.loc[sem, "ne_ccor"].map(lambda x: camada5.get(x, (None, None))[0])
+# segunda passada do saldo único: a camada 5 identifica NEs que consomem saldo
+aplica_saldo_unico()
 
 f["camada"] = f.camada.fillna("6 não identificado")
 GRUPO = {
