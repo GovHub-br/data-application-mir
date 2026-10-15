@@ -757,3 +757,42 @@ models:
         description: "Regra que ligou a NE."
       - name: rodada_propagacao
         description: "Rodada em que a propagação B/C/E ligou a NE (0 = primeira)."
+
+  - name: execucao_ted_ne_vinculo
+    description: >
+      Atribuição final de cada NE da consulta oficial a um instrumento (TED ou tedinho).
+      Sobre execucao_ted_ne_regras, aplica as regras de crédito e saldo de pipeline.py, na
+      ordem: G1 crédito exclusivo, G2 saldo exato de um TED, G3 repasse por outro órgão,
+      G1b crédito exclusivo descontado o repasse, G4/G5 saldo na célula, T NC do MIR
+      citada (com cancela-e-relança), S subdescentralização, R saldo do intermediário,
+      G3 repasse por exclusão e a segunda passada do saldo na célula (G6 conjunto aberto).
+      Nada é rateado: o que nenhuma regra resolve fica como '6 não identificado'. Grão:
+      uma linha por NE da consulta oficial.
+    columns:
+      - name: ne_ccor
+        description: "NE."
+        tests:
+          - unique
+          - not_null
+      - name: celula_credito
+        description: "Célula de crédito ano|órgão|PTRES|fonte da NE."
+      - name: instrumento
+        description: "Número do TED, 'tedinho <NC>' ou junção ('A + B'); nulo se não identificado."
+      - name: tipo_instrumento
+        description: "TED ou Tedinho."
+      - name: regra
+        description: "Regra que identificou o instrumento (rótulos de pipeline.py)."
+      - name: grupo_regra
+        description: "Camada da regra."
+        tests:
+          - accepted_values:
+              values:
+                - "1 cascata dbt"
+                - "2 regras determinísticas"
+                - "4 crédito da UG"
+                - "5 tedinho / subdescentralização"
+                - "6 não identificado"
+      - name: modo_casamento
+        description: "Para as regras de saldo: exato, grupo, subconjunto, exclusão, conjunto ou conjunto aberto."
+      - name: rodada
+        description: "Rodada da propagação ou do casamento de saldos que ligou a NE."
