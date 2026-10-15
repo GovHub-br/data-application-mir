@@ -27,6 +27,7 @@ Tedinho = NC do MIR sem nº de transferência. Quando a página do gov.br lista 
 descentralização ("Processo: 21290..."), o tedinho leva o processo no nome.
 """
 
+import itertools
 import math
 import re
 import unicodedata
@@ -36,7 +37,7 @@ from typing import Callable, cast
 import pandas as pd
 
 from carga import K, SAIDA, load_ne_antigo, load_ne_reais, load_ug, ref
-from credito_total import credito, instrumento_da_nc, valor_com_sinal
+from credito_total import credito, instrumento_da_nc, ncs_brutas
 from govbr_pagina import instrumentos_da_pagina
 
 EXCL_UG = {"810008", "170607", "170605", "201057", "230003", "810005", "238012"}
@@ -140,7 +141,7 @@ nc["valor"] = nc.valor.astype(float) * nc.tipo.map(
 )
 nc["orgao"] = nc.ug.map(orgao_da_ug)
 nc["orgao_ug"] = nc.orgao
-nc_raw = pd.concat([ref("nc_raw1.csv"), ref("nc_raw2.csv")])
+nc_raw = ncs_brutas()  # valor com sinal em "v" (desde 2026, pelo tipo_nc)
 nc_raw["suf"] = nc_raw.nc.str[-12:]
 
 vinc = (
@@ -481,46 +482,99 @@ def ident_da_celula(df: pd.DataFrame, k: tuple) -> pd.Series:
     return x.groupby("ted").emp.sum()
 
 
+def _passo_exato(
+    nes: dict[str, float], saldo: dict[str, float], out: dict[str, tuple[str, str]]
+) -> bool:
+    """NE cujo valor é o saldo de um único instrumento."""
+    mudou = False
+    for ne, v in list(nes.items()):
+        hit = [i for i, s_ in saldo.items() if abs(s_ - v) < 0.01]
+        if len(hit) == 1:
+            out[ne] = (hit[0], "exato")
+            saldo[hit[0]] -= nes.pop(ne)
+            mudou = True
+    return mudou
+
+
+def _passo_grupo(
+    nes: dict[str, float],
+    grupo: dict[str, str],
+    saldo: dict[str, float],
+    out: dict[str, tuple[str, str]],
+) -> bool:
+    """Grupo de NEs (mesma NC citada) cuja soma é o saldo de um único instrumento."""
+    grupos: dict[str, list[str]] = {}
+    for ne in nes:
+        if grupo.get(ne):
+            grupos.setdefault(grupo[ne], []).append(ne)
+    mudou = False
+    for membros in grupos.values():
+        soma = sum(nes[ne] for ne in membros)
+        hit = [i for i, s_ in saldo.items() if abs(s_ - soma) < 0.01]
+        if len(membros) > 1 and len(hit) == 1:
+            for ne in membros:
+                out[ne] = (hit[0], "grupo")
+                del nes[ne]
+            saldo[hit[0]] -= soma
+            mudou = True
+    return mudou
+
+
+def _passo_subconjunto(
+    nes: dict[str, float], saldo: dict[str, float], out: dict[str, tuple[str, str]]
+) -> bool:
+    """2 ou 3 NEs cuja soma é o saldo de um instrumento, se for a única combinação
+    que casa com algum saldo (ex.: UFF 2026, 179.520 + 24.480 = 204.000 do 1ABDUQ,
+    com os 12% de custos indiretos pagando a conta de água)."""
+    if not 3 <= len(nes) <= 12:
+        return False
+    casam = [
+        (combo, i)
+        for r in (2, 3)
+        for combo in itertools.combinations(sorted(nes), r)
+        for i, s_ in saldo.items()
+        if s_ > 0.01 and abs(sum(nes[n] for n in combo) - s_) < 0.01
+    ]
+    if len(casam) != 1:
+        return False
+    combo, i = casam[0]
+    for ne in combo:
+        out[ne] = (i, "subconjunto")
+        saldo[i] -= nes.pop(ne)
+    return True
+
+
 def casar_saldos(
     nes: dict[str, float], grupo: dict[str, str], saldo: dict[str, float]
 ) -> dict[str, tuple[str, str]]:
-    """Casa NEs pendentes com o saldo dos instrumentos, sem ratear:
-    1) NE cujo valor é o saldo de um único instrumento ("exato");
-    2) grupo de NEs (mesma NC citada) cuja soma é o saldo de um único instrumento;
-    3) por exclusão, se só um instrumento ainda tem saldo e ele cobre o resto."""
-    nes, saldo, out = dict(nes), dict(saldo), {}
-    mudou = True
-    while mudou and nes:
-        mudou = False
-        for ne, v in list(nes.items()):
-            hit = [i for i, s_ in saldo.items() if abs(s_ - v) < 0.01]
-            if len(hit) == 1:
-                out[ne] = (hit[0], "exato")
-                saldo[hit[0]] -= v
-                del nes[ne]
-                mudou = True
-        grupos: dict[str, list[str]] = {}
-        for ne in nes:
-            if grupo.get(ne):
-                grupos.setdefault(grupo[ne], []).append(ne)
-        for membros in grupos.values():
-            soma = sum(nes[ne] for ne in membros)
-            hit = [i for i, s_ in saldo.items() if abs(s_ - soma) < 0.01]
-            if len(membros) > 1 and len(hit) == 1:
-                for ne in membros:
-                    out[ne] = (hit[0], "grupo")
-                    del nes[ne]
-                saldo[hit[0]] -= soma
-                mudou = True
+    """Casa NEs pendentes com o saldo dos instrumentos, sem ratear: valor exato, grupo
+    de NEs com a mesma NC citada, subconjunto de NEs; por fim, se só um instrumento
+    tem saldo, por exclusão; e, se o pendente é exatamente o saldo somado de 2 ou 3
+    instrumentos, eles viram um instrumento mesclado ("A + B")."""
+    nes, saldo = dict(nes), dict(saldo)
+    out: dict[str, tuple[str, str]] = {}
+    while nes and (
+        _passo_exato(nes, saldo, out)
+        or _passo_grupo(nes, grupo, saldo, out)
+        or _passo_subconjunto(nes, saldo, out)
+    ):
+        pass
     com_saldo = [i for i, s_ in saldo.items() if s_ > 0.01]
-    if nes and len(com_saldo) == 1 and saldo[com_saldo[0]] >= sum(nes.values()) - 0.01:
+    resto = sum(nes.values())
+    if nes and len(com_saldo) == 1 and saldo[com_saldo[0]] >= resto - 0.01:
         out.update({ne: (com_saldo[0], "exclusão") for ne in nes})
+    elif nes and 2 <= len(com_saldo) <= 3:
+        if abs(sum(saldo[i] for i in com_saldo) - resto) < 0.01:
+            mesclado = " + ".join(sorted(com_saldo))
+            out.update({ne: (mesclado, "conjunto") for ne in nes})
     return out
 
 
 ROTULO_CELULA = {
     "exato": "G5 saldo exato da NE na célula",
     "grupo": "G5 saldo exato da NE na célula",
+    "subconjunto": "G5 saldo exato da NE na célula",
+    "conjunto": "G5 fechamento conjunto na célula",
     "exclusão": "G4 saldo único na célula",
 }
 
@@ -589,7 +643,6 @@ _liq_tedinho = (
 )
 _bruto = (
     nc_mir[(nc_mir.nc_transferencia == "-8")]
-    .assign(v=lambda d: valor_com_sinal(d.valor.fillna("0")))
     .query("v > 0")
     .groupby(["nc", "orgao", "ano_nc"])
     .v.sum()
@@ -682,6 +735,8 @@ def intermediario(ne: str) -> tuple[tuple, str] | None:
 
 ROTULO_R = {
     "exato": "R saldo exato do intermediário",
+    "subconjunto": "R saldo exato do intermediário",
+    "conjunto": "R fechamento conjunto no intermediário",
     "grupo": "R saldo do intermediário por NC citada",
     "exclusão": "R saldo do intermediário por exclusão",
 }
@@ -721,7 +776,13 @@ f["grupo_camada"] = f.camada.str[0].map(GRUPO)
 # sem Transferegov); NCs do mesmo processo viram um instrumento só
 _pag = instrumentos_da_pagina()
 rotulo = dict(zip(_pag.instrumento, _pag.rotulo))
-f["ted"] = f.ted.map(lambda t: rotulo.get(t, t) if str(t).startswith("tedinho") else t)
+f["ted"] = f.ted.map(
+    lambda t: (
+        " + ".join(rotulo.get(p, p) for p in str(t).split(" + "))
+        if str(t).startswith("tedinho")
+        else t
+    )
+)
 f["tipo_instrumento"] = f.ted.map(
     lambda t: (
         None if pd.isna(t) else ("Tedinho" if str(t).startswith("tedinho") else "TED")

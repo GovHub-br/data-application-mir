@@ -43,6 +43,27 @@ def _itens(df: pd.DataFrame, contraparte: str) -> pd.DataFrame:
     )
 
 
+def _casar_estornos(
+    ncs: pd.DataFrame,
+    pos: pd.DataFrame,
+    neg: pd.DataFrame,
+    mapa: dict[str, str],
+    abatidas: set[str],
+) -> None:
+    """Estorno que cita a NC na descrição ("ESTORNO DE NOTA DE CREDITO 2026NC000064")."""
+    if "ref_estorno" not in ncs:
+        return
+    cita = ncs.dropna(subset=["ref_estorno"]).groupby("nc").ref_estorno.first()
+    for n in tuplas(neg):
+        alvo = cita.get(n.nc)
+        if alvo is None:
+            continue
+        hit = pos[(pos.nc.str[-12:] == alvo) & (pos.nc.str[:6] == str(n.nc)[:6])]
+        if len(hit) == 1 and str(hit.nc.iloc[0]) not in abatidas:
+            mapa[str(n.nc)] = mapa[str(hit.nc.iloc[0])] = str(hit.nc.iloc[0])
+            abatidas.add(str(hit.nc.iloc[0]))
+
+
 def casar_negativas(tdn: pd.DataFrame, dev: pd.DataFrame) -> dict[str, str]:
     """NC sem nº de transferência -> instrumento (NC que ela é, ou que ela abate).
 
@@ -57,6 +78,7 @@ def casar_negativas(tdn: pd.DataFrame, dev: pd.DataFrame) -> dict[str, str]:
     neg = neg[neg.total < -0.005]
     mapa: dict[str, str] = {}
     abatidas: set[str] = set()
+    _casar_estornos(pd.concat([tdn, dev]), pos, neg, mapa, abatidas)
     for por_itens in (True, False):  # primeiro itens idênticos, depois valor total
         for n in tuplas(neg):
             if str(n.nc) in mapa:
@@ -75,12 +97,41 @@ def casar_negativas(tdn: pd.DataFrame, dev: pd.DataFrame) -> dict[str, str]:
     return mapa
 
 
-def _ncs_sem_numero() -> tuple[pd.DataFrame, pd.DataFrame]:
-    """NCs do MIR sem nº de transferência (enviadas) e devoluções sem nº ao MIR."""
-    r = pd.concat([ref("nc_raw1.csv"), ref("nc_raw2.csv")])
-    r["v"] = valor_com_sinal(r.valor.fillna("0"))
+def ncs_brutas() -> pd.DataFrame:
+    """Linhas das NCs (até 2025 e desde 2026, lado DESTINO) com o valor com sinal.
+
+    Até 2025 o sinal vem no valor. Desde 2026 o valor vem sempre positivo e o sinal
+    sai do tipo_nc: anulação (enviadas) e devolução (recebidas) são negativas. Nas
+    recebidas, só a devolução interessa; descentralização de outro órgão para o MIR
+    sai. ref_estorno = NC citada na descrição do estorno ("ESTORNO DA NC 2026NC64")."""
+    r1 = ref("nc_raw1.csv")
+    r1["v"] = valor_com_sinal(r1.valor.fillna("0"))
+    r1 = r1[(r1.relatorio != "recebidas") | (r1.v < 0)]
+    r2 = ref("nc_raw2.csv")
+    tipo = r2.tipo_nc.fillna("")
+    r2["v"] = valor_com_sinal(r2.valor.fillna("0")).abs()
+    r2.loc[tipo.str.startswith(("ANULACAO", "DEVOLUCAO")), "v"] *= -1
+    r2 = r2[(r2.relatorio != "recebidas") | tipo.str.startswith("DEVOLUCAO")]
+    ref_ = r2.descricao.fillna("").str.extract(
+        r"ESTORNO D[AE] (?:NOTA DE CREDITO |NC\s?)?(?:([0-9]{4})NC)?0*([0-9]+)\b"
+    )
+    r2["ref_estorno"] = [
+        (
+            f"{a if isinstance(a, str) else n[11:15]}NC{int(q):06d}"
+            if isinstance(q, str)
+            else None
+        )
+        for a, q, n in zip(ref_[0], ref_[1], r2.nc)
+    ]
+    r = pd.concat([r1, r2], ignore_index=True)
     r["ano"] = r.nc.str[11:15].astype(int)
     r["emit"] = r.nc.str[:6]
+    return r
+
+
+def _ncs_sem_numero() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """NCs do MIR sem nº de transferência (enviadas) e devoluções sem nº ao MIR."""
+    r = ncs_brutas()
     tdn = r[
         (r.nc_transferencia == "-8")
         & r.emit.str.startswith(MIR)

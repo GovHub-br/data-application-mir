@@ -37,6 +37,7 @@ exporta "select distinct nc, ug_emitente, favorecido_doc, relatorio, id_plano_ac
 exporta "select nc, nc_transferencia, ptres, fonte_recursos fonte, favorecido_doc fav,
                 plano_interno pi, relatorio, movimento_liquido_moeda_origem valor
          from siafi.nc_tesouro_ate_2025" nc_raw1.csv
+# desde 2026 o valor vem sempre positivo: o sinal sai do tipo_nc (anulação/devolução)
 exporta "select nc, nc_transferencia, ptres, fonte_codigo fonte, favorecido_codigo fav,
-                pi_codigo pi, relatorio, valor_celula valor
+                pi_codigo pi, relatorio, valor_celula valor, tipo_nc, descricao
          from siafi.nc_tesouro_desde_2026 where dc = 'DESTINO'" nc_raw2.csv

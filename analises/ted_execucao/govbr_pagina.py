@@ -14,7 +14,7 @@ from typing import Any, Callable
 import pandas as pd
 
 from carga import DADOS, load_ug, ref, tuplas
-from credito_total import instrumento_da_nc, valor_com_sinal
+from credito_total import instrumento_da_nc, ncs_brutas
 
 PASTA = DADOS + "govbr_html/"
 NUM_TRANSF = r"(?<![0-9A-Z])(\d{6}|\d[A-Z0-9]{5})(?![0-9A-Z])"
@@ -103,8 +103,7 @@ def entradas() -> pd.DataFrame:
 
 def _ncs_do_mir() -> pd.DataFrame:
     """NCs enviadas pelo MIR, com o valor total por NC e o nº de transferência."""
-    r = pd.concat([ref("nc_raw1.csv"), ref("nc_raw2.csv")])
-    r["v"] = valor_com_sinal(r.valor.fillna("0"))  # anulação entra negativa
+    r = ncs_brutas()  # valor com sinal: anulação entra negativa
     r = r[r.nc.str[:6].isin(["238012", "810008"]) & (r.relatorio == "enviadas")]
     return r.groupby(["nc", "nc_transferencia", "fav"]).v.sum().reset_index()
 
