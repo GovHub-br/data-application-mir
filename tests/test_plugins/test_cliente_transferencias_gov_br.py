@@ -5,6 +5,7 @@ import pytest
 
 from cliente_transferencias_gov_br import (
     ClienteTransferenciasGovBr,
+    extrair_descentralizacoes,
     extrair_teds,
     html_para_texto,
 )
@@ -27,6 +28,28 @@ Valor de R$&nbsp;1.000.000,00.</p>
 </div>
 <div id="viewlet-below-content">Termo de Execução Descentralizada nº 98/2098</div>
 </body></html>
+"""
+
+# Página com TED seguido de descentralizações sem TED (tedinhos), como a de 2025
+PAGINA_DESCENTRALIZACOES_HTML = """
+<html><body><div id="content-core">
+<h3>Termo de Execução Descentralizada nº 01/2025 - Transferegov n° 974892</h3>
+<p>Termo de Execução Descentralizada nº 01/2025 firmado entre o Ministério da \
+Igualdade Racial - MIR e a Universidade Federal Fluminense - UFF. Processo: \
+21290.000100/2025-10. Valor de R$ 629.282,00.</p>
+<h3>Descentralização de Crédito</h3>
+<p>Descentralização de crédito firmado entre o Ministério da Igualdade Racial - \
+MIR e a Fundação Escola Nacional de Administração Pública - Enap. Processo: \
+21290.001270/2025-56. Objeto: "Prestação do serviço Evidência Express (EvEx)", no \
+valor total de R$ 118.267,00 (cento e dezoito mil). Vigência: 2025 a 2026.</p>
+<p>Acesse a íntegra desse Plano de Trabalho</p>
+<h3>Descentralização de Crédito </h3>
+<p>Descentralização de crédito firmado entre o Ministério da Igualdade Racial - \
+MIR e o Instituto Federal de Goiás - IFG. Processo: 21290.001747/2025-01. Objeto: \
+"Organizar um estande formativo", no valor total de R$ 100.000,00.</p>
+<h3>Descentralização de Crédito</h3>
+<p>Em elaboração.</p>
+</div></body></html>
 """
 
 PAGINA_PRINCIPAL_HTML = """
@@ -92,6 +115,46 @@ def test_extrair_teds_sem_numero_do_transferegov() -> None:
     assert ted["texto"].startswith("TED da UFF nº 3/2025")
 
 
+def test_extrair_teds_para_na_descentralizacao_seguinte() -> None:
+    (ted,) = extrair_teds(html_para_texto(PAGINA_DESCENTRALIZACOES_HTML), "2025-1")
+
+    assert ted["numero_ted"] == "01/2025"
+    assert ted["num_transf"] == "974892"
+    assert "Enap" not in ted["texto"]
+
+
+# ---------------------------------------------------------------------------
+# extrair_descentralizacoes
+# ---------------------------------------------------------------------------
+def test_extrair_descentralizacoes_um_registro_por_bloco() -> None:
+    descs = extrair_descentralizacoes(
+        html_para_texto(PAGINA_DESCENTRALIZACOES_HTML), "2025-1"
+    )
+
+    # o bloco "Em elaboração" não tem o parágrafo do instrumento e fica de fora
+    assert [d["processo"] for d in descs] == [
+        "21290.001270/2025-56",
+        "21290.001747/2025-01",
+    ]
+    assert all(d["pagina"] == "2025-1" for d in descs)
+
+
+def test_extrair_descentralizacoes_campos() -> None:
+    enap, ifg = extrair_descentralizacoes(
+        html_para_texto(PAGINA_DESCENTRALIZACOES_HTML), "2025-1"
+    )
+
+    assert enap["parceiro"] == "Fundação Escola Nacional de Administração Pública - Enap"
+    assert enap["objeto"] == "Prestação do serviço Evidência Express (EvEx)"
+    assert enap["valor"] == "118.267,00"
+    assert ifg["parceiro"] == "Instituto Federal de Goiás - IFG"
+    assert ifg["valor"] == "100.000,00"
+
+
+def test_extrair_descentralizacoes_pagina_sem_nenhuma() -> None:
+    assert extrair_descentralizacoes(html_para_texto(PAGINA_HTML), "2026-1") == []
+
+
 # ---------------------------------------------------------------------------
 # ClienteTransferenciasGovBr
 # ---------------------------------------------------------------------------
@@ -139,3 +202,17 @@ def test_get_teds_pagina_inclui_url(cliente: ClienteTransferenciasGovBr) -> None
     mock_get.assert_called_once_with("/2026-1")
     assert len(teds) == 3
     assert teds[0]["url"] == f"{ClienteTransferenciasGovBr.BASE_URL}/2026-1"
+
+
+def test_get_transferencias_pagina_le_a_pagina_uma_vez(
+    cliente: ClienteTransferenciasGovBr,
+) -> None:
+    with patch.object(
+        cliente, "get_html", return_value=PAGINA_DESCENTRALIZACOES_HTML
+    ) as mock_get:
+        teds, descs = cliente.get_transferencias_pagina("2025-1")
+
+    mock_get.assert_called_once_with("/2025-1")
+    assert len(teds) == 1
+    assert len(descs) == 2
+    assert descs[0]["url"] == f"{ClienteTransferenciasGovBr.BASE_URL}/2025-1"

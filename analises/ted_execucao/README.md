@@ -130,8 +130,6 @@ especifica) o que o crédito já determina.
   - "Processo 21290.001553/2025-06 + TED 01/2026 (ENAP)": R$ 4.658,16 de GECC pagos
     por UFRJ e UFPR em 2026 (conjunto aberto: os dois ainda têm saldo, sem
     fechamento exato).
-- O scraper `cliente_transferencias_gov_br.py` descarta as descentralizações sem TED
-  da página.
 
 ## Modelos dbt
 
@@ -143,9 +141,13 @@ especifica) o que o crédito já determina.
 | `pipeline.py`, camadas 4 e 5 | `execucao_ted_ne_vinculo` |
 | `execucao_por_ted.csv` e `execucao_por_ne.csv` | `ted_execucao_por_instrumento` e `ted_execucao_por_ne` |
 
-Ficam de fora a similaridade (camada 3: sem ela o total identificado é o mesmo, ver
-[Verificação da similaridade](#verificação-da-similaridade)) e o nome do tedinho pela
-página do gov.br (`govbr_pagina.py`), que depende de o scraper ler as descentralizações.
+Fica de fora a similaridade (camada 3: sem ela o total identificado é o mesmo, ver
+[Verificação da similaridade](#verificação-da-similaridade)). O nome do tedinho pela
+página do gov.br (`govbr_pagina.py`) está em `ted_tedinho_gov_br`: o scraper
+`cliente_transferencias_gov_br.py` lê as descentralizações sem TED
+(`transfere_gov.descentralizacoes_gov_br`), e a gold `ted_execucao_por_instrumento`
+traz `nome_instrumento` e `processo_gov_br`. Nas páginas de 15/10/2026, os 20
+tedinhos ligados coincidem com os do script, com o mesmo processo.
 
 Diferenças em relação aos scripts:
 

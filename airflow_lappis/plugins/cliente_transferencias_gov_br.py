@@ -18,6 +18,17 @@ NUM_TRANSF = r"(?<![0-9A-Z])(\d{6}|\d[A-Z0-9]{5})(?![0-9A-Z])"
 RE_TRANSFEREGOV = re.compile(
     r"(?:Transfere\s*gov|\bTED)[^0-9\n]{0,25}?" + NUM_TRANSF, re.I
 )
+# Início de uma descentralização de crédito sem TED (tedinho): título sozinho na
+# linha, seguido do parágrafo "Descentralização de crédito firmado entre o MIR e
+# ... Processo: ... Objeto: ... R$ ...". Também encerra o bloco do TED anterior.
+RE_INICIO_DESCENTRALIZACAO = re.compile(
+    r"^\s*Descentraliza[cç][aã]o de Cr[eé]dito\s*$", re.I
+)
+RE_OBJETO = re.compile(
+    r"Objeto\s*:?\s*[\"“”]?(.+?)[\"“”]?\s*,?\s*"
+    r"(?:no valor|com valor|cujo valor|Valor|Vig[eê]ncia)",
+    re.I,
+)
 RE_PROCESSO = re.compile(r"\b(\d{5}\.\d{6}/\d{4}-\d{2})\b")
 RE_VALOR = re.compile(r"R\$\s*([\d.]+,\d{2})")
 RE_PARCEIRO = re.compile(
@@ -57,6 +68,8 @@ def extrair_teds(texto: str, pagina: str) -> list[dict]:
             if atual is None or atual["numero_ted"] != numero_ted:
                 atual = {"numero_ted": numero_ted, "texto": ""}
                 blocos.append(atual)
+        elif RE_INICIO_DESCENTRALIZACAO.match(linha):
+            atual = None  # descentralização sem TED: fica em extrair_descentralizacoes
         if atual is not None:
             atual["texto"] += linha.strip() + "\n"
 
@@ -82,6 +95,50 @@ def extrair_teds(texto: str, pagina: str) -> list[dict]:
             }
         )
     return teds
+
+
+def extrair_descentralizacoes(texto: str, pagina: str) -> list[dict]:
+    """
+    Descentralizações de crédito sem TED (tedinhos) da página: um bloco por título
+    "Descentralização de Crédito", até o próximo TED ou descentralização. Extrai o
+    processo, o parceiro, o objeto e o valor. Não há número de TED nem do
+    Transferegov; o vínculo com a NC do MIR é feito no dbt, pelo valor.
+    """
+    blocos: list[list[str]] = []
+    atual: list[str] | None = None
+    for linha in texto.splitlines():
+        if RE_INICIO_DESCENTRALIZACAO.match(linha):
+            atual = []
+            blocos.append(atual)
+        elif RE_INICIO_TED.match(linha):
+            atual = None
+        elif atual is not None:
+            atual.append(linha.strip())
+
+    descentralizacoes = []
+    for linhas in blocos:
+        txt = "\n".join(linhas)
+        if "firmad" not in txt.lower():
+            continue  # título sem o parágrafo do instrumento
+        processo = RE_PROCESSO.search(txt)
+        valor = RE_VALOR.search(txt)
+        parceiro = RE_PARCEIRO.search(txt)
+        objeto = RE_OBJETO.search(txt)
+        descentralizacoes.append(
+            {
+                "pagina": pagina,
+                "processo": processo.group(1) if processo else None,
+                "parceiro": (
+                    re.sub(r"\s+", " ", parceiro.group(1)).strip() if parceiro else None
+                ),
+                "objeto": (
+                    re.sub(r"\s+", " ", objeto.group(1)).strip() if objeto else None
+                ),
+                "valor": valor.group(1) if valor else None,
+                "texto": txt.strip(),
+            }
+        )
+    return descentralizacoes
 
 
 class ClienteTransferenciasGovBr(ClienteBase):
@@ -141,11 +198,17 @@ class ClienteTransferenciasGovBr(ClienteBase):
 
     def get_teds_pagina(self, pagina: str) -> list[dict]:
         """TEDs de uma subpágina, um registro por TED."""
+        return self.get_transferencias_pagina(pagina)[0]
+
+    def get_transferencias_pagina(self, pagina: str) -> tuple[list[dict], list[dict]]:
+        """TEDs e descentralizações sem TED de uma subpágina, numa leitura só."""
         texto = html_para_texto(self.get_html(f"/{pagina}"))
         teds = extrair_teds(texto, pagina)
-        for ted in teds:
-            ted["url"] = f"{self.BASE_URL}/{pagina}"
+        descentralizacoes = extrair_descentralizacoes(texto, pagina)
+        for registro in teds + descentralizacoes:
+            registro["url"] = f"{self.BASE_URL}/{pagina}"
         logging.info(
-            f"[cliente_transferencias_gov_br.py] {len(teds)} TEDs na página {pagina}"
+            f"[cliente_transferencias_gov_br.py] {len(teds)} TEDs e "
+            f"{len(descentralizacoes)} descentralizações na página {pagina}"
         )
-        return teds
+        return teds, descentralizacoes

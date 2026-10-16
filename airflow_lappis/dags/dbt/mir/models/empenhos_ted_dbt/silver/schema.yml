@@ -692,6 +692,45 @@ models:
           dos documentos, em maiúsculas: o texto em que as regras procuram TED, NC, NE de
           referência, processo e contrato.
 
+  - name: ted_tedinho_gov_br
+    description: >
+      Tedinhos (NC do MIR sem número de transferência) identificados na página de
+      transferências voluntárias do MIR no gov.br, com o processo, o parceiro e o
+      objeto da página. Porta analises/ted_execucao/govbr_pagina.py. A página não traz
+      a NC: o vínculo é pelo valor, com NCs do ano da página (ou do seguinte) para o
+      órgão do parceiro, e só quando é único (um instrumento com o valor exato ou um
+      único par de NCs que soma o valor). Grão: uma linha por instrumento.
+    columns:
+      - name: instrumento
+        description: "Instrumento de ted_credito_instrumento ('tedinho <NC>' ou NCs fundidas)."
+        tests:
+          - not_null
+          - unique
+      - name: nome_instrumento
+        description: >
+          "tedinho Processo 21290.../AAAA-xx (SIGLA)" ou, para TED da página sem número
+          do Transferegov, "tedinho TED nn/AAAA (sem nº Transferegov) (SIGLA)".
+      - name: tipo_entrada
+        description: "'descentralização' ou 'TED sem nº Transferegov'."
+      - name: numero_ted
+        description: "Número/ano do TED na página (só em 'TED sem nº Transferegov')."
+      - name: processo
+        description: "Processo SEI na página."
+      - name: parceiro
+        description: "Parceiro como a página o nomeia."
+      - name: parceiro_sigla
+        description: "Sigla do parceiro (fim do nome na página), em maiúsculas."
+      - name: objeto
+        description: "Objeto da descentralização na página."
+      - name: valor_pagina
+        description: "Valor da descentralização na página."
+      - name: metodo
+        description: "'valor exato' ou 'par de NCs'."
+      - name: pagina
+        description: "Subpágina do gov.br."
+      - name: url
+        description: "Endereço da subpágina."
+
   - name: ted_credito_instrumento
     description: >
       Crédito descentralizado pelo MIR por instrumento, uma linha por movimento de NC, com
