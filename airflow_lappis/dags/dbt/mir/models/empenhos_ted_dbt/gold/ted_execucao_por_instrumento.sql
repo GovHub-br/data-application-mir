@@ -37,7 +37,8 @@ with
     ),
 
     -- tedinho identificado na página do gov.br: nome pelo processo; instrumento
-    -- mesclado ("A + B") recebe o nome de cada parte
+    -- mesclado ("A + B") recebe o nome, o parceiro e o objeto de cada parte (do plano
+    -- de ação ou da página)
     pagina as (select * from {{ ref("ted_tedinho_gov_br") }}),
 
     partes as (
@@ -54,10 +55,22 @@ with
                 coalesce(pg.nome_instrumento, pt.parte), ' + ' order by pt.ordem
             ) as nome_instrumento,
             string_agg(pg.processo, '; ' order by pt.ordem) as processo_gov_br,
-            string_agg(pg.parceiro_sigla, ' + ' order by pt.ordem) as parceiro_gov_br,
-            string_agg(left(pg.objeto, 200), ' | ' order by pt.ordem) as objeto_gov_br
+            string_agg(
+                coalesce(pl.sigla_unidade_descentralizada, pg.parceiro_sigla, '?'),
+                ' + '
+                order by pt.ordem
+            ) as parceiro_partes,
+            string_agg(
+                coalesce(pl.objeto, left(pg.objeto, 200), '?'), ' | ' order by pt.ordem
+            ) as objeto_partes,
+            bool_or(
+                pl.sigla_unidade_descentralizada is not null
+                or pg.parceiro_sigla is not null
+            ) as tem_parceiro,
+            bool_or(pl.objeto is not null or pg.objeto is not null) as tem_objeto
         from partes as pt
         left join pagina as pg on pg.instrumento = pt.parte
+        left join planos as pl on pl.sq_instrumento = pt.parte
         group by pt.instrumento
     )
 
@@ -83,11 +96,10 @@ select
     round(
         sum(v.emp) filter (where v.grupo_regra = '6 não identificado'), 2
     ) as empenhado_nao_identificado,
-    coalesce(max(p.sigla_unidade_descentralizada), max(n.parceiro_gov_br)) as parceiro,
-    coalesce(max(p.objeto), max(n.objeto_gov_br)) as objeto,
+    max(n.parceiro_partes) filter (where n.tem_parceiro) as parceiro,
+    max(n.objeto_partes) filter (where n.tem_objeto) as objeto,
     max(n.nome_instrumento) as nome_instrumento,
     max(n.processo_gov_br) as processo_gov_br
 from vinculo as v
-left join planos as p on p.sq_instrumento = v.instrumento
 left join nomes as n on n.instrumento = v.instrumento
 group by v.ano, v.instrumento
