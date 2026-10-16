@@ -44,6 +44,7 @@ sources:
       - name: notas_de_credito
       - name: planos_acao_portal
       - name: teds_gov_br
+      - name: descentralizacoes_gov_br
 
   - name: siafi
     schema: siafi

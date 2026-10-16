@@ -54,7 +54,10 @@ with
             coalesce(ne_info_complementar, '') as info,
             coalesce(doc_observacao, '') as doc,
             regexp_replace(coalesce(ne_num_processo, ''), '\D', '', 'g') as processo,
-            ne_ccor_favorecido_descricao
+            ne_ccor_favorecido_descricao,
+            natureza_despesa,
+            natureza_despesa_descricao,
+            fonte_recursos_detalhada_descricao
         from {{ ref("ppa_tesouro") }}
         where
             ne_ccor <> '-9'
@@ -102,7 +105,11 @@ with
             min(ne_ccor_descricao) as ne_ccor_descricao,
             -- primeiro processo informado (o -9 vira 9 e cai no corte de 15 dígitos)
             min(processo) filter (where length(processo) >= 15) as processo,
-            min(ne_ccor_favorecido_descricao) as favorecido
+            min(ne_ccor_favorecido_descricao) as favorecido,
+            -- a natureza é do cabeçalho da NE: um valor só por NE
+            min(natureza_despesa) as natureza_despesa,
+            min(natureza_despesa_descricao) as natureza_despesa_descricao,
+            min(fonte_recursos_detalhada_descricao) as fonte_descricao
         from linhas
         group by ne_ccor, ano, ug, acao, po, ptres, grupo, fonte
     )
@@ -126,6 +133,9 @@ select
     n.ne_ccor_descricao,
     n.processo,
     n.favorecido,
+    n.natureza_despesa,
+    n.natureza_despesa_descricao,
+    n.fonte_descricao,
     upper(
         concat_ws(' | ', coalesce(n.ne_ccor_descricao, ''), i.info, d.docs)
     ) as texto

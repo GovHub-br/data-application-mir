@@ -490,9 +490,23 @@ models:
       - name: empenhado_nao_identificado
         description: "Parte sem instrumento."
       - name: parceiro
-        description: "Sigla da unidade descentralizada do plano de ação (só TED com plano)."
+        description: >
+          Sigla da unidade descentralizada do plano de ação (TED com plano) ou, para
+          tedinho, a sigla do parceiro na página do gov.br (ted_tedinho_gov_br).
       - name: objeto
-        description: "Objeto do plano de ação (200 primeiros caracteres)."
+        description: >
+          Objeto do plano de ação ou, para tedinho, o objeto da página do gov.br (200
+          primeiros caracteres).
+      - name: nome_instrumento
+        description: >
+          Nome legível do instrumento: o próprio número do TED; para tedinho
+          identificado na página do gov.br, "tedinho Processo 21290.../AAAA-xx
+          (SIGLA)"; instrumento mesclado ("A + B") recebe o nome de cada parte. Os
+          demais tedinhos ficam como "tedinho <NC>".
+      - name: processo_gov_br
+        description: >
+          Processo SEI do tedinho na página do gov.br (vários, separados por '; ', no
+          instrumento mesclado).
 
   - name: ted_execucao_por_ne
     description: >
@@ -510,6 +524,12 @@ models:
         description: "Nome da UG executora na consulta oficial."
       - name: orgao_nome
         description: "Nome do órgão na consulta oficial."
+      - name: fonte_descricao
+        description: "Descrição da fonte de recursos detalhada (ppa_tesouro)."
+      - name: natureza_despesa
+        description: "Natureza de despesa da NE (um valor por NE, do cabeçalho da NE)."
+      - name: natureza_despesa_descricao
+        description: "Descrição da natureza de despesa."
       - name: instrumento
         description: "Instrumento (nulo se não identificado)."
       - name: regra

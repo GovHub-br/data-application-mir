@@ -723,6 +723,36 @@ models:
       - name: dt_ingest
         description: "Data/hora (UTC-3) da ingestão."
 
+  - name: descentralizacoes_gov_br
+    description: >
+      Modelo da camada bronze para as descentralizações de crédito sem TED
+      (tedinhos) raspadas das páginas de transferências voluntárias do MIR no gov.br,
+      só do retrato mais recente da ingestão. Cada linha é um bloco "Descentralização
+      de Crédito" da página, identificado por página + ordem.
+    columns:
+      - name: pagina
+        description: "Subpágina do gov.br (ex.: 2025-1)."
+        tests:
+          - not_null
+      - name: ordem
+        description: "Posição da descentralização na página."
+        tests:
+          - not_null
+      - name: processo
+        description: "Número do processo SEI."
+      - name: parceiro
+        description: "Unidade que recebe o crédito, como o texto a nomeia."
+      - name: objeto
+        description: "Objeto da descentralização."
+      - name: valor
+        description: "Valor da descentralização (numeric)."
+      - name: texto
+        description: "Texto do bloco."
+      - name: url
+        description: "Endereço da subpágina."
+      - name: dt_ingest
+        description: "Data e hora da raspagem."
+
   - name: teds_gov_br
     description: >
       Modelo da camada bronze para os TEDs raspados das páginas de transferências
