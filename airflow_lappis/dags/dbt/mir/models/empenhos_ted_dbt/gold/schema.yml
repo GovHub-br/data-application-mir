@@ -524,6 +524,12 @@ models:
         description: "Nome da UG executora na consulta oficial."
       - name: orgao_nome
         description: "Nome do órgão na consulta oficial."
+      - name: fonte_descricao
+        description: "Descrição da fonte de recursos detalhada (ppa_tesouro)."
+      - name: natureza_despesa
+        description: "Natureza de despesa da NE (um valor por NE, do cabeçalho da NE)."
+      - name: natureza_despesa_descricao
+        description: "Descrição da natureza de despesa."
       - name: instrumento
         description: "Instrumento (nulo se não identificado)."
       - name: regra

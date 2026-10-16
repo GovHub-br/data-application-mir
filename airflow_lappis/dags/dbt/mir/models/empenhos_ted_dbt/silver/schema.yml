@@ -658,6 +658,12 @@ models:
         description: "UG emitente da NE (6 primeiros caracteres de ne_ccor)."
       - name: orgao_ug
         description: "Órgão da UG na consulta oficial; nulo se a UG não está nela."
+      - name: natureza_despesa
+        description: "Natureza de despesa da NE (do cabeçalho da NE: um valor por NE)."
+      - name: natureza_despesa_descricao
+        description: "Descrição da natureza de despesa."
+      - name: fonte_descricao
+        description: "Descrição da fonte de recursos detalhada."
       - name: acao
         description: "Ação orçamentária."
       - name: po
