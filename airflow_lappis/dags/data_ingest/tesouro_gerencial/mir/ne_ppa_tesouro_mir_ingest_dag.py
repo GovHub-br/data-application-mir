@@ -101,6 +101,9 @@ SUB_HEADER_LINES = 2
 #     favorecido/valor). Por isso a chave inclui a classificacao
 #     orcamentaria e os proprios valores financeiros, que sao o que
 #     de fato distingue linhas de uma mesma NE ou dotacao.
+# Como os valores estao na chave, ela so serve para deduplicar dentro do
+# anexo: entre cargas, a linha cujo valor mudou ganha chave nova. A troca de
+# versao e feita por exercicio (ver EXERCICIO_SQL).
 UNIQUE_KEY = [
     "ne_ccor",
     "natureza_despesa",
@@ -120,6 +123,16 @@ UNIQUE_KEY = [
     "restos_a_pagar_inscritos",
     "restos_a_pagar_pagos",
 ]
+
+# Cada anexo e o retrato completo de um exercicio, e o ano do exercicio esta
+# em todas as linhas no fim de emissao_mes ("SET/2026", "000/2026" na
+# inscricao de restos a pagar). ne_ccor_ano_emissao nao serve: e o ano da NE,
+# e o relatorio de 2026 traz restos a pagar de NEs de 2023 a 2025.
+EXERCICIO_SQL = "right(emissao_mes, 4)"
+
+
+def _exercicio(record: Dict[str, Any]) -> str:
+    return (record.get("emissao_mes") or "")[-4:]
 
 
 def _decode_csv(raw_data: bytes) -> str:
@@ -258,15 +271,15 @@ def _filter_and_dedupe(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 def _reset_table_if_has_primary_key(db: ClientPostgresDB) -> None:
     """Dropa a tabela se ela tiver uma PRIMARY KEY.
 
-    insert_data() e chamado so com conflict_fields=UNIQUE_KEY (sem
-    primary_key): o ON CONFLICT usa o UNIQUE INDEX criado a partir de
-    conflict_fields, que aceita nulos. Uma PRIMARY KEY, por outro lado,
-    torna todas as colunas da chave NOT NULL — e como a chave inclui as
-    6 colunas financeiras (normalmente so uma vem preenchida por linha),
-    isso quebra o insert com NotNullViolation. Se uma execucao anterior
-    (ou uma tabela criada manualmente) deixou uma PRIMARY KEY, dropamos
-    para recriar sem ela. Seguro: cada e-mail traz o relatorio completo,
-    entao a proxima carga repopula tudo.
+    replace_rows() cria a tabela sem primary_key. O UNIQUE INDEX de
+    UNIQUE_KEY que cargas antigas deixaram aceita nulos. Uma PRIMARY KEY,
+    por outro lado, torna todas as colunas da chave NOT NULL — e como a
+    chave inclui as 6 colunas financeiras (normalmente so uma vem
+    preenchida por linha), isso quebra o insert com NotNullViolation. Se
+    uma execucao anterior (ou uma tabela criada manualmente) deixou uma
+    PRIMARY KEY, dropamos para recriar sem ela. Cada e-mail traz um
+    exercicio so: depois do drop, os outros exercicios precisam ser
+    recarregados com data_inicial.
     """
     rows = db.execute_query(
         f"SELECT 1 FROM information_schema.table_constraints "
@@ -289,7 +302,7 @@ with DAG(
     default_args=default_args,
     description=(
         "Processa o anexo de notas de empenho por programa PPA vindo do "
-        "email, formata e insere no db"
+        "email, formata e substitui no db o exercicio que ele traz"
     ),
     schedule_interval=get_dynamic_schedule(
         "empenhos_tesouro_ppa_ingest_dag", default="5 0 * * *"
@@ -308,18 +321,37 @@ with DAG(
         for record in data:
             record["dt_ingest"] = datetime.now().isoformat()
 
+        anos = sorted({_exercicio(r) for r in data})
+        invalidos = [a for a in anos if not (len(a) == 4 and a.isdigit())]
+        if invalidos:
+            # Linha sem ano em emissao_mes nunca seria apagada pelo replace e
+            # acumularia versoes velhas.
+            raise ValueError(
+                f"emissao_mes sem ano no fim em parte das linhas ({invalidos}); "
+                "nao da para saber qual exercicio substituir."
+            )
+
         _reset_table_if_has_primary_key(db)
 
-        db.insert_data(
+        db.replace_rows(
             data,
             TABLE_NAME,
-            conflict_fields=UNIQUE_KEY,
+            f"{EXERCICIO_SQL} = ANY(%s)",
+            (anos,),
             schema=TABLE_SCHEMA,
         )
         return len(data)
 
     def fetch_and_ingest(**context: Dict[str, Any]) -> Dict[str, int]:
-        """Processa cada anexo e ingere imediatamente, evitando acumulo em memoria."""
+        """
+        Processa cada anexo e ingere imediatamente, evitando acumulo em memoria.
+
+        Cada anexo e o retrato completo de um exercicio: substitui as linhas
+        desse exercicio, para que valores que mudaram (ex.: NE em moeda
+        estrangeira, reavaliada pelo cambio do dia) nao deixem a versao
+        anterior na tabela. Os anexos vem em ordem cronologica, entao o mais
+        recente prevalece. Exercicio que nao vem no anexo fica como estava.
+        """
         creds = json.loads(Variable.get("email_credentials"))
         params = context.get("params", {})
         start_date, end_date = resolve_email_date_range(
