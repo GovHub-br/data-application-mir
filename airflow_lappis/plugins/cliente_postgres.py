@@ -1,5 +1,6 @@
 import logging
 import re
+import unicodedata
 from contextlib import contextmanager
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
@@ -8,6 +9,66 @@ import psycopg2.extras
 from pandas import json_normalize
 import pandas as pd
 import io
+
+# Quebra de linha dentro de um campo de texto (inclusive o U+008E que o SIAFI
+# usa como separador de linha). O Power BI, por padrao, quebra a linha do CSV
+# em toda quebra, mesmo entre aspas, e embaralha as colunas.
+_QUEBRA_DE_LINHA_CSV = re.compile(r"[\s\x8e]*[\n\r\x0b\x0c\x85\x8e\u2028\u2029][\s\x8e]*")
+
+# Caracteres que o cp1252 (encoding do envio ao OneDrive) nao representa e que
+# chegavam como "?", com o equivalente mais proximo.
+_SUBSTITUTOS_CP1252 = {
+    "\u200b": "",  # espaco de largura zero
+    "\u0301": "´",  # acento agudo solto que o NFC nao compoe ("O \u0301Neill")
+    "˚": "º",  # "n˚" no lugar de "nº"
+    "Ɵ": "ti",  # ligaduras de texto copiado de PDF
+    "Ʃ": "tt",
+    "●": "•",  # marcadores de lista
+    "⚫": "•",
+    "►": "•",
+}
+
+
+def _cabe_em_cp1252(texto: str) -> bool:
+    try:
+        texto.encode("cp1252")
+        return True
+    except UnicodeEncodeError:
+        return False
+
+
+def _substituto_cp1252(ch: str) -> str:
+    if ch in _SUBSTITUTOS_CP1252:
+        return _SUBSTITUTOS_CP1252[ch]
+    codigo = ord(ch)
+    if 0xF020 <= codigo <= 0xF0FF:  # marcador do Word nas fontes Symbol/Wingdings
+        return "•"
+    if 0x80 <= codigo <= 0x9F:  # byte cp1252 lido como latin-1 (ex.: \x96 = "–")
+        try:
+            return bytes([codigo]).decode("cp1252")
+        except UnicodeDecodeError:
+            return ch
+    equivalente = unicodedata.normalize("NFKC", ch)  # espacos especiais
+    return equivalente if _cabe_em_cp1252(equivalente) else ch
+
+
+def _texto_para_csv(texto: str) -> str:
+    texto = _QUEBRA_DE_LINHA_CSV.sub(" ", texto)
+    if _cabe_em_cp1252(texto):
+        return texto
+    # NFC recompoe acentos decompostos ("c" + U+0327 -> "ç")
+    texto = unicodedata.normalize("NFC", texto)
+    return "".join(ch if _cabe_em_cp1252(ch) else _substituto_cp1252(ch) for ch in texto)
+
+
+def _formatar_valor_csv(valor: Any) -> Any:
+    # NUMERIC chega via psycopg2 como Decimal; formatamos a string direto, sem
+    # passar por float, pra nao perder precisao em valores monetarios.
+    if isinstance(valor, (Decimal, float)):
+        return str(valor).replace(".", ",")
+    if isinstance(valor, str):
+        return _texto_para_csv(valor)
+    return valor
 
 
 class ClientPostgresDB:
@@ -423,7 +484,12 @@ class ClientPostgresDB:
         return [dict(zip(columns, row)) for row in rows]
 
     def export_table_to_csv(self, schema: str, table_name: str) -> str:
-        """Exporta o conteúdo de uma tabela como CSV (string), colunas incluídas."""
+        """Exporta o conteúdo de uma tabela como CSV (string), colunas incluídas.
+
+        Formato pensado para o Power BI em pt-BR: decimal com vírgula, inteiro
+        sem casa decimal e texto numa linha só, apenas com caracteres que o
+        cp1252 representa.
+        """
         self._validate_identifiers(schema, table_name)
 
         query = f"SELECT * FROM {schema}.{table_name}"
@@ -437,18 +503,12 @@ class ClientPostgresDB:
             f"[cliente_postgres.py] Exportadas {len(rows)} linhas de "
             f"{schema}.{table_name}"
         )
-        df = pd.DataFrame(rows, columns=columns)
-        # Colunas NUMERIC/DECIMAL do Postgres chegam via psycopg2 como
-        # decimal.Decimal (dtype "object"), que o parametro decimal="," do
-        # pandas ignora - ele so formata colunas float64. Convertemos essas
-        # colunas manualmente para string com virgula, sem passar por float,
-        # pra nao perder precisao em valores monetarios.
-        for col in df.columns:
-            if df[col].map(lambda v: isinstance(v, Decimal)).any():
-                df[col] = df[col].map(
-                    lambda v: str(v).replace(".", ",") if v is not None else v
-                )
-        return df.to_csv(index=False, sep=",", decimal=",")
+        # Formata antes de montar o DataFrame e com dtype=object: se o pandas
+        # inferir o tipo, inteiro com NULL vira float e o CSV sai "2023,0", o
+        # que quebra as chaves de juncao na ponta (ex.: id_plano_acao "1376,0").
+        linhas = [[_formatar_valor_csv(valor) for valor in row] for row in rows]
+        df = pd.DataFrame(linhas, columns=columns, dtype=object)
+        return df.to_csv(index=False, sep=",")
 
     def get_codigo_unidade(self) -> list[dict]:
         query = """
