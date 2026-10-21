@@ -121,6 +121,29 @@ models:
         description: >
           Soma das despesas liquidadas — despesas com bens ou serviços
           efetivamente entregues e atestados.
+      - name: liquidado_exercicio
+        description: >
+          Liquidado no exercício da NE (despesas_liquidadas). É o par de
+          pago_exercicio: mesmo escopo da consulta oficial "Execução TED por UG" e do
+          levantamento da CGPO, onde pago <= liquidado. Não se compara com
+          pago_exercicio + pago_rap, porque a liquidação do RAP não está na fonte.
+      - name: pago_exercicio
+        description: >
+          Pago no exercício da NE (despesas_pagas). Deve ser <= liquidado_exercicio
+          (teste test_ted_resumo_orcamentario_pago_le_liquidado). É o "pago" que se
+          compara com o liquidado.
+      - name: pago_rap
+        description: >
+          Restos a pagar pagos (restos_a_pagar_pagos): pagamento, num exercício, de
+          NEs de exercícios anteriores. A liquidação correspondente não está em
+          liquidado_exercicio, então não entra no par com o liquidado; exibir
+          separado, se for o caso.
+      - name: pago_excede_liquidado
+        description: >
+          Verdadeiro quando pago_exercicio > liquidado_exercicio para o instrumento.
+          Ocorre quando a cascata atribui ao TED só parte das linhas de uma NE; as
+          exceções conhecidas estão justificadas em
+          tests/test_ted_resumo_orcamentario_pago_le_liquidado.sql. Nulo para tedinho.
       - name: financeiro_recebido
         description: >
           Soma dos valores de Programações Financeiras com ação 'TRANSFERENCIA',
@@ -286,6 +309,14 @@ models:
         description: "Valor inscrito em Restos a Pagar no exercício."
       - name: despesas_liquidada
         description: "Soma das despesas liquidadas no exercício."
+      - name: liquidado_exercicio
+        description: "Liquidado no exercício da NE (despesas_liquidadas). Par comparável de pago_exercicio; ver ted_resumo_orcamentario."
+      - name: pago_exercicio
+        description: "Pago no exercício da NE (despesas_pagas). Deve ser <= liquidado_exercicio."
+      - name: pago_rap
+        description: "RAP pago: pagamento de NEs de exercícios anteriores. Não entra no par com o liquidado."
+      - name: pago_excede_liquidado
+        description: "Verdadeiro quando pago_exercicio > liquidado_exercicio no par (num_transf, exercicio)."
       - name: dt_ingest
         description: "Timestamp mais recente de ingestão entre as NEs do exercício (UTC-3)."
     tests:
@@ -478,7 +509,7 @@ models:
       - name: liquidado
         description: "Liquidado no exercício."
       - name: pago
-        description: "Pago no exercício."
+        description: "Pago no exercício, sem RAP (mesmo escopo do liquidado). Deve ser <= liquidado (teste test_ted_execucao_por_instrumento_pago_le_liquidado)."
       - name: empenhado_cascata_dbt
         description: "Parte do empenhado ligada pela cascata dbt (empenhos_por_plano_acao)."
       - name: empenhado_regras_deterministicas
