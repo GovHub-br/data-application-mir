@@ -1,10 +1,8 @@
-{{
-    config(
-        materialized="incremental",
-        unique_key="id_hash",
-        incremental_strategy="merge",
-    )
-}}
+-- Table, nao incremental: a raw guarda so a foto mais recente de cada
+-- exercicio, e uma linha cujo valor muda (ex.: NE em moeda estrangeira,
+-- reavaliada pelo cambio do dia) ganha id_hash novo. Um merge manteria a
+-- versao anterior para sempre.
+{{ config(materialized="table") }}
 
 
 with
@@ -66,9 +64,9 @@ with
 
 select
     *,
-    -- Chave surrogada estavel para o merge incremental. Cobre todas as
-    -- colunas de negocio (exclui dt_ingest para tornar a reingestao do
-    -- mesmo dado idempotente). Necessaria porque nenhum subconjunto de
+    -- Chave surrogada da linha. Cobre todas as colunas de negocio (exclui
+    -- dt_ingest para tornar a reingestao do mesmo dado idempotente).
+    -- Necessaria porque nenhum subconjunto de
     -- colunas identifica sozinho o grao de dotacao (ne_ccor = '-9'): essas
     -- linhas so se distinguem por ptres/plano_orcamentario/dotacao, etc.
     md5(
