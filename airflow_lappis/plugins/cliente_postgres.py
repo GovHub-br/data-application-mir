@@ -10,19 +10,20 @@ from pandas import json_normalize
 import pandas as pd
 import io
 
-# Quebra de linha dentro de um campo de texto (inclusive o U+008E que o SIAFI
-# usa como separador de linha). O Power BI, por padrao, quebra a linha do CSV
-# em toda quebra, mesmo entre aspas, e embaralha as colunas.
-_QUEBRA_DE_LINHA_CSV = re.compile(r"[\s\x8e]*[\n\r\x0b\x0c\x85\x8e\u2028\u2029][\s\x8e]*")
+# Sequencia de espacos em branco, incluindo o U+008E que o SIAFI usa como
+# separador de linha. O U+0085 fica de fora: aqui ele e o "…" do cp1252 lido
+# como latin-1 (ver _substituto_cp1252), nao uma quebra de linha.
+_ESPACOS_CSV = re.compile(r"(?:[^\S\x85]|\x8e)+")
+_QUEBRAS_DE_LINHA = frozenset("\n\r\x0b\x0c\x8e\u2028\u2029")
 
 # Caracteres que o cp1252 (encoding do envio ao OneDrive) nao representa e que
 # chegavam como "?", com o equivalente mais proximo.
 _SUBSTITUTOS_CP1252 = {
-    "\u200b": "",  # espaco de largura zero
     "\u0301": "´",  # acento agudo solto que o NFC nao compoe ("O \u0301Neill")
     "˚": "º",  # "n˚" no lugar de "nº"
     "Ɵ": "ti",  # ligaduras de texto copiado de PDF
     "Ʃ": "tt",
+    "\u2212": "-",  # sinal de menos
     "●": "•",  # marcadores de lista
     "⚫": "•",
     "►": "•",
@@ -48,15 +49,29 @@ def _substituto_cp1252(ch: str) -> str:
             return bytes([codigo]).decode("cp1252")
         except UnicodeDecodeError:
             return ch
+    categoria = unicodedata.category(ch)
+    # invisivel (U+200B, U+FEFF) ou acento combinante que sobrou do NFC
+    if categoria in ("Cf", "Mn"):
+        return ""
+    if categoria == "Pd":  # hifens e tracos que o cp1252 nao tem
+        return "-"
     equivalente = unicodedata.normalize("NFKC", ch)  # espacos especiais
     return equivalente if _cabe_em_cp1252(equivalente) else ch
 
 
+def _juntar_linhas(espacos: re.Match) -> str:
+    trecho = espacos.group()
+    return trecho if _QUEBRAS_DE_LINHA.isdisjoint(trecho) else " "
+
+
 def _texto_para_csv(texto: str) -> str:
-    texto = _QUEBRA_DE_LINHA_CSV.sub(" ", texto)
+    # Sequencia de espacos com quebra de linha vira um espaco: o Power BI, por
+    # padrao, quebra a linha do CSV em toda quebra, mesmo entre aspas.
+    if not _QUEBRAS_DE_LINHA.isdisjoint(texto):
+        texto = _ESPACOS_CSV.sub(_juntar_linhas, texto)
     if _cabe_em_cp1252(texto):
         return texto
-    # NFC recompoe acentos decompostos ("c" + U+0327 -> "ç")
+    # NFC recompoe acentos decompostos ("c" + cedilha combinante -> "ç")
     texto = unicodedata.normalize("NFC", texto)
     return "".join(ch if _cabe_em_cp1252(ch) else _substituto_cp1252(ch) for ch in texto)
 
@@ -64,11 +79,17 @@ def _texto_para_csv(texto: str) -> str:
 def _formatar_valor_csv(valor: Any) -> Any:
     # NUMERIC chega via psycopg2 como Decimal; formatamos a string direto, sem
     # passar por float, pra nao perder precisao em valores monetarios.
-    if isinstance(valor, (Decimal, float)):
+    if isinstance(valor, Decimal):
         return str(valor).replace(".", ",")
     if isinstance(valor, str):
         return _texto_para_csv(valor)
     return valor
+
+
+def _precisa_formatar(valor: Any) -> bool:
+    # bool e subclasse de int, mas o pandas ja escreve True/False
+    inteiro = isinstance(valor, int) and not isinstance(valor, bool)
+    return inteiro or isinstance(valor, (str, Decimal))
 
 
 class ClientPostgresDB:
@@ -503,12 +524,18 @@ class ClientPostgresDB:
             f"[cliente_postgres.py] Exportadas {len(rows)} linhas de "
             f"{schema}.{table_name}"
         )
-        # Formata antes de montar o DataFrame e com dtype=object: se o pandas
-        # inferir o tipo, inteiro com NULL vira float e o CSV sai "2023,0", o
-        # que quebra as chaves de juncao na ponta (ex.: id_plano_acao "1376,0").
-        linhas = [[_formatar_valor_csv(valor) for valor in row] for row in rows]
-        df = pd.DataFrame(linhas, columns=columns, dtype=object)
-        return df.to_csv(index=False, sep=",")
+        df = pd.DataFrame(rows, columns=columns)
+        # Substitui so as colunas de texto, Decimal e inteiro, ja formatadas e
+        # com dtype=object: se o pandas inferir o tipo, inteiro com NULL vira
+        # float e o CSV sai "2023,0", o que quebra as chaves de juncao na ponta
+        # (ex.: id_plano_acao "1376,0"). Data, intervalo, float e booleano
+        # seguem com a formatacao do pandas, como antes.
+        for i, coluna in enumerate(columns):
+            valores = [row[i] for row in rows]
+            if any(_precisa_formatar(valor) for valor in valores):
+                formatados = [_formatar_valor_csv(valor) for valor in valores]
+                df[coluna] = pd.Series(formatados, index=df.index, dtype=object)
+        return df.to_csv(index=False, sep=",", decimal=",")
 
     def get_codigo_unidade(self) -> list[dict]:
         query = """
