@@ -124,6 +124,17 @@ def test_corte_temporal_2023() -> None:
     assert [i["nr_convenio"] for i in instrumentos] == ["2"]
 
 
+def test_exclui_instrumento_sem_data_assinatura() -> None:
+    # Instrumento com inicio_vigencia mas sem data_assinatura: ainda não formalizado.
+    # Deve ser excluído mesmo que vigencia >= ANO_CORTE e situacao preenchida.
+    nao_formalizado = _convenio(1, assinatura=None, vigencia="2025-01-01")
+    formalizado = _convenio(2, assinatura="2025-03-01")
+
+    instrumentos = montar_instrumentos([nao_formalizado, formalizado], meta_crono_fisico=[])
+
+    assert [i["nr_convenio"] for i in instrumentos] == ["2"]
+
+
 def test_exclui_empenho_zero_com_pagamento_por_padrao() -> None:
     gold = [_convenio(1, empenhado=0.0, pago=100.0), _convenio(2, empenhado=100.0, pago=50.0)]
 

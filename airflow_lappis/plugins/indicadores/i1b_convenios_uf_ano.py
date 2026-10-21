@@ -154,6 +154,8 @@ def montar_instrumentos(
 
     instrumentos = []
     for r in gold_convenios:
+        if not _txt(r.get("data_assinatura")):
+            continue
         ano = _ano_instrumento(r.get("data_assinatura"), r.get("inicio_vigencia"))
         if ano is None or ano < ano_corte:
             continue
