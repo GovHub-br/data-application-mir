@@ -80,7 +80,7 @@ def test_CP1_status_2xx_retorna_status_e_json(status):
     assert len(handler.chamadas) == 1
 
 
-@pytest.mark.parametrize("status", [300, 399, 400, 404, 499, 500, 503, 599])
+@pytest.mark.parametrize("status", [300, 399, 408, 429, 500, 503, 599])
 def test_CP1_status_fora_de_2xx_esgota_tentativas(status):
     handler = _sequencia(httpx.Response(status, json={}))
     with pytest.raises(Exception, match="maximum number of attempts"):
@@ -162,3 +162,52 @@ def test_CB2_laco_sem_iteracoes_retorna_500(monkeypatch):
     monkeypatch.setattr(ClienteBase, "DEFAULT_MAX_RETRIES", -1)
     st, dados = _cliente(_sequencia(httpx.Response(200, json={}))).request("GET", "/x")
     assert (st, dados) == (HTTPStatus.INTERNAL_SERVER_ERROR, None)
+
+
+# ---- CB1 (complemento estrutural): a análise da decisão
+# `response.status_code if response else "Unknown"` mostrou que o ramo
+# depende de `response` de uma tentativa ANTERIOR. Nenhum teste funcional
+# exercitava "tentativa 1 com resposta, tentativa 2 sem resposta".
+def test_CB1_log_de_erro_de_rede_nao_reaproveita_status_antigo(caplog):
+    handler = _sequencia(httpx.Response(503), httpx.ConnectError("recusada"))
+    with caplog.at_level(logging.WARNING), pytest.raises(Exception):
+        _cliente(handler).request("GET", "/x")
+    avisos = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert "status 503" in avisos[0]
+    assert all("status Unknown" in m for m in avisos[1:])
+
+
+
+# ======================================================================
+# TDD: erros 4xx definitivos não devem ser repetidos (exceto 408 e 429)
+# ======================================================================
+@pytest.mark.parametrize("status", [400, 401, 404, 422, 499])
+def test_TDD_erro_cliente_definitivo_falha_na_primeira_tentativa(status, sem_espera):
+    handler = _sequencia(httpx.Response(status))
+    with pytest.raises(Exception, match=f"client error {status}") as exc:
+        _cliente(handler).request("GET", "/x")
+    assert isinstance(exc.value.__cause__, httpx.HTTPStatusError)
+    assert len(handler.chamadas) == 1
+    assert sem_espera == []
+
+
+# ---- MC/DC da decisão  A and B and C and D  em _deve_repetir:
+# A: erro é HTTPStatusError | B: status >= 400 | C: status <= 499
+# D: status não está em {408, 429}.  Erro definitivo <=> A∧B∧C∧D.
+def _erro_status(code):
+    resp = httpx.Response(code, request=httpx.Request("GET", "https://x"))
+    return httpx.HTTPStatusError("erro", request=resp.request, response=resp)
+
+
+@pytest.mark.parametrize(
+    "caso, erro, deve_repetir",
+    [
+        ("MC1 A=V B=V C=V D=V", _erro_status(404), False),
+        ("MC2 A=F (muda só A)", httpx.ConnectError("x"), True),
+        ("MC3 B=F (muda só B)", _erro_status(399), True),
+        ("MC4 C=F (muda só C)", _erro_status(500), True),
+        ("MC5 D=F (muda só D)", _erro_status(429), True),
+    ],
+)
+def test_MCDC_deve_repetir(caso, erro, deve_repetir):
+    assert ClienteBase._deve_repetir(erro) is deve_repetir
