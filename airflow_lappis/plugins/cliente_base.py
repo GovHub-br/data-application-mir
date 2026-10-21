@@ -47,7 +47,12 @@ class ClienteBase:
                 )
                 return HTTPStatus(response.status_code), response.json()
             except httpx.HTTPError as e:
-                status = response.status_code if response else "Unknown"
+                if isinstance(e, httpx.HTTPStatusError):
+                    status = e.response.status_code
+                else:
+                    status = "Unknown"
+                if not self._deve_repetir(e):
+                    raise Exception(f"API returned client error {status}") from e
                 logging.warning(
                     f"[cliente_base.py] API failed with status {status} on "
                     f"attempt {attempt + 1}. Error: {str(e)}"
@@ -64,3 +69,14 @@ class ClienteBase:
                     ) from e
 
         return HTTPStatus.INTERNAL_SERVER_ERROR, None
+
+    @staticmethod
+    def _deve_repetir(erro: httpx.HTTPError) -> bool:
+        if (
+            isinstance(erro, httpx.HTTPStatusError)
+            and erro.response.status_code >= 400
+            and erro.response.status_code <= 499
+            and erro.response.status_code not in (408, 429)
+        ):
+            return False
+        return True
