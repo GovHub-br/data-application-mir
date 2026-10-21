@@ -53,6 +53,7 @@ def sem_espera(monkeypatch):
 # ABORDAGEM 1: CAIXA-PRETA (especificação = docstring) -> complemento CB
 # ======================================================================
 
+
 # ---- CP1: Particionamento de equivalência + valor limite do status HTTP
 # Classes: [200..299] sucesso | [300..399] redirecionamento | [400..499]
 # erro do cliente | [500..599] erro do servidor.
@@ -175,7 +176,6 @@ def test_CB1_log_de_erro_de_rede_nao_reaproveita_status_antigo(caplog):
     avisos = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
     assert "status 503" in avisos[0]
     assert all("status Unknown" in m for m in avisos[1:])
-
 
 
 # ======================================================================

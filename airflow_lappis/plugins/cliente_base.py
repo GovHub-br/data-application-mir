@@ -9,6 +9,10 @@ class ClienteBase:
     DEFAULT_TIMEOUT = 10
     DEFAULT_MAX_RETRIES = 3
     DEFAULT_SLEEP_SECONDS = 2
+    # Erros 4xx que ainda valem nova tentativa (timeout e rate limit).
+    RETRYABLE_CLIENT_ERRORS = frozenset(
+        {HTTPStatus.REQUEST_TIMEOUT, HTTPStatus.TOO_MANY_REQUESTS}
+    )
 
     def __init__(self, base_url: str, headers: Optional[dict] = None) -> None:
         self.base_url = base_url
@@ -31,7 +35,6 @@ class ClienteBase:
             Tuple[HTTPStatus, dict]: status e resposta da requisição HTTP.
         """
         kwargs["timeout"] = kwargs.get("timeout", self.DEFAULT_TIMEOUT)
-        response = None
 
         for attempt in range(self.DEFAULT_MAX_RETRIES + 1):
             try:
@@ -47,10 +50,7 @@ class ClienteBase:
                 )
                 return HTTPStatus(response.status_code), response.json()
             except httpx.HTTPError as e:
-                if isinstance(e, httpx.HTTPStatusError):
-                    status = e.response.status_code
-                else:
-                    status = "Unknown"
+                status = self._status_do_erro(e)
                 if not self._deve_repetir(e):
                     raise Exception(f"API returned client error {status}") from e
                 logging.warning(
@@ -62,7 +62,7 @@ class ClienteBase:
                 else:
                     logging.error(
                         f"[cliente_base.py] API failed after "
-                        f"{self.DEFAULT_MAX_RETRIES} attempts. Error: {str(e)}"
+                        f"{attempt + 1} attempts. Error: {str(e)}"
                     )
                     raise Exception(
                         "API failed after the maximum number of attempts!"
@@ -71,12 +71,21 @@ class ClienteBase:
         return HTTPStatus.INTERNAL_SERVER_ERROR, None
 
     @staticmethod
-    def _deve_repetir(erro: httpx.HTTPError) -> bool:
-        if (
-            isinstance(erro, httpx.HTTPStatusError)
-            and erro.response.status_code >= 400
-            and erro.response.status_code <= 499
-            and erro.response.status_code not in (408, 429)
-        ):
-            return False
-        return True
+    def _status_do_erro(erro: httpx.HTTPError) -> int | str:
+        """Status da tentativa que falhou ("Unknown" em erros de rede)."""
+        if isinstance(erro, httpx.HTTPStatusError):
+            return erro.response.status_code
+        return "Unknown"
+
+    @classmethod
+    def _deve_repetir(cls, erro: httpx.HTTPError) -> bool:
+        """
+        Indica se vale nova tentativa. Erros 4xx são definitivos (repetir
+        não muda o resultado), exceto 408 e 429; erros de rede, 3xx e 5xx
+        são considerados transitórios.
+        """
+        if not isinstance(erro, httpx.HTTPStatusError):
+            return True
+        code = erro.response.status_code
+        erro_cliente = 400 <= code <= 499
+        return not (erro_cliente and code not in cls.RETRYABLE_CLIENT_ERRORS)
