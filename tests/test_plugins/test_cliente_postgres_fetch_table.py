@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -80,3 +82,82 @@ def test_replace_rows_sem_dados_nao_conecta() -> None:
 def test_replace_rows_rejeita_identificador_invalido() -> None:
     with pytest.raises(ValueError):
         ClientPostgresDB("dsn").replace_rows([{"a": 1}], "t; drop", "1 = 1", ())
+
+
+def _exportar_csv(columns: list[str], rows: list[tuple]) -> str:
+    conn = _mock_connect(columns, rows)
+    with patch("cliente_postgres.psycopg2.connect", return_value=conn):
+        return ClientPostgresDB("dsn").export_table_to_csv("siafi_dbt", "t")
+
+
+def test_export_csv_inteiro_com_nulo_nao_vira_decimal() -> None:
+    csv = _exportar_csv(["id_plano_acao", "ano"], [(1376, 2023), (2, None)])
+
+    assert csv == "id_plano_acao,ano\n1376,2023\n2,\n"
+
+
+def test_export_csv_decimal_sai_com_virgula_e_sem_perder_precisao() -> None:
+    csv = _exportar_csv(
+        ["valor", "taxa"], [(Decimal("1285773.68"), 99.5), (Decimal("-0.1234"), None)]
+    )
+
+    assert csv == 'valor,taxa\n"1285773,68","99,5"\n"-0,1234",\n'
+
+
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "linha 1\nlinha 2",
+        "linha 1\r\nlinha 2",
+        "linha 1  \n\n  linha 2",
+        "linha 1\x8elinha 2",  # separador de linha do SIAFI
+    ],
+)
+def test_export_csv_quebra_de_linha_vira_um_espaco(texto: str) -> None:
+    assert _exportar_csv(["obs"], [(texto,)]) == "obs\nlinha 1 linha 2\n"
+
+
+@pytest.mark.parametrize(
+    "texto, esperado",
+    [
+        ("divulgac\u0327a\u0303o", "divulgação"),  # acentos decompostos (NFD)
+        ("bolsas.\u202fO CNPq", "bolsas. O CNPq"),
+        ("● Justiça \uf0fc Racial", "• Justiça • Racial"),
+        ("Portaria n˚ 537", "Portaria nº 537"),
+        ("senƟdo hƩp", "sentido http"),
+        ("BRASÍLIA \x96 DF", "BRASÍLIA – DF"),
+        ("883932/2019\u200b", "883932/2019"),
+        ("Paul H. O \u0301Neill", "Paul H. O ´Neill"),
+        ("Aguarde\x85 fim", "Aguarde… fim"),  # \x85 e o "…" do cp1252
+        ("saldo \u22121 e pós\u2010pago", "saldo -1 e pós-pago"),
+        ("\ufeffabc\u200d", "abc"),  # invisiveis
+        ("q\u0303", "q"),  # acento combinante sem forma composta
+    ],
+)
+def test_export_csv_troca_caracteres_fora_do_cp1252(texto: str, esperado: str) -> None:
+    csv = _exportar_csv(["texto"], [(texto,)])
+
+    assert csv == f"texto\n{esperado}\n"
+    csv.encode("cp1252")  # nada vira "?" no envio
+
+
+def test_export_csv_demais_tipos_seguem_o_formato_do_pandas() -> None:
+    linhas = [
+        (datetime(2024, 1, 1), float("nan"), timedelta(days=1, hours=2), True),
+        (datetime(2024, 2, 1), 1.5, None, None),
+    ]
+
+    csv = _exportar_csv(["dt", "taxa", "duracao", "ativo"], linhas)
+
+    # mesma saida do export anterior: data, float, intervalo e booleano nao mudam
+    assert csv == (
+        "dt,taxa,duracao,ativo\n"
+        "2024-01-01,,1 days 02:00:00,True\n"
+        '2024-02-01,"1,5",,\n'
+    )
+
+
+def test_export_csv_espacos_sem_quebra_de_linha_ficam_como_estao() -> None:
+    texto = "a" + " " * 5000 + "b\tc"
+
+    assert _exportar_csv(["obs"], [(texto,)]) == f"obs\n{texto}\n"
