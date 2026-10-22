@@ -45,3 +45,30 @@ models:
       - name: nr_processo_sei
       - name: qt_aditivos
       - name: dt_ingest
+
+  - name: coleta_instrumento_meta
+    description: >
+      Metas e etapas do plano de trabalho por instrumento, para a lista do item
+      5.2 dos formularios do Coleta MIR. TED: plano_acao_meta/plano_acao_etapa
+      da API de TED; convenio e termo de fomento: meta_crono_fisico do SICONV
+      (sem etapas). Linha da meta tem nr_etapa nulo. O municipio vem por nome
+      (no_municipio), como no SICONV; o Coleta casa com o IBGE.
+    columns:
+      - name: chave_instrumento
+        tests:
+          - not_null
+          - relationships:
+              to: ref('coleta_instrumento')
+              field: chave
+      - name: nr_meta
+        tests:
+          - not_null
+      - name: nr_etapa
+      - name: no_meta
+      - name: ds_meta
+      - name: qt_meta
+      - name: ds_unidade
+      - name: sg_uf
+      - name: no_municipio
+      - name: dt_inicio
+      - name: dt_fim
