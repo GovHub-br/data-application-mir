@@ -59,6 +59,24 @@ with
             tp.instrumento
     ),
 
+    -- Info da pagina por instrumento_key (= id_instrumento do tedinho no
+    -- resumo, que pode ser 'nc:', 'proc:' ou 'transf:'). Cada NC da pagina vai
+    -- para o instrumento_key de tedinhos_mir; se a NC nao esta la, vale como
+    -- 'nc:<NC>'. Uma linha por chave: prefere com parceiro, depois menor NC.
+    tedinho_info_chave as (
+        select distinct on (chave) chave, parceiro, objeto, processo_gov_br
+        from
+            (
+                select tm.instrumento_key::text as chave, ti.*
+                from tedinho_info as ti
+                join {{ ref("tedinhos_mir") }} as tm on tm.nc = ti.nc
+                union all
+                select 'nc:' || ti.nc as chave, ti.*
+                from tedinho_info as ti
+            ) as x
+        order by chave, parceiro is null, nc
+    ),
+
     -- MIR: UGs do proprio ministerio (seed ugs_mir). Nunca sao parceiro.
     mir as (select ug_codigo::text as ug_codigo from {{ ref("ugs_mir") }}),
 
@@ -110,10 +128,16 @@ with
             r.id_instrumento::text as nr_instrumento,
             -- UG do parceiro. TED, em ordem: UG do plano no portal; UG que
             -- recebeu o credito (ted_ug_credito); UG unica do empenho
-            -- (ted_ug_empenho). Tedinho: a UG favorecida das notas de credito
+            -- (ted_ug_empenho). A UG do plano so vale fora do MIR. Tedinho: a UG
+            -- favorecida das notas de credito
             -- (tedinho_ug_credito). UG do MIR nunca entra.
             coalesce(
-                p.ug_plano, uc.ug_credito, ue.ug_empenho, tu.ug_credito
+                case
+                    when p.ug_plano not in (select ug_codigo from mir) then p.ug_plano
+                end,
+                uc.ug_credito,
+                ue.ug_empenho,
+                tu.ug_credito
             ) as co_identificador,
             coalesce(
                 p.unidade_descentralizada,
@@ -141,9 +165,9 @@ with
         left join plano as p on p.id_plano_acao = r.plano_acao::text
         left join termo as tm on tm.id_plano_acao = r.plano_acao::text
         left join
-            tedinho_info as t
+            tedinho_info_chave as t
             on r.tipo_instrumento = 'Tedinho'
-            and t.nc = regexp_replace(r.id_instrumento::text, '^nc:', '')
+            and t.chave = r.id_instrumento::text
         left join
             ted_ug_credito as uc
             on r.tipo_instrumento = 'TED'
@@ -154,8 +178,8 @@ with
             on r.tipo_instrumento = 'Tedinho'
             and tu.id_instrumento = r.id_instrumento::text
         -- Tedinho so entra no contrato quando foi identificado nas paginas de
-        -- transparencia do gov.br (casou com tedinho_info).
-        where r.tipo_instrumento = 'TED' or t.nc is not null
+        -- transparencia do gov.br (casou com tedinho_info_chave).
+        where r.tipo_instrumento = 'TED' or t.chave is not null
     ),
 
     proponente as (
