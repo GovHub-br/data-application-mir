@@ -1,6 +1,6 @@
 import http
 from http import HTTPStatus
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import pytest
 
@@ -444,35 +444,64 @@ def test_get_por_ids_lista_vazia_nao_chama_api(cliente_ted: ClienteTed) -> None:
 def test_get_por_ids_um_lote_uma_pagina(cliente_ted: ClienteTed) -> None:
     expected = [{"id_meta": 1}, {"id_meta": 2}]
     with patch.object(
-        cliente_ted, "request", return_value=(HTTPStatus.OK, expected)
+        cliente_ted,
+        "request",
+        side_effect=[(HTTPStatus.OK, expected), (HTTPStatus.OK, [])],
     ) as mock_request:
         result = cliente_ted.get_por_ids(
             "plano_acao_meta", "id_plano_acao", [64, 65], "id_meta"
         )
 
     assert result == expected
-    mock_request.assert_called_once_with(
+    assert mock_request.call_args_list[0] == call(
         http.HTTPMethod.GET,
         "plano_acao_meta?id_plano_acao=in.(64,65)&order=id_meta&limit=1000&offset=0",
         headers=ClienteTed.BASE_HEADER,
     )
+    assert mock_request.call_args_list[1].args[1] == (
+        "plano_acao_meta?id_plano_acao=in.(64,65)&order=id_meta&limit=1000&offset=2"
+    )
 
 
-def test_get_por_ids_pagina_ate_vir_pagina_incompleta(cliente_ted: ClienteTed) -> None:
+def test_get_por_ids_pagina_ate_vir_pagina_vazia(cliente_ted: ClienteTed) -> None:
     pagina_cheia = [{"id": i} for i in range(ClienteTed.LIMITE_PAGINA)]
     ultima = [{"id": "fim"}]
     with patch.object(
         cliente_ted,
         "request",
-        side_effect=[(HTTPStatus.OK, pagina_cheia), (HTTPStatus.OK, ultima)],
+        side_effect=[
+            (HTTPStatus.OK, pagina_cheia),
+            (HTTPStatus.OK, ultima),
+            (HTTPStatus.OK, []),
+        ],
     ) as mock_request:
         result = cliente_ted.get_por_ids("evento", "id_nota", [7], "id_nota,cd_evento")
 
     assert len(result) == ClienteTed.LIMITE_PAGINA + 1
-    segunda = mock_request.call_args_list[1].args[1]
-    assert segunda == (
-        "evento?id_nota=in.(7)&order=id_nota,cd_evento&limit=1000&offset=1000"
-    )
+    offsets = [c.args[1].rsplit("&offset=", 1)[1] for c in mock_request.call_args_list]
+    assert offsets == ["0", "1000", "1001"]
+
+
+def test_get_por_ids_max_rows_da_api_menor_que_o_limite_nao_trunca(
+    cliente_ted: ClienteTed,
+) -> None:
+    # A API corta em 500 linhas por pagina (max-rows) apesar de limit=1000.
+    pagina_500 = [{"id": i} for i in range(500)]
+    with patch.object(
+        cliente_ted,
+        "request",
+        side_effect=[
+            (HTTPStatus.OK, pagina_500),
+            (HTTPStatus.OK, pagina_500),
+            (HTTPStatus.OK, [{"id": "fim"}]),
+            (HTTPStatus.OK, []),
+        ],
+    ) as mock_request:
+        result = cliente_ted.get_por_ids("evento", "id_nota", [7], "id_nota,cd_evento")
+
+    assert len(result) == 1001
+    offsets = [c.args[1].rsplit("&offset=", 1)[1] for c in mock_request.call_args_list]
+    assert offsets == ["0", "500", "1000", "1001"]
 
 
 def test_get_por_ids_divide_em_lotes(cliente_ted: ClienteTed) -> None:

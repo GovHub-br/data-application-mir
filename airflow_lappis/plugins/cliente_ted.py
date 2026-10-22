@@ -144,7 +144,8 @@ class ClienteTed(ClienteBase):
     ) -> list | None:
         """Busca as linhas de `tabela` cujo `coluna` esta em `ids`.
 
-        Divide os ids em lotes (in.(...)) e pagina cada lote. `ordem` precisa
+        Divide os ids em lotes (in.(...)) e pagina cada lote ate receber uma
+        pagina vazia (o offset anda o tanto de linhas recebidas). `ordem` precisa
         ser uma ordem total das linhas, senao a paginacao repete ou pula
         linhas. Retorna None se qualquer pagina falhar: quem chama nao deve
         gravar um retrato incompleto.
@@ -168,10 +169,12 @@ class ClienteTed(ClienteBase):
                     )
                     return None
 
-                linhas.extend(data)
-                if len(data) < self.LIMITE_PAGINA:
+                # Pagina ate vir uma pagina vazia: se o max-rows da API for menor
+                # que LIMITE_PAGINA, parar na primeira pagina incompleta truncaria.
+                if not data:
                     break
-                offset += self.LIMITE_PAGINA
+                linhas.extend(data)
+                offset += len(data)
 
         logging.info(f"{len(linhas)} linhas de {tabela} para {len(ids)} ids")
         return linhas
