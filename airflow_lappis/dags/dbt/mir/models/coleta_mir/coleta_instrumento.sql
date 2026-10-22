@@ -26,55 +26,53 @@ with
         order by id_plano_acao, dt_assinatura desc nulls last, id_termo desc
     ),
 
-    -- Parceiro, objeto e processo do tedinho vem da pagina do gov.br, exposta
-    -- em ted_execucao_por_instrumento. La o instrumento e 'tedinho <NC>', ou
-    -- mesclado ('tedinho <NC_A> / <NC_B>', 'tedinho <NC_A> + tedinho <NC_B>');
-    -- aqui o id_instrumento do tedinho e 'nc:<NC>'. Abre o instrumento em NCs
-    -- e fica com uma linha por NC, preferindo o instrumento com parceiro e o
-    -- menos mesclado.
-    tedinho_pagina as (
+    -- Tedinho: so entram os identificados nas paginas de transparencia do
+    -- gov.br, lidos direto do modelo da pagina (ted_tedinho_gov_br: uma linha
+    -- por instrumento da pagina, com processo, parceiro e objeto). Nao usa
+    -- ted_execucao_por_instrumento, que vem da reconciliacao das NEs e tem
+    -- tedinhos sem evidencia da pagina.
+    -- Na pagina o instrumento e 'tedinho <NC>' ou mesclado ('tedinho <A> / <B>',
+    -- 'tedinho <A> + tedinho <B>'): abre em NCs.
+    tedinho_pagina_nc as (
         select
-            instrumento,
-            max(parceiro) as parceiro,
-            max(objeto) as objeto,
-            max(processo_gov_br) as processo_gov_br
-        from {{ ref("ted_execucao_por_instrumento") }}
-        where tipo_instrumento = 'Tedinho'
-        group by instrumento
-    ),
-
-    tedinho_info as (
-        select distinct on (nc) nc, tp.parceiro, tp.objeto, tp.processo_gov_br
-        from tedinho_pagina as tp
+            pg.instrumento,
+            pg.processo,
+            pg.parceiro,
+            pg.objeto,
+            partes.nc,
+            cardinality(
+                regexp_split_to_array(replace(pg.instrumento, 'tedinho ', ''), ' (/|\+) ')
+            ) as qt_partes
+        from {{ ref("ted_tedinho_gov_br") }} as pg
         cross join
             lateral unnest(
-                regexp_split_to_array(replace(tp.instrumento, 'tedinho ', ''), ' (/|\+) ')
+                regexp_split_to_array(replace(pg.instrumento, 'tedinho ', ''), ' (/|\+) ')
             ) as partes(nc)
-        order by
-            nc,
-            tp.parceiro is null,
-            cardinality(
-                regexp_split_to_array(replace(tp.instrumento, 'tedinho ', ''), ' (/|\+) ')
-            ),
-            tp.instrumento
     ),
 
-    -- Info da pagina por instrumento_key (= id_instrumento do tedinho no
-    -- resumo, que pode ser 'nc:', 'proc:' ou 'transf:'). Cada NC da pagina vai
-    -- para o instrumento_key de tedinhos_mir; se a NC nao esta la, vale como
-    -- 'nc:<NC>'. Uma linha por chave: prefere com parceiro, depois menor NC.
+    -- NC -> instrumento_key de tedinhos_mir (= id_instrumento do tedinho no
+    -- resumo: 'nc:', 'proc:' ou 'transf:'). tedinhos_mir tem uma linha por
+    -- celula da NC, mas cada NC tem um unico instrumento_key (conferido).
+    tedinho_nc_chave as (
+        select nc, instrumento_key::text as chave
+        from {{ ref("tedinhos_mir") }}
+        group by nc, instrumento_key
+    ),
+
+    -- Uma linha por chave. Desempate deterministico: com parceiro, depois o
+    -- instrumento da pagina menos mesclado, depois a menor NC.
     tedinho_info_chave as (
-        select distinct on (chave) chave, parceiro, objeto, processo_gov_br
-        from
-            (
-                select tm.instrumento_key::text as chave, ti.*
-                from tedinho_info as ti
-                join {{ ref("tedinhos_mir") }} as tm on tm.nc = ti.nc
-                union all
-                select 'nc:' || ti.nc as chave, ti.*
-                from tedinho_info as ti
-            ) as x
-        order by chave, parceiro is null, nc
+        select distinct
+            on (k.chave) k.chave, p.parceiro, p.objeto, p.processo as processo_gov_br
+        from tedinho_pagina_nc as p
+        join tedinho_nc_chave as k on k.nc = p.nc
+        order by k.chave, p.parceiro is null, p.qt_partes, p.nc, p.instrumento
+    ),
+
+    -- Menor NC de cada instrumento de tedinho: referencia estavel para o
+    -- consumidor religar o instrumento se o nr_instrumento mudar.
+    tedinho_nc_referencia as (
+        select chave, min(nc) as nc_referencia from tedinho_nc_chave group by chave
     ),
 
     -- MIR: UGs do proprio ministerio (seed ugs_mir). Nunca sao parceiro.
@@ -126,14 +124,19 @@ with
                 r.tipo_instrumento when 'TED' then 'ted' else 'tedinho'
             end as tp_instrumento,
             r.id_instrumento::text as nr_instrumento,
+            nr.nc_referencia,
             -- UG do parceiro. TED, em ordem: UG do plano no portal; UG que
             -- recebeu o credito (ted_ug_credito); UG unica do empenho
-            -- (ted_ug_empenho). A UG do plano so vale fora do MIR. Tedinho: a UG
-            -- favorecida das notas de credito
-            -- (tedinho_ug_credito). UG do MIR nunca entra.
+            -- (ted_ug_empenho). A UG do plano so vale com 6 digitos e fora do
+            -- MIR (ex.: plano 245 traz '26350', codigo de orgao). Tedinho: a UG
+            -- favorecida das notas de credito (tedinho_ug_credito). UG do MIR
+            -- nunca entra.
             coalesce(
                 case
-                    when p.ug_plano not in (select ug_codigo from mir) then p.ug_plano
+                    when
+                        p.ug_plano ~ '^\d{6}$'
+                        and p.ug_plano not in (select ug_codigo from mir)
+                    then p.ug_plano
                 end,
                 uc.ug_credito,
                 ue.ug_empenho,
@@ -156,8 +159,16 @@ with
             r.dt_fim_vigencia::date as dt_fim_vigencia,
             tm.dt_assinatura,
             r.situacao_plano_acao::text as ds_situacao,
+            -- Processo SEI: do termo de execucao (TED) ou da pagina do gov.br
+            -- (tedinho). r.processo so vale no formato SEI: no tedinho 'nc:' ele
+            -- traz o numero da NC, que nao e processo.
             coalesce(
-                tm.nr_processo_sei, r.processo::text, t.processo_gov_br
+                tm.nr_processo_sei,
+                t.processo_gov_br,
+                case
+                    when r.processo::text ~ '^\d{5}\.\d{6}/\d{4}-\d{2}$'
+                    then r.processo::text
+                end
             ) as nr_processo_sei,
             cast(null as integer) as qt_aditivos,
             r.dt_ingest::timestamptz as dt_ingest
@@ -174,11 +185,16 @@ with
             and uc.id_instrumento = r.id_instrumento::text
         left join ted_ug_empenho as ue on ue.id_instrumento = r.id_instrumento::text
         left join
+            tedinho_nc_referencia as nr
+            on r.tipo_instrumento = 'Tedinho'
+            and nr.chave = r.id_instrumento::text
+        left join
             tedinho_ug_credito as tu
             on r.tipo_instrumento = 'Tedinho'
             and tu.id_instrumento = r.id_instrumento::text
         -- Tedinho so entra no contrato quando foi identificado nas paginas de
-        -- transparencia do gov.br (casou com tedinho_info_chave).
+        -- transparencia do gov.br (casou com tedinho_info_chave, que vem de
+        -- ted_tedinho_gov_br).
         where r.tipo_instrumento = 'TED' or t.chave is not null
     ),
 
@@ -236,6 +252,7 @@ with
             on (c.nr_convenio::text)
             c.tp_instrumento,
             c.nr_convenio::text as nr_instrumento,
+            cast(null as text) as nc_referencia,
             nullif(
                 regexp_replace(pp.identif_proponente, '\D', '', 'g'), ''
             ) as co_identificador,
@@ -262,6 +279,7 @@ with
         select
             tp_instrumento,
             nr_instrumento,
+            nc_referencia,
             case when co_identificador is not null then 'ug' end as tp_identificador,
             co_identificador,
             no_parceiro,
@@ -282,6 +300,7 @@ with
         select
             tp_instrumento,
             nr_instrumento,
+            nc_referencia,
             case when co_identificador is not null then 'cnpj' end as tp_identificador,
             co_identificador,
             no_parceiro,

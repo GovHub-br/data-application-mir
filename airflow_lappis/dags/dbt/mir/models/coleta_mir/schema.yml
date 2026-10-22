@@ -8,11 +8,17 @@ models:
       automaticamente nos formularios (Bloco 1) e o identificador do parceiro
       usado no controle de acesso (CNPJ para convenio/termo de fomento, UG para
       TED). Tedinhos so entram quando foram identificados nas paginas de
-      transparencia do gov.br. Consumido pela sincronizacao diaria do Coleta
+      transparencia do gov.br (modelo ted_tedinho_gov_br); parceiro, objeto e
+      processo do tedinho vem da pagina. Consumido pela sincronizacao diaria do Coleta
       MIR: mudar nome ou tipo de coluna quebra o consumidor.
     columns:
       - name: chave
-        description: "<tp_instrumento>:<nr_instrumento>. Chave estavel do contrato."
+        description: >
+          <tp_instrumento>:<nr_instrumento>. Chave do contrato, unica. Estavel
+          para TED, convenio e termo de fomento. Para tedinho, nr_instrumento vem
+          de tedinhos_mir.instrumento_key ('proc:', 'transf:' ou 'nc:') e pode
+          mudar quando uma NC posterior traz o processo; use nc_referencia para
+          religar o instrumento.
         tests:
           - unique
           - not_null
@@ -25,13 +31,23 @@ models:
         description: "TED: id_instrumento (num_transf canonico); tedinho: id do instrumento (nc:/proc:/transf:); convenio e termo de fomento: nr_convenio."
         tests:
           - not_null
+      - name: nc_referencia
+        description: >
+          So para tedinho: a menor NC (ordem de texto) do instrumento em
+          tedinhos_mir. Nao muda quando o nr_instrumento do tedinho muda; serve
+          para o consumidor religar o instrumento. Nulo para os demais tipos.
       - name: tp_identificador
         description: "'ug' para TED/tedinho, 'cnpj' para convenio/termo de fomento; nulo quando o identificador nao foi encontrado."
         tests:
           - accepted_values:
               values: ['cnpj', 'ug']
       - name: co_identificador
-        description: "Codigo da UG (6 digitos) ou CNPJ (14 digitos), so digitos. Nulo sem identificador; ver coleta_cobertura_identificador."
+        description: >
+          Codigo da UG (6 digitos) ou CNPJ (14 digitos), so digitos. Nulo sem
+          identificador; ver coleta_cobertura_identificador. TED, em ordem: UG do
+          plano no portal (so com 6 digitos e fora do MIR), UG que recebeu o
+          credito, UG unica do empenho. Tedinho: UG favorecida das notas de
+          credito. UG do MIR nunca entra.
       - name: no_parceiro
       - name: ds_objeto
       - name: vl_firmado
@@ -43,8 +59,15 @@ models:
       - name: dt_assinatura
       - name: ds_situacao
       - name: nr_processo_sei
+        description: >
+          Processo SEI. TED: do termo de execucao mais recente. Tedinho: o
+          processo da pagina do gov.br; nunca um numero de NC.
       - name: qt_aditivos
       - name: dt_ingest
+        description: >
+          TED e tedinho: dt_ingest da fonte (ted_resumo_orcamentario). Convenio e
+          termo de fomento: momento do build do dbt, porque os resumos do SICONV
+          nao expoem a ingestao.
 
   - name: coleta_cobertura_identificador
     description: >
