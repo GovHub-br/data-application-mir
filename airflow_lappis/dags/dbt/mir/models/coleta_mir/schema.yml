@@ -83,3 +83,42 @@ models:
       - name: no_municipio
       - name: dt_inicio
       - name: dt_fim
+
+  - name: coleta_lista_ppa
+    description: >
+      Lista em cascata do PPA do MIR (revisao mais recente) para o Bloco 3.1:
+      programa > objetivo especifico > indicador > meta; entrega pendurada no
+      objetivo especifico; medida institucional no programa.
+    columns:
+      - name: nivel
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['programa', 'objetivo_especifico', 'indicador', 'meta', 'entrega', 'medida_institucional']
+      - name: codigo
+        tests:
+          - not_null
+      - name: codigo_pai
+      - name: titulo
+      - name: ano_ppa
+
+  - name: coleta_lista_agenda
+    description: "Agendas transversais e ODS (Blocos 3.1 e 3.2), uma linha por chave_agenda."
+    columns:
+      - name: codigo
+        tests:
+          - unique
+          - not_null
+      - name: nome
+      - name: grupo
+      - name: nome_mae
+
+  - name: coleta_lista_pei
+    description: "Planejamento Estrategico Institucional (Bloco 3.3); espelho do seed pei_mir."
+    columns:
+      - name: nivel
+      - name: codigo
+        tests:
+          - not_null
+      - name: codigo_pai
+      - name: titulo
