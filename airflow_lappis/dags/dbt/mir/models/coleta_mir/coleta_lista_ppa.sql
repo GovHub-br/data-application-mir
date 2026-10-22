@@ -3,8 +3,7 @@
 -- Lista em cascata do PPA para o Bloco 3.1 dos formularios do Coleta MIR:
 -- programa -> objetivo especifico -> indicador -> meta; entregas penduradas no
 -- objetivo especifico e medidas institucionais no programa. So a revisao mais
--- recente do PPA. Codigo da meta e sintetico (indicador + ordem), porque a
--- fonte nao traz codigo proprio para a meta.
+-- recente do PPA. A meta nao tem codigo proprio na fonte (ver CTE metas).
 with
     revisao as (select max(ano_ppa) as ano_ppa from {{ ref("programa_filtrado_mir") }}),
 
@@ -41,14 +40,14 @@ with
         inner join revisao as r on r.ano_ppa = i.ano_ppa
     ),
 
+    -- A meta nao tem codigo na fonte: codigo = indicador + hash do texto da meta.
+    -- Estavel enquanto o texto nao muda e independente das demais metas.
     metas as (
         select
             'meta' as nivel,
             m.indicador::text
             || '-'
-            || row_number() over (
-                partition by m.indicador order by m.meta_do_objetivo_especifico
-            )::text as codigo,
+            || left(md5(m.meta_do_objetivo_especifico::text), 10) as codigo,
             m.indicador::text as codigo_pai,
             m.meta_do_objetivo_especifico::text as titulo,
             m.ano_ppa
