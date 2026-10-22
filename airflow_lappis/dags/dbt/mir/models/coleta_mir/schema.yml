@@ -46,6 +46,20 @@ models:
       - name: qt_aditivos
       - name: dt_ingest
 
+  - name: coleta_cobertura_identificador
+    description: >
+      Quantos instrumentos do contrato tem identificador do parceiro (UG/CNPJ),
+      por tipo. Instrumento sem identificador nao pode ser acessado por gestor
+      no Coleta MIR ate o MIR atribuir um manualmente.
+    columns:
+      - name: tp_instrumento
+        tests:
+          - unique
+          - not_null
+      - name: qt_total
+      - name: qt_sem_identificador
+      - name: pc_cobertura
+
   - name: coleta_instrumento_meta
     description: >
       Metas e etapas do plano de trabalho por instrumento, para a lista do item
