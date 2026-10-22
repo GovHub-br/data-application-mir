@@ -426,3 +426,81 @@ def test_get_planos_acao_portal_status_nao_ok(cliente_portal: ClienteTedPortal) 
         result = cliente_portal.get_planos_acao_by_unidade_descentralizadora("308823")
 
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# get_por_ids
+# ---------------------------------------------------------------------------
+def test_get_por_ids_lista_vazia_nao_chama_api(cliente_ted: ClienteTed) -> None:
+    with patch.object(cliente_ted, "request") as mock_request:
+        result = cliente_ted.get_por_ids("plano_acao_meta", "id_plano_acao", [], "id_meta")
+
+    assert result == []
+    mock_request.assert_not_called()
+
+
+def test_get_por_ids_um_lote_uma_pagina(cliente_ted: ClienteTed) -> None:
+    expected = [{"id_meta": 1}, {"id_meta": 2}]
+    with patch.object(
+        cliente_ted, "request", return_value=(HTTPStatus.OK, expected)
+    ) as mock_request:
+        result = cliente_ted.get_por_ids(
+            "plano_acao_meta", "id_plano_acao", [64, 65], "id_meta"
+        )
+
+    assert result == expected
+    mock_request.assert_called_once_with(
+        http.HTTPMethod.GET,
+        "plano_acao_meta?id_plano_acao=in.(64,65)&order=id_meta&limit=1000&offset=0",
+        headers=ClienteTed.BASE_HEADER,
+    )
+
+
+def test_get_por_ids_pagina_ate_vir_pagina_incompleta(cliente_ted: ClienteTed) -> None:
+    pagina_cheia = [{"id": i} for i in range(ClienteTed.LIMITE_PAGINA)]
+    ultima = [{"id": "fim"}]
+    with patch.object(
+        cliente_ted,
+        "request",
+        side_effect=[(HTTPStatus.OK, pagina_cheia), (HTTPStatus.OK, ultima)],
+    ) as mock_request:
+        result = cliente_ted.get_por_ids("evento", "id_nota", [7], "id_nota,cd_evento")
+
+    assert len(result) == ClienteTed.LIMITE_PAGINA + 1
+    segunda = mock_request.call_args_list[1].args[1]
+    assert segunda == "evento?id_nota=in.(7)&order=id_nota,cd_evento&limit=1000&offset=1000"
+
+
+def test_get_por_ids_divide_em_lotes(cliente_ted: ClienteTed) -> None:
+    with patch.object(
+        cliente_ted, "request", return_value=(HTTPStatus.OK, [])
+    ) as mock_request:
+        cliente_ted.get_por_ids("trf", "id_programacao", [1, 2, 3], "id_programacao", 2)
+
+    paths = [c.args[1] for c in mock_request.call_args_list]
+    assert paths == [
+        "trf?id_programacao=in.(1,2)&order=id_programacao&limit=1000&offset=0",
+        "trf?id_programacao=in.(3)&order=id_programacao&limit=1000&offset=0",
+    ]
+
+
+def test_get_por_ids_falha_em_qualquer_pagina_retorna_none(
+    cliente_ted: ClienteTed,
+) -> None:
+    with patch.object(
+        cliente_ted,
+        "request",
+        side_effect=[(HTTPStatus.OK, []), (HTTPStatus.BAD_GATEWAY, None)],
+    ):
+        result = cliente_ted.get_por_ids("trf", "id_programacao", [1, 2], "id_programacao", 1)
+
+    assert result is None
+
+
+def test_get_por_ids_corpo_nao_lista_retorna_none(cliente_ted: ClienteTed) -> None:
+    with patch.object(
+        cliente_ted, "request", return_value=(HTTPStatus.OK, {"erro": "x"})
+    ):
+        result = cliente_ted.get_por_ids("trf", "id_programacao", [1], "id_programacao")
+
+    assert result is None
