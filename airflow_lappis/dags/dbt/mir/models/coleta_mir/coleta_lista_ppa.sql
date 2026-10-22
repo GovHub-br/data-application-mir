@@ -75,7 +75,7 @@ with
             'medida_institucional' as nivel,
             coalesce(
                 nullif(mi.medida_institucional_normativa::text, ''),
-                md5(mi.enunciado::text)
+                left(md5(mi.enunciado::text), 10)
             ) as codigo,
             mi.programa::text as codigo_pai,
             mi.enunciado::text as titulo,
