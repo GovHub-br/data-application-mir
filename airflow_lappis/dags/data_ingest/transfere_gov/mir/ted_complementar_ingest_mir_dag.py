@@ -40,4 +40,5 @@ def ted_complementar_mir_dag() -> None:
 
     chain(*[criar_task(endpoint) for endpoint in ENDPOINTS_TED])
 
+
 ted_complementar_mir_dag()

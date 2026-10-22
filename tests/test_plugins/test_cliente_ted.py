@@ -433,7 +433,9 @@ def test_get_planos_acao_portal_status_nao_ok(cliente_portal: ClienteTedPortal) 
 # ---------------------------------------------------------------------------
 def test_get_por_ids_lista_vazia_nao_chama_api(cliente_ted: ClienteTed) -> None:
     with patch.object(cliente_ted, "request") as mock_request:
-        result = cliente_ted.get_por_ids("plano_acao_meta", "id_plano_acao", [], "id_meta")
+        result = cliente_ted.get_por_ids(
+            "plano_acao_meta", "id_plano_acao", [], "id_meta"
+        )
 
     assert result == []
     mock_request.assert_not_called()
@@ -468,7 +470,9 @@ def test_get_por_ids_pagina_ate_vir_pagina_incompleta(cliente_ted: ClienteTed) -
 
     assert len(result) == ClienteTed.LIMITE_PAGINA + 1
     segunda = mock_request.call_args_list[1].args[1]
-    assert segunda == "evento?id_nota=in.(7)&order=id_nota,cd_evento&limit=1000&offset=1000"
+    assert segunda == (
+        "evento?id_nota=in.(7)&order=id_nota,cd_evento&limit=1000&offset=1000"
+    )
 
 
 def test_get_por_ids_divide_em_lotes(cliente_ted: ClienteTed) -> None:
@@ -492,7 +496,9 @@ def test_get_por_ids_falha_em_qualquer_pagina_retorna_none(
         "request",
         side_effect=[(HTTPStatus.OK, []), (HTTPStatus.BAD_GATEWAY, None)],
     ):
-        result = cliente_ted.get_por_ids("trf", "id_programacao", [1, 2], "id_programacao", 1)
+        result = cliente_ted.get_por_ids(
+            "trf", "id_programacao", [1, 2], "id_programacao", 1
+        )
 
     assert result is None
 
