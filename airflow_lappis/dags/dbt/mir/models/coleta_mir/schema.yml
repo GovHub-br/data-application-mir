@@ -183,7 +183,7 @@ models:
       - name: ano_ppa
 
   - name: coleta_lista_agenda
-    description: "Agendas transversais e ODS (Blocos 3.1 e 3.2), uma linha por chave_agenda."
+    description: "Agendas transversais e ODS (Blocos 3.1 e 3.2), uma linha por chave_agenda, inclusive as que sairam da revisao mais recente do PPA (in_vigente = false)."
     columns:
       - name: codigo
         tests:
@@ -192,6 +192,13 @@ models:
       - name: nome
       - name: grupo
       - name: nome_mae
+      - name: in_vigente
+        description: >
+          true quando a agenda aparece na revisao mais recente do PPA (maior
+          ano_ppa de programa_filtrado_mir, a mesma de coleta_lista_ppa). Agenda
+          que saiu do PPA fica com false, sem ser apagada.
+        tests:
+          - not_null
 
   - name: coleta_lista_pei
     description: "Planejamento Estrategico Institucional (Bloco 3.3); espelho do seed pei_mir."
