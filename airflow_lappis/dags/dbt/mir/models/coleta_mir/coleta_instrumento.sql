@@ -88,16 +88,33 @@ with
         having count(distinct n.favorecido_doc) = 1
     ),
 
+    -- UG unica do empenho (ted_resumo_orcamentario.ugs_responsaveis_codigos),
+    -- so quando qtd_ugs_responsaveis = 1, 6 digitos e fora do MIR.
+    ted_ug_empenho as (
+        select
+            r.id_instrumento::text as id_instrumento,
+            r.ugs_responsaveis_codigos::text as ug_empenho
+        from {{ ref("ted_resumo_orcamentario") }} as r
+        where
+            r.tipo_instrumento = 'TED'
+            and r.qtd_ugs_responsaveis = 1
+            and r.ugs_responsaveis_codigos::text ~ '^\d{6}$'
+            and r.ugs_responsaveis_codigos::text not in (select ug_codigo from mir)
+    ),
+
     teds as (
         select
             case
                 r.tipo_instrumento when 'TED' then 'ted' else 'tedinho'
             end as tp_instrumento,
             r.id_instrumento::text as nr_instrumento,
-            -- UG do parceiro. TED: UG do plano no portal; sem ela, a UG que
-            -- recebeu o credito (ted_ug_credito). Tedinho: a UG favorecida das
-            -- notas de credito (tedinho_ug_credito). UG do MIR nunca entra.
-            coalesce(p.ug_plano, uc.ug_credito, tu.ug_credito) as co_identificador,
+            -- UG do parceiro. TED, em ordem: UG do plano no portal; UG que
+            -- recebeu o credito (ted_ug_credito); UG unica do empenho
+            -- (ted_ug_empenho). Tedinho: a UG favorecida das notas de credito
+            -- (tedinho_ug_credito). UG do MIR nunca entra.
+            coalesce(
+                p.ug_plano, uc.ug_credito, ue.ug_empenho, tu.ug_credito
+            ) as co_identificador,
             coalesce(
                 p.unidade_descentralizada,
                 r.sigla_unidade_descentralizada::text,
@@ -131,6 +148,7 @@ with
             ted_ug_credito as uc
             on r.tipo_instrumento = 'TED'
             and uc.id_instrumento = r.id_instrumento::text
+        left join ted_ug_empenho as ue on ue.id_instrumento = r.id_instrumento::text
         left join
             tedinho_ug_credito as tu
             on r.tipo_instrumento = 'Tedinho'
