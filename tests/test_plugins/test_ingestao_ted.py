@@ -6,23 +6,21 @@ from ingestao_ted import ENDPOINTS_TED, EndpointTed, ingerir_endpoint
 
 DT = "2026-10-22T03:00:00"
 
-COM_CHAVE = EndpointTed(
+META = EndpointTed(
     tabela_api="plano_acao_meta",
     coluna_filtro="id_plano_acao",
     tabela_ids="planos_acao",
     coluna_ids="id_plano_acao",
     tabela_destino="planos_acao_meta",
     ordem="id_meta",
-    chave=("id_meta",),
 )
-SEM_CHAVE = EndpointTed(
+EVENTO = EndpointTed(
     tabela_api="evento",
     coluna_filtro="id_nota",
     tabela_ids="notas_de_credito",
     coluna_ids="id_nota",
     tabela_destino="eventos_nota_credito",
     ordem="id_nota,cd_evento",
-    chave=None,
 )
 
 
@@ -55,7 +53,7 @@ def test_ids_lidos_do_postgres_como_inteiros_distintos() -> None:
     api = Mock()
     api.get_por_ids.return_value = []
 
-    ingerir_endpoint(api, db, COM_CHAVE, DT)
+    ingerir_endpoint(api, db, META, DT)
 
     db.execute_query.assert_called_once_with(
         "select distinct id_plano_acao from transfere_gov.planos_acao"
@@ -65,30 +63,44 @@ def test_ids_lidos_do_postgres_como_inteiros_distintos() -> None:
     )
 
 
-def test_com_chave_faz_upsert_com_dt_ingest() -> None:
+@pytest.mark.parametrize("endpoint", ENDPOINTS_TED, ids=lambda e: e.tabela_api)
+def test_todo_endpoint_substitui_a_tabela_inteira(endpoint: EndpointTed) -> None:
+    # get_por_ids devolve o retrato completo (ou None): linhas removidas na fonte
+    # tambem saem do destino, inclusive nos endpoints com chave natural.
     db = _db([64])
     api = Mock()
-    api.get_por_ids.return_value = [{"id_meta": 1}]
+    api.get_por_ids.return_value = [{"id": 1}]
 
-    gravadas = ingerir_endpoint(api, db, COM_CHAVE, DT)
+    gravadas = ingerir_endpoint(api, db, endpoint, DT)
 
     assert gravadas == 1
-    db.insert_data.assert_called_once_with(
-        [{"id_meta": 1, "dt_ingest": DT}],
-        "planos_acao_meta",
-        conflict_fields=["id_meta"],
-        primary_key=["id_meta"],
+    db.replace_rows.assert_called_once_with(
+        [{"id": 1, "dt_ingest": DT}],
+        endpoint.tabela_destino,
+        delete_where="true",
+        delete_params=(),
         schema="transfere_gov",
     )
-    db.replace_rows.assert_not_called()
+    db.insert_data.assert_not_called()
 
 
-def test_sem_chave_substitui_a_tabela_inteira() -> None:
+def test_endpoint_nao_tem_mais_campo_chave() -> None:
+    assert not hasattr(META, "chave")
+
+
+def test_ordem_de_programa_beneficiario_inclui_nome() -> None:
+    (beneficiario,) = [
+        e for e in ENDPOINTS_TED if e.tabela_api == "programa_beneficiario"
+    ]
+    assert "tx_nome_beneficiario" in beneficiario.ordem.split(",")
+
+
+def test_endpoint_sem_chave_natural_substitui_a_tabela_inteira() -> None:
     db = _db([7])
     api = Mock()
     api.get_por_ids.return_value = [{"id_nota": 7, "cd_evento": "x"}]
 
-    ingerir_endpoint(api, db, SEM_CHAVE, DT)
+    ingerir_endpoint(api, db, EVENTO, DT)
 
     db.replace_rows.assert_called_once_with(
         [{"id_nota": 7, "cd_evento": "x", "dt_ingest": DT}],
@@ -106,7 +118,7 @@ def test_falha_da_api_nao_grava_e_levanta_erro() -> None:
     api.get_por_ids.return_value = None
 
     with pytest.raises(RuntimeError, match="evento"):
-        ingerir_endpoint(api, db, SEM_CHAVE, DT)
+        ingerir_endpoint(api, db, EVENTO, DT)
 
     db.insert_data.assert_not_called()
     db.replace_rows.assert_not_called()
@@ -116,7 +128,7 @@ def test_sem_ids_nao_chama_api() -> None:
     db = _db([])
     api = Mock()
 
-    assert ingerir_endpoint(api, db, COM_CHAVE, DT) == 0
+    assert ingerir_endpoint(api, db, META, DT) == 0
     api.get_por_ids.assert_not_called()
 
 
@@ -125,5 +137,5 @@ def test_api_sem_linhas_nao_apaga_tabela() -> None:
     api = Mock()
     api.get_por_ids.return_value = []
 
-    assert ingerir_endpoint(api, db, SEM_CHAVE, DT) == 0
+    assert ingerir_endpoint(api, db, EVENTO, DT) == 0
     db.replace_rows.assert_not_called()

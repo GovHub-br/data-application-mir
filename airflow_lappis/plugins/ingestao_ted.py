@@ -11,8 +11,12 @@ SCHEMA = "transfere_gov"
 class EndpointTed:
     """Um endpoint da API de TED filtrado por ids ja gravados no Postgres.
 
-    chave None: a fonte nao tem chave; a carga substitui a tabela inteira.
     ordem: ordem total das linhas, exigida pela paginacao da API.
+
+    Toda carga substitui a tabela inteira: get_por_ids devolve o retrato completo
+    (ou None), e um upsert pela chave natural manteria para sempre as linhas
+    removidas na fonte. Por isso nao ha campo de chave aqui; a chave natural de
+    cada tabela fica documentada (e testada) no bronze do dbt.
     """
 
     tabela_api: str
@@ -21,7 +25,6 @@ class EndpointTed:
     coluna_ids: str
     tabela_destino: str
     ordem: str
-    chave: tuple[str, ...] | None
 
 
 # plano_acao_etapa depois de plano_acao_meta: os ids dela saem da tabela da meta.
@@ -33,7 +36,6 @@ ENDPOINTS_TED: tuple[EndpointTed, ...] = (
         "id_plano_acao",
         "planos_acao_meta",
         "id_meta",
-        ("id_meta",),
     ),
     EndpointTed(
         "plano_acao_etapa",
@@ -42,7 +44,6 @@ ENDPOINTS_TED: tuple[EndpointTed, ...] = (
         "id_meta",
         "planos_acao_etapa",
         "id_etapa",
-        ("id_etapa",),
     ),
     EndpointTed(
         "termo_execucao",
@@ -51,7 +52,6 @@ ENDPOINTS_TED: tuple[EndpointTed, ...] = (
         "id_plano_acao",
         "termos_execucao",
         "id_termo",
-        ("id_termo",),
     ),
     EndpointTed(
         "plano_acao_analise",
@@ -60,7 +60,6 @@ ENDPOINTS_TED: tuple[EndpointTed, ...] = (
         "id_plano_acao",
         "planos_acao_analise",
         "id_analise",
-        ("id_analise",),
     ),
     EndpointTed(
         "plano_acao_parecer",
@@ -69,7 +68,6 @@ ENDPOINTS_TED: tuple[EndpointTed, ...] = (
         "id_plano_acao",
         "planos_acao_parecer",
         "id_parecer",
-        ("id_parecer",),
     ),
     EndpointTed(
         "evento",
@@ -79,7 +77,6 @@ ENDPOINTS_TED: tuple[EndpointTed, ...] = (
         "eventos_nota_credito",
         "id_nota,cd_evento,cd_ptres_evento,cd_fonte_recurso_evento,"
         "cd_plano_interno_evento,codigo_natureza,cd_ug_responsavel_evento,vl_evento",
-        None,
     ),
     EndpointTed(
         "trf",
@@ -89,7 +86,6 @@ ENDPOINTS_TED: tuple[EndpointTed, ...] = (
         "trf_programacao_financeira",
         "id_programacao,cd_vinculacao_trf,cd_fonte_recurso_trf,"
         "cd_categoria_gasto_trf,cd_situacao_contabil_trf,vl_valor_trf",
-        None,
     ),
     EndpointTed(
         "programa_acao_orcamentaria",
@@ -98,7 +94,6 @@ ENDPOINTS_TED: tuple[EndpointTed, ...] = (
         "id_programa",
         "programas_acao_orcamentaria",
         "id_programa,tx_codigo_acao_orcamentaria",
-        None,
     ),
     EndpointTed(
         "programa_beneficiario",
@@ -106,8 +101,7 @@ ENDPOINTS_TED: tuple[EndpointTed, ...] = (
         "programas",
         "id_programa",
         "programas_beneficiario",
-        "id_programa,tx_codigo_siorg,vl_valor_beneficiario",
-        None,
+        "id_programa,tx_codigo_siorg,vl_valor_beneficiario,tx_nome_beneficiario",
     ),
 )
 
@@ -142,22 +136,13 @@ def ingerir_endpoint(
     for linha in linhas:
         linha["dt_ingest"] = dt_ingest
 
-    if endpoint.chave:
-        db.insert_data(
-            linhas,
-            endpoint.tabela_destino,
-            conflict_fields=list(endpoint.chave),
-            primary_key=list(endpoint.chave),
-            schema=SCHEMA,
-        )
-    else:
-        db.replace_rows(
-            linhas,
-            endpoint.tabela_destino,
-            delete_where="true",
-            delete_params=(),
-            schema=SCHEMA,
-        )
+    db.replace_rows(
+        linhas,
+        endpoint.tabela_destino,
+        delete_where="true",
+        delete_params=(),
+        schema=SCHEMA,
+    )
 
     logging.info(f"{len(linhas)} linhas gravadas em {SCHEMA}.{endpoint.tabela_destino}")
     return len(linhas)
