@@ -2,6 +2,9 @@
 
 -- Metas (e etapas, so TED) do plano de trabalho de cada instrumento do
 -- contrato do Coleta MIR. Linha da meta: nr_etapa nulo.
+-- id_origem e a chave estavel da linha na fonte (prefixo + id da meta/etapa).
+-- nr_meta e nr_etapa sao a numeracao da fonte e podem se repetir, entao quem
+-- consome (ex.: respostas do Coleta) deve apontar para id_origem.
 with
     ted_plano as (
         select
@@ -14,6 +17,7 @@ with
     ted_metas as (
         select
             tp.chave_instrumento,
+            'ted_meta:' || m.id_meta::text as id_origem,
             m.nr_meta,
             cast(null as integer) as nr_etapa,
             m.no_meta,
@@ -31,16 +35,9 @@ with
     ted_etapas as (
         select
             tp.chave_instrumento,
+            'ted_etapa:' || e.id_etapa::text as id_origem,
             m.nr_meta,
-            -- nr_etapa da API se repete dentro da mesma meta (etapas distintas
-            -- com o mesmo numero); renumera em sequencia por meta, na ordem
-            -- (nr_etapa original, id_etapa), para manter o grao unico.
-            cast(
-                row_number() over (
-                    partition by tp.chave_instrumento, m.nr_meta
-                    order by e.nr_etapa, e.id_etapa
-                ) as integer
-            ) as nr_etapa,
+            e.nr_etapa,
             e.no_etapa as no_meta,
             e.ds_etapa as ds_meta,
             e.qt_etapa as qt_meta,
@@ -57,6 +54,7 @@ with
     convenio_metas as (
         select
             ci.chave as chave_instrumento,
+            'siconv_meta:' || mc.id_meta::text as id_origem,
             mc.nr_meta::integer as nr_meta,
             cast(null as integer) as nr_etapa,
             ('Meta ' || mc.nr_meta::text) as no_meta,

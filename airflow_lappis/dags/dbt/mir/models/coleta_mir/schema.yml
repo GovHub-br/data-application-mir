@@ -52,7 +52,10 @@ models:
       5.2 dos formularios do Coleta MIR. TED: plano_acao_meta/plano_acao_etapa
       da API de TED; convenio e termo de fomento: meta_crono_fisico do SICONV
       (sem etapas). Linha da meta tem nr_etapa nulo. O municipio vem por nome
-      (no_municipio), como no SICONV; o Coleta casa com o IBGE.
+      (no_municipio), como no SICONV; o Coleta casa com o IBGE. Grao:
+      (chave_instrumento, id_origem). id_origem e a chave estavel da linha na
+      fonte e deve ser usada por quem consome; nr_meta e nr_etapa sao a
+      numeracao da fonte e podem se repetir.
     columns:
       - name: chave_instrumento
         tests:
@@ -60,10 +63,18 @@ models:
           - relationships:
               to: ref('coleta_instrumento')
               field: chave
+      - name: id_origem
+        description: >
+          Chave estavel da linha na fonte: ted_meta:<id_meta>,
+          ted_etapa:<id_etapa> ou siconv_meta:<id_meta>.
+        tests:
+          - not_null
+          - unique
       - name: nr_meta
         tests:
           - not_null
       - name: nr_etapa
+        description: Numero da etapa na fonte; pode se repetir dentro da meta.
       - name: no_meta
       - name: ds_meta
       - name: qt_meta
