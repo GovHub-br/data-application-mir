@@ -59,28 +59,45 @@ with
             tp.instrumento
     ),
 
+    -- MIR: UGs do proprio ministerio (seed ugs_mir). Nunca sao parceiro.
+    mir as (select ug_codigo::text as ug_codigo from {{ ref("ugs_mir") }}),
+
+    -- UG que recebeu o credito do TED (ted_credito_instrumento), so quando as
+    -- notas de credito do TED apontam uma UG unica fora do MIR. A chave e o
+    -- num_transf sem zeros a esquerda, igual ao id_instrumento do TED.
+    ted_ug_credito as (
+        select ltrim(num_transf, '0') as id_instrumento, min(ug) as ug_credito
+        from {{ ref("ted_credito_instrumento") }}
+        where ug ~ '^\d{6}$' and ug not in (select ug_codigo from mir)
+        group by ltrim(num_transf, '0')
+        having count(distinct ug) = 1
+    ),
+
+    -- UG favorecida das notas de credito do tedinho (tedinhos_mir x
+    -- nc_tesouro_mir), so quando e uma unica UG fora do MIR. Agregado a uma
+    -- linha por instrumento_key (= id_instrumento do tedinho) antes do join.
+    tedinho_ug_credito as (
+        select tm.instrumento_key as id_instrumento, min(n.favorecido_doc) as ug_credito
+        from {{ ref("tedinhos_mir") }} as tm
+        join {{ ref("nc_tesouro_mir") }} as n on n.nc = tm.nc
+        where
+            tm.tedinho_provavel
+            and n.favorecido_doc ~ '^\d{6}$'
+            and n.favorecido_doc not in (select ug_codigo from mir)
+        group by tm.instrumento_key
+        having count(distinct n.favorecido_doc) = 1
+    ),
+
     teds as (
         select
             case
                 r.tipo_instrumento when 'TED' then 'ted' else 'tedinho'
             end as tp_instrumento,
             r.id_instrumento::text as nr_instrumento,
-            -- UG da unidade descentralizada: portal do TED; sem plano no portal,
-            -- a UG que empenhou, quando e uma so (num TED quem empenha e quem
-            -- recebeu o credito).
-            coalesce(
-                p.ug_plano,
-                case
-                    when r.qtd_ugs_responsaveis = 1
-                    then
-                        nullif(
-                            regexp_replace(
-                                r.ugs_responsaveis_codigos::text, '\D', '', 'g'
-                            ),
-                            ''
-                        )
-                end
-            ) as co_identificador,
+            -- UG do parceiro. TED: UG do plano no portal; sem ela, a UG que
+            -- recebeu o credito (ted_ug_credito). Tedinho: a UG favorecida das
+            -- notas de credito (tedinho_ug_credito). UG do MIR nunca entra.
+            coalesce(p.ug_plano, uc.ug_credito, tu.ug_credito) as co_identificador,
             coalesce(
                 p.unidade_descentralizada,
                 r.sigla_unidade_descentralizada::text,
@@ -110,6 +127,17 @@ with
             tedinho_info as t
             on r.tipo_instrumento = 'Tedinho'
             and t.nc = regexp_replace(r.id_instrumento::text, '^nc:', '')
+        left join
+            ted_ug_credito as uc
+            on r.tipo_instrumento = 'TED'
+            and uc.id_instrumento = r.id_instrumento::text
+        left join
+            tedinho_ug_credito as tu
+            on r.tipo_instrumento = 'Tedinho'
+            and tu.id_instrumento = r.id_instrumento::text
+        -- Tedinho so entra no contrato quando foi identificado nas paginas de
+        -- transparencia do gov.br (casou com tedinho_info).
+        where r.tipo_instrumento = 'TED' or t.nc is not null
     ),
 
     proponente as (

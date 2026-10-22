@@ -7,8 +7,9 @@ models:
       tedinho, convenio, termo de fomento), com os campos preenchidos
       automaticamente nos formularios (Bloco 1) e o identificador do parceiro
       usado no controle de acesso (CNPJ para convenio/termo de fomento, UG para
-      TED). Consumido pela sincronizacao diaria do Coleta MIR: mudar nome ou
-      tipo de coluna quebra o consumidor.
+      TED). Tedinhos so entram quando foram identificados nas paginas de
+      transparencia do gov.br. Consumido pela sincronizacao diaria do Coleta
+      MIR: mudar nome ou tipo de coluna quebra o consumidor.
     columns:
       - name: chave
         description: "<tp_instrumento>:<nr_instrumento>. Chave estavel do contrato."
@@ -21,7 +22,7 @@ models:
           - accepted_values:
               values: ['ted', 'tedinho', 'convenio', 'termo_fomento']
       - name: nr_instrumento
-        description: "TED: num_transf; tedinho: processo/NC; convenio e termo de fomento: nr_convenio."
+        description: "TED: id_instrumento (num_transf canonico); tedinho: id do instrumento (nc:/proc:/transf:); convenio e termo de fomento: nr_convenio."
         tests:
           - not_null
       - name: tp_identificador
