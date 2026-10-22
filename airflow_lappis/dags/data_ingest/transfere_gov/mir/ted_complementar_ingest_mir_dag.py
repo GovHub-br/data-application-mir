@@ -1,6 +1,5 @@
 import logging
 from airflow.decorators import dag, task
-from airflow.models.baseoperator import chain
 from datetime import datetime, timedelta
 from schedule_loader import get_dynamic_schedule
 from postgres_helpers import get_postgres_conn
@@ -24,8 +23,18 @@ def ted_complementar_mir_dag() -> None:
     """Endpoints da API de TED alem de programa, plano_acao, nota_credito e
     programacao_financeira (que tem DAGs proprias): metas, etapas, termo de
     execucao, analises, pareceres, eventos das NCs, TRF das PFs, acoes
-    orcamentarias e beneficiarios dos programas. Depende das DAGs de planos de
-    acao, notas de credito, programacao financeira e programas."""
+    orcamentarias e beneficiarios dos programas.
+
+    Agendamento (configurar na Variable dynamic_schedules): esta DAG le os ids
+    gravados pelas DAGs de planos de acao, notas de credito, programacao
+    financeira e programas, entao deve rodar DEPOIS delas. A sincronizacao do
+    Coleta MIR (schema coleta_mir) deve rodar depois do mir_cosmos_dag, que
+    constroi o dbt a partir destas tabelas.
+
+    Tasks: so plano_acao_meta >> plano_acao_etapa sao encadeadas (os ids da etapa
+    saem da tabela da meta). As demais sao independentes, para que a falha de um
+    endpoint nao bloqueie os outros.
+    """
 
     def criar_task(endpoint: EndpointTed):
         @task(task_id=f"ingerir_{endpoint.tabela_api}")
@@ -38,7 +47,8 @@ def ted_complementar_mir_dag() -> None:
 
         return ingerir()
 
-    chain(*[criar_task(endpoint) for endpoint in ENDPOINTS_TED])
+    tasks = {endpoint.tabela_api: criar_task(endpoint) for endpoint in ENDPOINTS_TED}
+    tasks["plano_acao_meta"] >> tasks["plano_acao_etapa"]
 
 
 ted_complementar_mir_dag()
