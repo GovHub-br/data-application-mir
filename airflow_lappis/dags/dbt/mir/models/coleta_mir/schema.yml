@@ -23,9 +23,10 @@ models:
         description: >
           <tp_instrumento>:<nr_instrumento>. Chave do contrato, unica. Estavel
           para TED, convenio e termo de fomento. Para tedinho, nr_instrumento vem
-          de tedinhos_mir.instrumento_key ('proc:', 'transf:' ou 'nc:') e pode
-          mudar quando uma NC posterior traz o processo; use nc_referencia para
-          religar o instrumento.
+          de tedinhos_mir.instrumento_key ('proc:', 'transf:' ou 'nc:'),
+          extraida do texto de cada NC; um mesmo processo pode aparecer em mais
+          de uma chave, e a chave muda se a extracao do processo no texto da NC
+          mudar. nc_referencia e a referencia estavel para religar.
         tests:
           - unique
           - not_null
@@ -46,6 +47,8 @@ models:
           So para tedinho: a menor NC (ordem de texto) do instrumento em
           tedinhos_mir. Nao muda quando o nr_instrumento do tedinho muda; serve
           para o consumidor religar o instrumento. Nulo para os demais tipos.
+        tests:
+          - unique
       - name: tp_identificador
         data_type: text
         description: "'ug' para TED/tedinho, 'cnpj' para convenio/termo de fomento; nulo quando o identificador nao foi encontrado."
