@@ -52,6 +52,12 @@ models:
     coleta_mir:
       +materialized: table
       +schema: coleta_mir
+      # Leitor do Coleta MIR (usuario somente leitura da sincronizacao diaria).
+      # Passe o papel em --vars '{coleta_mir_leitor: <papel>}' (ou em vars:)
+      # para dar select nas tabelas do schema; sem a var, nenhum grant e feito.
+      # O papel tambem precisa de USAGE no schema coleta_mir (fora do dbt).
+      +grants:
+        select: "{{ [var('coleta_mir_leitor')] if var('coleta_mir_leitor', none) else [] }}"
 
 
 
