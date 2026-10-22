@@ -9,6 +9,8 @@ class ClienteTed(ClienteBase):
     BASE_HEADER = {"accept": "application/json"}
     # A API (PostgREST) corta a resposta em 1000 linhas.
     LIMITE_PAGINA = 1000
+    # Guarda contra paginacao infinita em get_por_ids (por lote de ids).
+    MAX_PAGINAS_POR_LOTE = 1000
 
     def __init__(self) -> None:
         super().__init__(base_url=ClienteTed.BASE_URL)
@@ -155,7 +157,15 @@ class ClienteTed(ClienteBase):
         for inicio in range(0, len(ids), tamanho_lote):
             lote = ",".join(str(id_) for id_ in ids[inicio : inicio + tamanho_lote])
             offset = 0
+            paginas = 0
             while True:
+                if paginas >= self.MAX_PAGINAS_POR_LOTE:
+                    logging.warning(
+                        f"Paginacao de {tabela} excedeu {self.MAX_PAGINAS_POR_LOTE} "
+                        "paginas num lote; abortando"
+                    )
+                    return None
+                paginas += 1
                 endpoint = (
                     f"{tabela}?{coluna}=in.({lote})&order={ordem}"
                     f"&limit={self.LIMITE_PAGINA}&offset={offset}"

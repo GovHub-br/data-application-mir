@@ -504,6 +504,20 @@ def test_get_por_ids_max_rows_da_api_menor_que_o_limite_nao_trunca(
     assert offsets == ["0", "500", "1000", "1001"]
 
 
+def test_get_por_ids_guarda_contra_loop_infinito(cliente_ted: ClienteTed) -> None:
+    # API que devolve sempre uma pagina nao vazia: a paginacao nunca terminaria.
+    with (
+        patch.object(ClienteTed, "MAX_PAGINAS_POR_LOTE", 3),
+        patch.object(
+            cliente_ted, "request", return_value=(HTTPStatus.OK, [{"id": 1}])
+        ) as mock_request,
+    ):
+        result = cliente_ted.get_por_ids("evento", "id_nota", [7], "id_nota")
+
+    assert result is None
+    assert mock_request.call_count == 3
+
+
 def test_get_por_ids_divide_em_lotes(cliente_ted: ClienteTed) -> None:
     with patch.object(
         cliente_ted, "request", return_value=(HTTPStatus.OK, [])
