@@ -49,6 +49,9 @@ models:
     mir_silver:
       +materialized: table
       +schema: mir_silver
+    coleta_mir:
+      +materialized: table
+      +schema: coleta_mir
 
 
 

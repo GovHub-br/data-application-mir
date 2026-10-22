@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: coleta_instrumento
+    description: >
+      Contrato de dados do Coleta MIR: um registro por instrumento do MIR (TED,
+      tedinho, convenio, termo de fomento), com os campos preenchidos
+      automaticamente nos formularios (Bloco 1) e o identificador do parceiro
+      usado no controle de acesso (CNPJ para convenio/termo de fomento, UG para
+      TED). Consumido pela sincronizacao diaria do Coleta MIR: mudar nome ou
+      tipo de coluna quebra o consumidor.
+    columns:
+      - name: chave
+        description: "<tp_instrumento>:<nr_instrumento>. Chave estavel do contrato."
+        tests:
+          - unique
+          - not_null
+      - name: tp_instrumento
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ted', 'tedinho', 'convenio', 'termo_fomento']
+      - name: nr_instrumento
+        description: "TED: num_transf; tedinho: processo/NC; convenio e termo de fomento: nr_convenio."
+        tests:
+          - not_null
+      - name: tp_identificador
+        description: "'ug' para TED/tedinho, 'cnpj' para convenio/termo de fomento; nulo quando o identificador nao foi encontrado."
+        tests:
+          - accepted_values:
+              values: ['cnpj', 'ug']
+      - name: co_identificador
+        description: "Codigo da UG (6 digitos) ou CNPJ (14 digitos), so digitos. Nulo sem identificador; ver coleta_cobertura_identificador."
+      - name: no_parceiro
+      - name: ds_objeto
+      - name: vl_firmado
+      - name: vl_empenhado
+      - name: vl_liquidado
+      - name: vl_pago
+      - name: dt_inicio_vigencia
+      - name: dt_fim_vigencia
+      - name: dt_assinatura
+      - name: ds_situacao
+      - name: nr_processo_sei
+      - name: qt_aditivos
+      - name: dt_ingest
