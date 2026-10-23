@@ -60,6 +60,14 @@ select
     pe.despesas_pagas_rap,
     pe.restos_a_pagar,
     pe.despesas_liquidada,
+    -- Mesmas metricas de escopo explicito de ted_resumo_orcamentario (issue
+    -- #509; ver o comentario la): liquidado_exercicio x pago_exercicio e o par
+    -- comparavel, e pago_rap fica a parte.
+    pe.despesas_liquidada as liquidado_exercicio,
+    pe.despesas_pagas_exercicio as pago_exercicio,
+    pe.despesas_pagas_rap as pago_rap,
+    round(coalesce(pe.despesas_pagas_exercicio, 0), 2)
+        > round(coalesce(pe.despesas_liquidada, 0), 2) as pago_excede_liquidado,
     pe.dt_ingest
 from por_exercicio pe
 left join plano_por_transf ppt using (num_transf_canon)

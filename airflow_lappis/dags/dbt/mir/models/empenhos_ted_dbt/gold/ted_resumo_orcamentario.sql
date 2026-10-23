@@ -265,6 +265,21 @@ with
             jp.despesas_pagas_rap,
             jp.restos_a_pagar,
             jp.despesas_liquidada,
+            -- Metricas de execucao com escopo explicito (issue #509, hipotese 3
+            -- do epico #506). despesas_liquidadas e despesas_pagas sao do
+            -- exercicio da NE; restos_a_pagar_pagos e o pagamento, num exercicio,
+            -- de NEs de exercicios anteriores, cuja liquidacao nao esta no
+            -- liquidado (a fonte nao traz RAP liquidado). Por isso pago + RAP nao
+            -- se compara com o liquidado, e o painel mostrava pago > liquidado. O
+            -- par comparavel e liquidado_exercicio x pago_exercicio, o mesmo
+            -- escopo da consulta oficial "Execucao TED por UG" (execucao_ted_ug)
+            -- e do levantamento da CGPO, onde pago <= liquidado. pago_rap fica a
+            -- parte, para ser exibido separado se for o caso.
+            jp.despesas_liquidada as liquidado_exercicio,
+            jp.despesas_pagas_exercicio as pago_exercicio,
+            jp.despesas_pagas_rap as pago_rap,
+            round(coalesce(jp.despesas_pagas_exercicio, 0), 2)
+                > round(coalesce(jp.despesas_liquidada, 0), 2) as pago_excede_liquidado,
             jp.financeiro_recebido,
             jp.financeiro_devolvido,
             jp.financeiro_cancelado,
@@ -358,6 +373,10 @@ with
             cast(null as numeric) as despesas_pagas_rap,
             cast(null as numeric) as restos_a_pagar,
             cast(null as numeric) as despesas_liquidada,
+            cast(null as numeric) as liquidado_exercicio,
+            cast(null as numeric) as pago_exercicio,
+            cast(null as numeric) as pago_rap,
+            cast(null as boolean) as pago_excede_liquidado,
             cast(null as numeric) as financeiro_recebido,
             cast(null as numeric) as financeiro_devolvido,
             cast(null as numeric) as financeiro_cancelado,
