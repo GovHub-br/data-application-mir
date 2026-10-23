@@ -18,7 +18,7 @@ def _mock_connect(columns: list[str], rows: list[tuple]) -> MagicMock:
     return conn
 
 
-def test_fetch_table_retorna_lista_de_dicts_com_nome_das_colunas() -> None:
+def test_fetch_table_sem_where_clause_retorna_lista_de_dicts_com_nome_das_colunas() -> None:
     conn = _mock_connect(["id_plano_acao", "empenhado"], [(1, 10.5), (2, None)])
 
     with patch("cliente_postgres.psycopg2.connect", return_value=conn):
@@ -32,6 +32,31 @@ def test_fetch_table_retorna_lista_de_dicts_com_nome_das_colunas() -> None:
         "SELECT * FROM siafi_dbt.planos_acao_ted"
     )
     conn.close.assert_called_once()
+
+
+def test_fetch_table_com_where_clause_inclui_filtro_na_query() -> None:
+    conn = _mock_connect(["nr_convenio", "valor"], [("123", 10.0)])
+
+    with patch("cliente_postgres.psycopg2.connect", return_value=conn):
+        linhas = ClientPostgresDB("dsn").fetch_table(
+            "siconv_dbt", "pagamento", where_clause="WHERE ug_emitente = 810008"
+        )
+
+    assert linhas == [{"nr_convenio": "123", "valor": 10.0}]
+    conn.cursor.return_value.execute.assert_called_once_with(
+        "SELECT * FROM siconv_dbt.pagamento WHERE ug_emitente = 810008"
+    )
+
+
+def test_fetch_table_sem_where_clause_nao_adiciona_where() -> None:
+    conn = _mock_connect(["id"], [(1,)])
+
+    with patch("cliente_postgres.psycopg2.connect", return_value=conn):
+        ClientPostgresDB("dsn").fetch_table("siafi_dbt", "programas_ted")
+
+    conn.cursor.return_value.execute.assert_called_once_with(
+        "SELECT * FROM siafi_dbt.programas_ted"
+    )
 
 
 def test_fetch_table_tabela_vazia_retorna_lista_vazia() -> None:

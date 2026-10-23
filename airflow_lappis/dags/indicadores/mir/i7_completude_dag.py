@@ -20,6 +20,8 @@ FONTES = {
     # nome do arquivo .sql, ao contrário de todos os outros models bronze
     # deste projeto. Descoberto rodando a DAG contra o Postgres real
     # (UndefinedTable em siafi_dbt.pf_ptres).
+    # TEDs e Emendas já chegam filtrados ao MIR no ingest (transfere_gov/mir/
+    # e transferegov_emendas/mir/).
     "TEDs": ("siafi_dbt", [
         "programas_ted", "pf_ptres_mir", "planos_acao_ted", "empenhos_tesouro_ted",
         "pf_tesouro_mir", "ppa_tesouro", "nc_tesouro_mir", "notas_de_credito",
@@ -38,6 +40,31 @@ FONTES = {
         "documentos_habeis", "finalidades", "tg_emendas", "planos_acoes",
         "historico_pagamentos", "executor", "relatorio_gestao",
     ]),
+}
+
+# O SICONV é baixado inteiro (ZIP público) — precisa filtrar pro MIR em tempo
+# de execução. TEDs e Emendas já chegam filtrados no ingest.
+# UG 810008 = Ministério da Igualdade Racial no SICONV.
+_NR_CONVENIOS_MIR = (
+    "SELECT nr_convenio FROM siconv_dbt.convenio WHERE ug_emitente = 810008"
+)
+_ID_PROPOSTAS_MIR = (
+    "SELECT id_proposta FROM siconv_dbt.convenio WHERE ug_emitente = 810008"
+)
+FILTROS_SICONV: dict[str, str] = {
+    "convenio": "WHERE ug_emitente = 810008",
+    "proposta": f"WHERE id_proposta IN ({_ID_PROPOSTAS_MIR})",
+    # todas as demais têm nr_convenio
+    **{
+        tabela: f"WHERE nr_convenio IN ({_NR_CONVENIOS_MIR})"
+        for tabela in [
+            "empenho", "desbloqueio", "prorroga_oficio", "solicitacao_alteracao",
+            "termo_aditivo", "pagamento_tributo", "cronograma_desembolso",
+            "meta_crono_fisico", "pagamento", "ingresso_contrapartida",
+            "desembolso", "licitacao", "solicitacao_rendimento_aplicacao",
+            "historico_situacao",
+        ]
+    },
 }
 
 
@@ -75,7 +102,8 @@ def i7_completude_dag() -> None:
         linhas_tabelas: list[dict] = []
         for pasta, (schema, nomes_tabelas) in FONTES.items():
             for nome_tabela in sorted(nomes_tabelas):
-                linhas = db.fetch_table(schema, nome_tabela)
+                where = FILTROS_SICONV.get(nome_tabela) if schema == "siconv_dbt" else None
+                linhas = db.fetch_table(schema, nome_tabela, where_clause=where)
                 logging.info(f"[I7] {pasta}/{nome_tabela}: {len(linhas)} linhas lidas")
 
                 cols, resumo = completude_tabela(pasta, nome_tabela, linhas)

@@ -488,11 +488,23 @@ class ClientPostgresDB:
             if not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", identifier):
                 raise ValueError(f"{label} inválido: {identifier!r}")
 
-    def fetch_table(self, schema: str, table_name: str) -> List[Dict[str, Any]]:
-        """Lê uma tabela inteira como lista de dicts (coluna -> valor)."""
+    def fetch_table(
+        self,
+        schema: str,
+        table_name: str,
+        where_clause: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Lê uma tabela como lista de dicts, com filtro opcional.
+
+        ``where_clause`` deve ser uma expressão SQL completa, incluindo o
+        ``WHERE`` (ex.: ``"WHERE ug_emitente = 810008"``). Deve vir de código
+        interno — nunca de entrada do usuário.
+        """
         self._validate_identifiers(schema, table_name)
 
         query = f"SELECT * FROM {schema}.{table_name}"
+        if where_clause:
+            query = f"{query} {where_clause}"
         with self._connect() as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query)
