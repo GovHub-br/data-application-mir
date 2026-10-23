@@ -65,3 +65,28 @@ seeds:
         description: >
           Nota de investigação, quando aplicável — ex: processo compartilhado com um TED
           formal, ou rótulo inconsistente na publicação (ver caso UNIVASF e TED nº1/2026).
+  - name: pei_mir
+    description: >
+      Planejamento Estrategico Institucional do MIR (Portaria n. 3, de janeiro
+      de 2025), conforme o Bloco 3.3 dos formularios do Coleta MIR: areas do
+      MIR e objetivos estrategicos. codigo_pai liga o objetivo a area quando o
+      formulario faz essa ligacao (OE5 -> DPMAT, OE6 -> DQC). Indicadores e
+      metas do PEI entram como nivel = 'indicador' quando forem fornecidos.
+    config:
+      column_types:
+        nivel: text
+        codigo: text
+        codigo_pai: text
+        titulo: text
+    columns:
+      - name: nivel
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['area', 'objetivo_estrategico', 'indicador']
+      - name: codigo
+        tests:
+          - not_null
+      - name: titulo
+        tests:
+          - not_null

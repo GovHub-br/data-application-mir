@@ -7,6 +7,10 @@ from cliente_base import ClienteBase
 class ClienteTed(ClienteBase):
     BASE_URL = "https://api.transferegov.gestao.gov.br/ted/"
     BASE_HEADER = {"accept": "application/json"}
+    # A API (PostgREST) corta a resposta em 1000 linhas.
+    LIMITE_PAGINA = 1000
+    # Guarda contra paginacao infinita em get_por_ids (por lote de ids).
+    MAX_PAGINAS_POR_LOTE = 1000
 
     def __init__(self) -> None:
         super().__init__(base_url=ClienteTed.BASE_URL)
@@ -131,6 +135,59 @@ class ClienteTed(ClienteBase):
         else:
             logging.warning(f"Falha ao buscar programação financeira - Status: {status}")
             return None
+
+    def get_por_ids(
+        self,
+        tabela: str,
+        coluna: str,
+        ids: list[int],
+        ordem: str,
+        tamanho_lote: int = 100,
+    ) -> list | None:
+        """Busca as linhas de `tabela` cujo `coluna` esta em `ids`.
+
+        Divide os ids em lotes (in.(...)) e pagina cada lote ate receber uma
+        pagina vazia (o offset anda o tanto de linhas recebidas). `ordem` precisa
+        ser uma ordem total das linhas, senao a paginacao repete ou pula
+        linhas. Retorna None se qualquer pagina falhar: quem chama nao deve
+        gravar um retrato incompleto.
+        """
+        linhas: list = []
+
+        for inicio in range(0, len(ids), tamanho_lote):
+            lote = ",".join(str(id_) for id_ in ids[inicio : inicio + tamanho_lote])
+            offset = 0
+            paginas = 0
+            while True:
+                if paginas >= self.MAX_PAGINAS_POR_LOTE:
+                    logging.warning(
+                        f"Paginacao de {tabela} excedeu {self.MAX_PAGINAS_POR_LOTE} "
+                        "paginas num lote; abortando"
+                    )
+                    return None
+                paginas += 1
+                endpoint = (
+                    f"{tabela}?{coluna}=in.({lote})&order={ordem}"
+                    f"&limit={self.LIMITE_PAGINA}&offset={offset}"
+                )
+                status, data = self.request(
+                    http.HTTPMethod.GET, endpoint, headers=self.BASE_HEADER
+                )
+                if status != http.HTTPStatus.OK or not isinstance(data, list):
+                    logging.warning(
+                        f"Falha ao buscar {tabela} (offset {offset}) - Status: {status}"
+                    )
+                    return None
+
+                # Pagina ate vir uma pagina vazia: se o max-rows da API for menor
+                # que LIMITE_PAGINA, parar na primeira pagina incompleta truncaria.
+                if not data:
+                    break
+                linhas.extend(data)
+                offset += len(data)
+
+        logging.info(f"{len(linhas)} linhas de {tabela} para {len(ids)} ids")
+        return linhas
 
     def get_todos_programas(self, limit: int = 1000, offset: int = 0) -> list | None:
         """

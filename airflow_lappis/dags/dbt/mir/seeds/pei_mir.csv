@@ -1,0 +1,26 @@
+nivel,codigo,codigo_pai,titulo
+area,DPA,,Diretoria de Políticas de Ações Afirmativas (DPA)
+area,DCR,,Diretoria de Políticas de Combate e Superação do Racismo (DCR)
+area,DAI,,Diretoria de Articulação Interfederativa (DAI)
+area,DAMGI,,"Diretoria de Avaliação, Monitoramento e Gestão da Informação (DAMGI)"
+area,DPMAT,,Diretoria de Políticas para Povos e Comunidades Tradicionais de Matriz Africana e de Terreiros (DPMAT)
+area,DQC,,Diretoria de Políticas para Quilombolas e Ciganos (DQC)
+area,AECI,,Assessoria Especial de Controle Interno (AECI)
+area,CONJUR,,Consultoria Jurídica (CONJUR)
+area,AI,,Assessoria Internacional (AI)
+area,ASPAR,,Assessoria Especial de Assuntos Parlamentares (ASPAR)
+area,DAG,,Diretoria de Ações Governamentais (DAG)
+area,DGA,,"Diretoria de Gestão e Administração (DGA), incluídas as unidades CGAL e DIGEP"
+area,AEM,,Assessoria Especial do Ministro (AEM)
+area,OUV,,Ouvidoria (OUV)
+area,GABMIN,,Gabinete do Ministro (GAB. MIN.)
+area,GAB,,Gabinete da Secretaria (GAB)
+area,ASCOM,,Assessoria Especial de Comunicação Social (ASCOM)
+area,SE,,Secretaria-Executiva (SE)
+area,CORREG,,Corregedoria (CORREG)
+objetivo_estrategico,OE1,,"Objetivo Estratégico 1 - Finalístico: garantir a criação de oportunidades para a inclusão de pessoas negras, na educação, no mercado de trabalho público e privado, e na política institucional, através da elaboração e acompanhamento das políticas de ações afirmativas intersetoriais"
+objetivo_estrategico,OE2,,"Objetivo Estratégico 2 - Finalístico: promover a igualdade de direitos para toda a população negra, em especial para a juventude negra, enfrentando e superando o racismo em todas as suas formas de expressão, através de políticas públicas intersetoriais e transversais"
+objetivo_estrategico,OE3,,"Objetivo Estratégico 3 - Finalístico: promover estratégias e políticas transversais para a igualdade racial em todo o território nacional, articulando e apoiando órgãos municipais, estaduais e do distrito federal, por meio da reestruturação, ampliação, consolidação e aprofundamento do alcance do SINAPIR"
+objetivo_estrategico,OE4,,"Objetivo Estratégico 4 - Finalístico: desenvolver e aperfeiçoar instrumentos de avaliação de políticas públicas, promovendo a produção, organização e divulgação de informações, dados e indicadores, por meio da qualificação da capacidade de formulação, execução, monitoramento e avaliação das políticas de igualdade racial"
+objetivo_estrategico,OE5,DPMAT,"Objetivo Estratégico 5 - Finalístico (DPMAT): assegurar direitos e superar o racismo religioso e a intolerância religiosa contra Povos e Comunidades Tradicionais de Matriz Africana e Povos de Terreiros, por meio de medidas intersetoriais de promoção da liberdade religiosa, respeito à ancestralidade, justiça social e climática, territorialidade e valorização do etnodesenvolvimento"
+objetivo_estrategico,OE6,DQC,"Objetivo Estratégico 6 - Finalístico (DQC): promover a melhoria da qualidade de vida, o bem viver, a paz e a justiça climática para comunidades quilombolas e povos ciganos, garantindo o acesso e a política de incentivo e proteção social, por meio do fortalecimento das estratégias de cuidado socioambiental das atuais e futuras gerações"
