@@ -3,16 +3,14 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.models import Variable
 from datetime import datetime, timedelta
+from io import BytesIO
 import csv
 import json
 import logging
-import cliente_email
+import zipfile
+import chardet
 from schedule_loader import get_dynamic_schedule
-from cliente_email import (
-    fetch_email_with_zip,
-    extract_csv_from_zip,
-    resolve_email_date_range,
-)
+from cliente_email import fetch_email_with_zip, resolve_email_date_range
 from email_ingest_params import date_range_params
 from cliente_postgres import ClientPostgresDB
 from postgres_helpers import get_postgres_conn
@@ -163,24 +161,35 @@ def _build_column_map(header_row: List[str]) -> Dict[str, int]:
     return col_map
 
 
-def parse_tesouro_emendas_csv(
-    csv_data: str,
-    column_mapping: Optional[Dict[int, str]] = None,
-    skiprows: int = 0,
-) -> pd.DataFrame:
+def read_csv_from_zip(zip_payload: bytes) -> Optional[str]:
+    """Le e decodifica o primeiro CSV nao vazio do anexo ZIP.
+
+    Mesma deteccao de encoding de cliente_email.extract_csv_from_zip, mas sem
+    o format_csv: o relatorio tem varios cabecalhos e precisa do parser abaixo.
+    """
+    with zipfile.ZipFile(BytesIO(zip_payload)) as zip_file:
+        for file_name in zip_file.namelist():
+            if not file_name.lower().endswith(".csv"):
+                continue
+            raw_data = zip_file.read(file_name)
+            if not raw_data.strip():
+                logging.warning("CSV vazio no anexo ZIP: %s", file_name)
+                continue
+            encoding = chardet.detect(raw_data)["encoding"]
+            decoded = raw_data.decode(encoding or "utf-8", errors="replace")
+            if decoded.strip():
+                return decoded
+    return None
+
+
+def parse_tesouro_emendas_csv(csv_data: str) -> pd.DataFrame:
     """Parser do relatorio do Tesouro Gerencial de empenhos de emendas.
 
     O arquivo concatena multiplos sub-relatorios (um por "Ano Lançamento"),
     cada um com seu proprio cabecalho e numero de colunas financeiras
     diferente. O parser detecta cada sub-relatorio pelo cabecalho
     repetido e mapeia colunas pelo nome (nao por posicao).
-
-    `column_mapping` e `skiprows` sao ignorados — existem so para manter
-    a assinatura de cliente_email.format_csv, que esta funcao substitui
-    via monkey-patch.
     """
-    del column_mapping, skiprows
-
     lines = csv_data.splitlines()
     header_indices = [
         i for i, line in enumerate(lines) if line.lstrip().startswith(HEADER_MARKER)
@@ -343,8 +352,6 @@ with DAG(
             params.get("data_inicial"), params.get("data_final")
         )
 
-        cliente_email.format_csv = parse_tesouro_emendas_csv
-
         logging.info("Iniciando processamento dos emails de empenhos de emendas.")
         zip_payloads: List[bytes] = fetch_email_with_zip(
             IMAP_SERVER,
@@ -368,12 +375,11 @@ with DAG(
         total_records = 0
 
         for idx, payload in enumerate(zip_payloads, 1):
-            # column_mapping/skiprows sao ignorados por parse_tesouro_emendas_csv
-            # (monkey-patch de cliente_email.format_csv acima).
-            df = extract_csv_from_zip(payload, {}, 0)
-            if df is None:
+            csv_data = read_csv_from_zip(payload)
+            if csv_data is None:
                 logging.warning("Anexo %s ignorado (CSV invalido).", idx)
                 continue
+            df = parse_tesouro_emendas_csv(csv_data)
 
             if not reset_done:
                 reset_table_if_legacy_schema(db)
