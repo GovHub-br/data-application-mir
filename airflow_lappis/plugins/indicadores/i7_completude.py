@@ -70,6 +70,120 @@ from typing import Any
 
 MARCADORES_AUSENCIA = {"", "SEM INFORMACAO", "SEM INFORMAÇÃO", "-8", "-9"}
 
+# Whitespace stripped by Python's str.strip() — ASCII set only.
+# Passed to PostgreSQL's btrim() as an E-string literal so both sides use
+# the same rule. PostgreSQL's plain btrim(x) only strips U+0020.
+_BTRIM_WHITESPACE = r"E' \t\n\r\x0b\x0c'"
+
+
+def _ausente_sql(col_expr: str, marcadores_upper: list[str]) -> str:
+    """SQL boolean expression equivalent to _esta_ausente() for a column."""
+    stripped = f"btrim({col_expr}::text, {_BTRIM_WHITESPACE})"
+    in_list = ", ".join(f"'{m}'" for m in marcadores_upper)
+    return (
+        f"({col_expr} IS NULL "
+        f"OR {stripped} = '' "
+        f"OR upper({stripped}) IN ({in_list}))"
+    )
+
+
+def build_completude_query(
+    schema: str,
+    table_name: str,
+    columns: list[str],
+    join_sql: str = "",
+    mir_cond: str | None = None,
+) -> str:
+    """SQL query that returns completude stats in a single row — no rows sent to Python.
+
+    ``join_sql``: optional JOIN fragment appended after the FROM clause, used to
+    link siconv detail tables to ``proposta`` for MIR identification.
+    ``mir_cond``: optional SQL boolean expression (e.g. ``p.cod_orgao_sup = 67000``)
+    that restricts counting to MIR rows. When None, all rows are counted.
+
+    Column values come from ``information_schema`` (trusted); schema/table names
+    come from the hardcoded FONTES dict — not user input.
+    """
+    marcadores_upper = sorted(m.upper() for m in MARCADORES_AUSENCIA if m != "")
+
+    col_exprs = []
+    for col in columns:
+        col_expr = f't."{col}"'
+        ausente = _ausente_sql(col_expr, marcadores_upper)
+        count = (
+            f"COUNT(*) FILTER (WHERE {mir_cond} AND {ausente})"
+            if mir_cond
+            else f"COUNT(*) FILTER (WHERE {ausente})"
+        )
+        col_exprs.append(f'{count} AS "{col}"')
+
+    n_expr = (
+        f"COUNT(*) FILTER (WHERE {mir_cond})" if mir_cond else "COUNT(*)"
+    )
+    join_fragment = f" {join_sql}" if join_sql else ""
+    return (
+        f'SELECT {n_expr} AS n_registros, {", ".join(col_exprs)} '
+        f'FROM "{schema}"."{table_name}" t{join_fragment}'
+    )
+
+
+def completude_tabela_from_stats(
+    pasta: str,
+    nome_tabela: str,
+    n_registros: int,
+    ausentes_por_col: dict[str, int],
+) -> tuple[list[dict], dict | None]:
+    """Mesma saída de completude_tabela mas a partir de stats pré-computados em SQL.
+
+    Permite calcular completude sem trazer nenhuma linha ao Python.
+    """
+    if n_registros == 0:
+        return [], None
+
+    colunas = list(ausentes_por_col.keys())
+    linhas_colunas = []
+    for col in colunas:
+        ausentes = ausentes_por_col[col]
+        pct = ausentes / n_registros * 100
+
+        if pct == 0:
+            tipo_sugerido = "completo"
+        elif pct >= 99.95:
+            tipo_sugerido = "estrutural_suspeita"
+        else:
+            tipo_sugerido = "dado_faltante"
+
+        linhas_colunas.append({
+            "pasta": pasta,
+            "arquivo": nome_tabela,
+            "coluna": col,
+            "n_registros": n_registros,
+            "n_ausentes": ausentes,
+            "pct_ausente": round(pct, 1),
+            "pct_preenchido": round(100 - pct, 1),
+            "faixa": "OK" if pct < 10 else ("ATENCAO" if pct <= 50 else "CRITICO"),
+            "tipo_ausencia_sugerido": tipo_sugerido,
+        })
+
+    celulas_total = n_registros * len(colunas)
+    celulas_ausentes = sum(ausentes_por_col.values())
+    pct_arquivo = celulas_ausentes / celulas_total * 100 if celulas_total else 0.0
+
+    linha_tabela = {
+        "pasta": pasta,
+        "arquivo": nome_tabela,
+        "n_registros": n_registros,
+        "n_colunas": len(colunas),
+        "pct_celulas_ausentes": round(pct_arquivo, 1),
+        "n_colunas_criticas": sum(
+            1 for c in colunas if ausentes_por_col[c] / n_registros > 0.5
+        ),
+        "n_colunas_estruturais_suspeitas": sum(
+            1 for c in colunas if ausentes_por_col[c] / n_registros >= 0.9995
+        ),
+    }
+    return linhas_colunas, linha_tabela
+
 
 def _txt(valor: Any) -> str:
     return "" if valor is None else str(valor).strip()

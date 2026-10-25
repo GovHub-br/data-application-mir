@@ -504,6 +504,41 @@ class ClientPostgresDB:
         )
         return [dict(zip(columns, row)) for row in rows]
 
+    def get_table_columns(self, schema: str, table_name: str) -> list[str]:
+        """Retorna os nomes das colunas de uma tabela em ordem de ordinal_position."""
+        self._validate_identifiers(schema, table_name)
+        with self._connect() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_schema = %s AND table_name = %s "
+                    "ORDER BY ordinal_position",
+                    (schema, table_name),
+                )
+                return [row[0] for row in cursor.fetchall()]
+
+    def execute_completude_stats(
+        self, query: str, columns: list[str]
+    ) -> tuple[int, dict[str, int]]:
+        """Executa uma query de completude construída por build_completude_query.
+
+        Retorna (n_registros, {coluna: n_ausentes}). A query deve ter n_registros
+        como primeira coluna e uma coluna por entrada de ``columns`` em seguida.
+        """
+        with self._connect() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query)
+                row = cursor.fetchone()
+        n_registros = row[0] if row else 0
+        if n_registros == 0:
+            return 0, {col: 0 for col in columns}
+        ausentes_por_col = {col: row[i + 1] for i, col in enumerate(columns)}
+        logging.info(
+            f"[cliente_postgres.py] completude stats: {n_registros} registros, "
+            f"{len(columns)} colunas"
+        )
+        return n_registros, ausentes_por_col
+
     def export_table_to_csv(self, schema: str, table_name: str) -> str:
         """Exporta o conteúdo de uma tabela como CSV (string), colunas incluídas.
 
