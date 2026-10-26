@@ -5,6 +5,15 @@ with
         select *
         from {{ ref("convenio") }}
     ),
+    -- Identifica os convenios do MIR pelo orgao superior (cod_orgao_sup = 67000).
+    -- Usar ug_emitente = 810008 perdia convenios com ug_emitente NULL mas
+    -- pertencentes ao MIR via proposta.cod_orgao_sup — confirmado contra o
+    -- Postgres real: 748 via cod_orgao_sup vs 608 via ug_emitente.
+    proposta_mir as (
+        select id_proposta
+        from {{ ref("proposta") }}
+        where cod_orgao_sup = 67000
+    ),
     -- UGs responsaveis consolidadas em UM registro por convenio. ppa_tesouro
     -- esta no grao do empenho: um mesmo convenio pode ter empenhos em varias
     -- UGs. Concatenamos as UGs (string_agg) em vez de deixa-las na chave para
@@ -47,7 +56,7 @@ with
             cast(null as text) as ug_responsavel_nome,
             0 as qtd_ugs_responsaveis
         from convenio
-        where ug_emitente = 810008
+        where id_proposta in (select id_proposta from proposta_mir)
             and nr_convenio not in (select nr_convenio from convenios_ppa)
         union distinct
         select
