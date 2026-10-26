@@ -93,52 +93,94 @@ with
         from {{ source("siafi", "nc_tesouro_desde_2026") }} as t
         left join ptres_programa as p on t.ptres = p.ptres
         where t.dc = 'DESTINO'
+    ),
+
+    todas_nc as (
+        select
+            programa_governo,
+            programa_governo_descricao,
+            acao_governo,
+            acao_governo_descricao,
+            nc,
+            relatorio,
+            ug_emitente,
+            ug_emitente_descricao,
+            nc_transferencia,
+            nc_fonte_recursos,
+            nc_fonte_recursos_descricao,
+            ptres,
+            case
+                when relatorio = 'enviadas' and movimento_liquido_moeda_origem > 0
+                then 'DESCENTRALIZACAO DE CREDITO'
+                when relatorio = 'enviadas'
+                then 'ANULACAO DE DESCENTRALIZACAO DE CREDITO'
+                when movimento_liquido_moeda_origem > 0
+                then 'DESCENTRALIZACAO DE CREDITO'
+                else 'DEVOLUCAO DE DESCENTRALIZACAO DE CREDITO'
+            end as nc_evento_descricao,
+            nc_ug_responsavel,
+            nc_ug_responsavel_descricao,
+            nc_natureza_despesa,
+            nc_natureza_despesa_descricao,
+            nc_plano_interno,
+            nc_plano_interno_descricao1,
+            favorecido_doc,
+            favorecido_doc_descricao,
+            favorecido_municipio,
+            favorecido_municipio_descricao,
+            abs(movimento_liquido_moeda_origem) as valor_celula,
+            movimento_liquido_moeda_origem,
+            descricao,
+            emissao_dia,
+            substring(nc from 12 for 4) as emissao_ano,
+            dc,
+            dt_ingest
+        from ate_2025
+
+        union all
+
+        select
+            programa_governo,
+            programa_governo_descricao,
+            acao_governo,
+            acao_governo_descricao,
+            nc,
+            relatorio,
+            ug_emitente,
+            ug_emitente_descricao,
+            nc_transferencia,
+            nc_fonte_recursos,
+            nc_fonte_recursos_descricao,
+            ptres,
+            nc_evento_descricao,
+            nc_ug_responsavel,
+            nc_ug_responsavel_descricao,
+            nc_natureza_despesa,
+            nc_natureza_despesa_descricao,
+            nc_plano_interno,
+            nc_plano_interno_descricao1,
+            favorecido_doc,
+            favorecido_doc_descricao,
+            favorecido_municipio,
+            favorecido_municipio_descricao,
+            valor_celula,
+            case
+                when nc_evento_descricao ~* '^DESC' then valor_celula else -valor_celula
+            end as movimento_liquido_moeda_origem,
+            descricao,
+            emissao_dia,
+            substring(nc from 12 for 4) as emissao_ano,
+            dc,
+            dt_ingest
+        from desde_2026
     )
 
-select
-    programa_governo,
-    programa_governo_descricao,
-    acao_governo,
-    acao_governo_descricao,
-    nc,
-    relatorio,
-    ug_emitente,
-    ug_emitente_descricao,
-    nc_transferencia,
-    nc_fonte_recursos,
-    nc_fonte_recursos_descricao,
-    ptres,
-    case
-        when relatorio = 'enviadas' and movimento_liquido_moeda_origem > 0
-        then 'DESCENTRALIZACAO DE CREDITO'
-        when relatorio = 'enviadas'
-        then 'ANULACAO DE DESCENTRALIZACAO DE CREDITO'
-        when movimento_liquido_moeda_origem > 0
-        then 'DESCENTRALIZACAO DE CREDITO'
-        else 'DEVOLUCAO DE DESCENTRALIZACAO DE CREDITO'
-    end as nc_evento_descricao,
-    nc_ug_responsavel,
-    nc_ug_responsavel_descricao,
-    nc_natureza_despesa,
-    nc_natureza_despesa_descricao,
-    nc_plano_interno,
-    nc_plano_interno_descricao1,
-    favorecido_doc,
-    favorecido_doc_descricao,
-    favorecido_municipio,
-    favorecido_municipio_descricao,
-    abs(movimento_liquido_moeda_origem) as valor_celula,
-    movimento_liquido_moeda_origem,
-    descricao,
-    emissao_dia,
-    substring(nc from 12 for 4) as emissao_ano,
-    dc,
-    dt_ingest
-from ate_2025
-
-union all
-
-select
+-- A mesma célula de NC (nc + ptres + fonte + natureza + favorecido + valor)
+-- pode aparecer N vezes quando múltiplas UGs do MIR figuram como responsáveis
+-- pelo mesmo item no relatório do Tesouro Gerencial. O DISTINCT ON elimina
+-- essas linhas idênticas em valor mantendo uma por célula (a de menor
+-- nc_ug_responsavel, para resultado determinístico).
+select distinct on (nc, relatorio, ptres, nc_fonte_recursos, nc_natureza_despesa, favorecido_doc, valor_celula)
     programa_governo,
     programa_governo_descricao,
     acao_governo,
@@ -163,12 +205,13 @@ select
     favorecido_municipio,
     favorecido_municipio_descricao,
     valor_celula,
-    case
-        when nc_evento_descricao ~* '^DESC' then valor_celula else -valor_celula
-    end as movimento_liquido_moeda_origem,
+    movimento_liquido_moeda_origem,
     descricao,
     emissao_dia,
-    substring(nc from 12 for 4) as emissao_ano,
+    emissao_ano,
     dc,
     dt_ingest
-from desde_2026
+from todas_nc
+order by
+    nc, relatorio, ptres, nc_fonte_recursos, nc_natureza_despesa, favorecido_doc, valor_celula,
+    nc_ug_responsavel nulls last
