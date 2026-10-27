@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from schedule_loader import get_dynamic_schedule
 from postgres_helpers import get_postgres_conn
 from cliente_postgres import ClientPostgresDB
-from cliente_ted import ClienteTed
+from cliente_ted import ClienteTed, numeros_como_texto
 
 
 @dag(
@@ -19,37 +19,51 @@ from cliente_ted import ClienteTed
     tags=["programacao_financeira", "ted_api", "MIR"],
 )
 def programacao_financeira_mir_dag() -> None:
+    """Programação financeira dos planos de ação (endpoint programacao_financeira),
+    por id_plano_acao.
+
+    A API devolve o retrato completo, entao a carga substitui a tabela inteira
+    (linhas removidas na fonte saem do banco). Se a API falhar para qualquer
+    plano de ação, a DAG falha e a tabela fica como estava, sem gravar um retrato
+    incompleto.
+    """
+
     @task
     def fetch_and_store_programacao_financeira() -> None:
-        logging.info("Iniciando fetch_and_store_programacao_financeira")
-
         api = ClienteTed()
-        postgres_conn_str = get_postgres_conn("postgres_mir")
-        db = ClientPostgresDB(postgres_conn_str)
-        id_planos_acao = db.get_id_planos_acao()
+        db = ClientPostgresDB(get_postgres_conn("postgres_mir"))
 
-        for id_plano_acao in id_planos_acao:
-            programacao_financeira = api.get_programacao_financeira_by_id_plano_acao(
-                id_plano_acao
-            )
-            if programacao_financeira:
-                # Adicionar dt_ingest a cada item
-                for item in programacao_financeira:
-                    item["dt_ingest"] = datetime.now().isoformat()
+        linhas: list = []
+        for id_plano_acao in db.get_id_planos_acao():
+            dados = api.get_programacao_financeira_by_id_plano_acao(id_plano_acao)
+            if dados is None:
+                raise RuntimeError(
+                    f"Falha na API de TED ao buscar programação financeira "
+                    f"(id_plano_acao {id_plano_acao})"
+                )
+            linhas.extend(numeros_como_texto(dados))
 
-                db.insert_data(
-                    programacao_financeira,
-                    "programacao_financeira",
-                    conflict_fields=["id_programacao"],
-                    primary_key=["id_programacao"],
-                    schema="transfere_gov",
-                )
-            else:
-                logging.warning(
-                    f"Nenhuma programação financeira encontrada "
-                    f"plano de ação {id_plano_acao}"
-                )
+        if not linhas:
+            logging.warning("API de TED sem programação financeira; tabela mantida")
+            return
+
+        dt_ingest = datetime.now().isoformat()
+        for linha in linhas:
+            linha["dt_ingest"] = dt_ingest
+
+        db.replace_rows(
+            linhas,
+            "programacao_financeira",
+            delete_where="true",
+            delete_params=(),
+            schema="transfere_gov",
+            preserva_nulos=True,
+        )
+        logging.info(
+            f"{len(linhas)} linhas gravadas em transfere_gov.programacao_financeira"
+        )
 
     fetch_and_store_programacao_financeira()
+
 
 programacao_financeira_mir_dag()
