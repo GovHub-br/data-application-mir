@@ -33,10 +33,14 @@ class ClienteOneDrive:
         return response.json()["access_token"]
 
     @staticmethod
+    def join_path(*parts: Optional[str]) -> str:
+        """Junta trechos de caminho do drive, ignorando trechos vazios e as
+        barras nas pontas de cada um."""
+        return "/".join(p.strip("/") for p in parts if p and p.strip("/"))
+
+    @staticmethod
     def _item_path(folder_path: str, file_name: str) -> str:
-        clean_folder = (folder_path or "").strip("/")
-        path = f"{clean_folder}/{file_name}" if clean_folder else file_name
-        return quote(path, safe="/")
+        return quote(ClienteOneDrive.join_path(folder_path, file_name), safe="/")
 
     def upload_file(
         self,
