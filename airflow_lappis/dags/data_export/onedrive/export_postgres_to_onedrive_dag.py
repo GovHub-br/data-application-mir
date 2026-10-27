@@ -22,7 +22,13 @@ from schedule_loader import get_dynamic_schedule
 )
 def export_postgres_to_onedrive_dag() -> None:
     """Exporta tabelas configuradas do Postgres para CSV e envia para o
-    OneDrive de um usuário via Microsoft Graph API."""
+    OneDrive de um usuário via Microsoft Graph API.
+
+    Cada tabela vai para ``onedrive_folder``/``folder``, em que ``folder`` é
+    opcional na tabela e relativo à base (sem ele, o arquivo fica na base).
+    Assim a mesma lista serve local e prod, mudando só ``onedrive_folder``.
+    Pastas inexistentes são criadas pela Graph, então um ``folder`` digitado
+    errado não falha: confira o caminho final no log."""
 
     @task
     def export_and_upload_tables() -> None:
@@ -50,14 +56,20 @@ def export_postgres_to_onedrive_dag() -> None:
             schema = table_config["schema"]
             table = table_config["table"]
             file_name = table_config.get("file_name", f"{table}.csv")
+            folder_path = ClienteOneDrive.join_path(
+                onedrive_folder, table_config.get("folder")
+            )
 
             logging.info(f"Exportando {schema}.{table} do Postgres")
             csv_content = db.export_table_to_csv(schema, table)
 
-            logging.info(f"Enviando {file_name} para o OneDrive de {onedrive_user_id}")
+            logging.info(
+                f"Enviando {ClienteOneDrive.join_path(folder_path, file_name)} "
+                f"para o OneDrive de {onedrive_user_id}"
+            )
             onedrive.upload_file(
                 user_id=onedrive_user_id,
-                folder_path=onedrive_folder,
+                folder_path=folder_path,
                 file_name=file_name,
                 content=csv_content.encode("cp1252", errors="replace"),
             )
