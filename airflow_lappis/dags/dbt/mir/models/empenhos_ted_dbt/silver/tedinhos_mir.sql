@@ -30,6 +30,23 @@
   tedinho. Mesmo assim, o texto da NC às vezes já cita um código antes do
   campo estruturado ser atualizado (ex.: TED normal em trânsito) -- por isso
   também extraímos codigo_mencionado_no_texto como segundo sinal.
+
+  Serviço administrativo não é tedinho. A NC para o centro de serviços
+  compartilhados (CSC/MGI, Diárias e Passagens, Central de Compras), para a
+  logística do MDHC ou numa ação administrativa paga a operação do próprio
+  MIR, não um parceiro -- e era ~95% do crédito que caía aqui. O recorte é o
+  da consulta oficial "Execução TED por UG": favorecido em
+  ted_execucao_ugs_excluidas() ou ação em ted_execucao_acoes_excluidas(), as
+  mesmas macros de execucao_ted_ne (a lista também tem UGs do próprio MIR,
+  que não aparecem como favorecido nas enviadas). Uma NC de serviço com ação
+  finalística (passagem de evento pelo CSC) também sai.
+
+  servico_administrativo é do instrumento, como os outros dois sinais: basta
+  uma linha administrativa para o instrumento inteiro sair. Por linha, um
+  instrumento misto entraria pela metade -- p.ex. a descentralização numa
+  ação finalística sem a anulação que a abate, se a anulação caísse numa
+  ação administrativa. As linhas continuam no modelo, só não viram
+  tedinho_provavel.
 #}
 
 with
@@ -38,6 +55,13 @@ with
             nc,
             nc_ug_responsavel,
             nc_ug_responsavel_descricao,
+            favorecido_doc,
+            acao_governo,
+            coalesce(
+                favorecido_doc in {{ ted_execucao_ugs_excluidas() }}
+                or upper(acao_governo) in {{ ted_execucao_acoes_excluidas() }},
+                false
+            ) as servico_administrativo_linha,
             valor_celula,
             nc_evento_descricao,
             nc_transferencia,
@@ -112,14 +136,23 @@ with
         group by instrumento_key
     ),
 
+    -- Uma linha administrativa já tira o instrumento inteiro (ver cabeçalho).
+    servico_por_instrumento as (
+        select instrumento_key, bool_or(servico_administrativo_linha) as servico_administrativo
+        from chaveada
+        group by instrumento_key
+    ),
+
     classificacao_por_instrumento as (
         select
             ta.instrumento_key,
             ta.nc_transferencia as nc_transferencia_atual,
             cnt.codigo_mencionado_no_texto,
-            (pa.sq_instrumento is not null) as registrado_no_transferegov
+            (pa.sq_instrumento is not null) as registrado_no_transferegov,
+            spi.servico_administrativo
         from transferencia_atual ta
         left join codigo_no_texto_por_instrumento cnt using (instrumento_key)
+        left join servico_por_instrumento spi using (instrumento_key)
         left join {{ ref("ted_plano_acao_consolidado") }} pa
             on pa.sq_instrumento = ta.nc_transferencia
     )
@@ -130,6 +163,8 @@ select
     nd.processo,
     nd.nc_ug_responsavel,
     nd.nc_ug_responsavel_descricao,
+    nd.favorecido_doc,
+    nd.acao_governo,
     nd.valor_celula,
     nd.nc_evento_descricao,
     nd.nc_transferencia,
@@ -139,9 +174,11 @@ select
     c.nc_transferencia_atual,
     c.codigo_mencionado_no_texto,
     coalesce(c.registrado_no_transferegov, false) as registrado_no_transferegov,
+    coalesce(c.servico_administrativo, false) as servico_administrativo,
     (
         not coalesce(c.registrado_no_transferegov, false)
         and c.codigo_mencionado_no_texto is null
+        and not coalesce(c.servico_administrativo, false)
     ) as tedinho_provavel
 from chaveada nd
 left join classificacao_por_instrumento c using (instrumento_key)

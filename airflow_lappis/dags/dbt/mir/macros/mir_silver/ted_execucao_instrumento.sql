@@ -4,7 +4,12 @@
   (pipeline.py, credito_total.py), que continuam como referência das regras.
 
     ted_execucao_ugs_excluidas / ted_execucao_acoes_excluidas: recorte da consulta oficial
-    "Execução TED por UG" (UGs e ações que ela não traz).
+    "Execução TED por UG" (UGs e ações que ela não traz): as UGs do próprio MIR (810008,
+    230003, 238012) e as de serviço compartilhado (CSC/MGI 170607, Diárias e Passagens
+    170605, Central de Compras 201057, logística do MDHC 810005), e as ações
+    administrativas. Dois consumidores: execucao_ted_ne (quais NEs entram) e tedinhos_mir
+    (servico_administrativo: a NC para essas UGs ou ações não é tedinho). Mudar a lista
+    muda também quantos tedinhos o painel mostra.
     ted_execucao_prefixos_lado_mir: prefixos do lado do MIR nas NCs sem número de
     transferência (credito_total.py: MIR): 238xxx, 810008, 230002 e os postos do MRE no
     exterior (240xxx), que executam despesa do próprio MIR (ex.: 240217, COP16 em Bogotá)

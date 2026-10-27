@@ -14,7 +14,10 @@
       quando o MIR recebe (devolução). "MIR" aqui é o seed ugs_mir, como no ted_credito_nc
       que o pipeline.py lê.
     - 'tedinho': NC do MIR sem número de transferência (nc_transferencia = '-8') para
-      outro órgão. Instrumento = 'tedinho <NC>'. Nos tedinhos e nas devoluções o lado do MIR
+      outro órgão. Instrumento = 'tedinho <NC>'. Aqui "tedinho" é mais largo que em
+      tedinhos_mir: inclui o serviço administrativo (CSC/MGI, Central de Compras...), que
+      tedinhos_mir tira. Não afeta a execução, porque execucao_ted_ne já deixa de fora as
+      NEs dessas UGs e ações (mesmas macros). Nos tedinhos e nas devoluções o lado do MIR
       é o de credito_total.py (macro ted_execucao_lado_mir), que inclui os postos do MRE
       no exterior (240xxx).
     - 'devolução': devolução sem número de outro órgão para o MIR.

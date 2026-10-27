@@ -25,7 +25,12 @@ models:
       detalhe por UG use ted_empenhos_plano_acao, que tem grão de Nota de Empenho — só cobre
       TED, não tedinho (ver tedinhos_mir para a limitação de empenho por tedinho). Bloco
       Tedinho: só orcamento_recebido/devolvido vêm preenchidos (via tedinhos_mir, que já
-      aplica a detecção correta por nc_evento_descricao + cruzamento com TransfereGov);
+      aplica a detecção correta por nc_evento_descricao + cruzamento com TransfereGov e
+      tira o serviço administrativo). A descentralização do MIR para serviço administrativo
+      (CSC/MGI, Diárias e Passagens, Central de Compras, logística do MDHC, ação 2000) não é
+      TED nem tedinho e não entra nesta tabela; para reconciliar o total com a
+      descentralização bruta do SIAFI, ela está em tedinhos_mir com
+      servico_administrativo = true;
       plano_acao, valor_firmado e todas as métricas de empenho/liquidação/pagamento/
       financeiro ficam nulas — a NE do órgão executor carrega o processo administrativo
       *dele*, não o do MIR, então não há hoje um join confiável entre o processo do tedinho

@@ -11,7 +11,13 @@
 - **Tedinho** — descentralização de crédito do MIR que nunca foi registrada no
   TransfereGov (issue #507). Não tem `num_transf` nem plano de ação; é
   identificado pelo processo ou pela NC (`instrumento_key` em `tedinhos_mir`).
-  `tipo_instrumento = 'Tedinho'`.
+  `tipo_instrumento = 'Tedinho'`. Crédito para serviço administrativo (CSC/MGI,
+  Diárias e Passagens, Central de Compras, logística do MDHC, ação 2000…) não
+  é tedinho: paga a operação do próprio MIR, não um parceiro, e não entra em
+  `ted_resumo_orcamentario` — fica em `tedinhos_mir` com
+  `servico_administrativo = true`. A lista é a das macros
+  `ted_execucao_ugs_excluidas`/`ted_execucao_acoes_excluidas`, o mesmo recorte
+  da consulta oficial "Execução TED por UG".
 - **Plano de Ação** — o documento do TransfereGov que detalha um TED (valor
   pactuado, vigência, situação). É um **atributo** do TED, não a unidade de
   contagem: plano ainda não firmado (sem `sq_instrumento`) não é TED e não
