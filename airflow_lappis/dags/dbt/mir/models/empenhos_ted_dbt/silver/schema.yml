@@ -469,6 +469,12 @@ models:
       também extrai qualquer código citado em codigo_mencionado_no_texto; um instrumento só
       é classificado como tedinho forte (tedinho_provavel) quando os dois sinais concordam:
       não registrado no TransfereGov E nenhum código citado em lugar nenhum do texto.
+      Serviço administrativo não é tedinho: a NC para UG de serviço compartilhado (CSC/MGI,
+      Diárias e Passagens, Central de Compras, logística do MDHC) ou numa ação administrativa
+      (2000, 216H, 4641) fica com servico_administrativo = true e tedinho_provavel = false.
+      É o mesmo recorte da consulta oficial "Execução TED por UG" (macros
+      ted_execucao_ugs_excluidas/acoes_excluidas), e era ~95% do crédito classificado como
+      tedinho antes da regra.
       Grão: uma linha por NC com evento de descentralização de crédito (não por instrumento —
       um instrumento pode ter várias NCs ao longo do tempo, incluindo anulações/reemissões).
       Alimenta ted_resumo_orcamentario como tipo_instrumento = 'Tedinho' (decisão de negócio:
@@ -493,6 +499,10 @@ models:
         description: "Código da UG responsável pela NC."
       - name: nc_ug_responsavel_descricao
         description: "Nome da UG responsável pela NC."
+      - name: favorecido_doc
+        description: "UG favorecida da NC — quem recebe o crédito."
+      - name: acao_governo
+        description: "Ação orçamentária da célula da NC."
       - name: valor_celula
         description: "Valor financeiro da NC (numeric 15,2)."
       - name: nc_evento_descricao
@@ -517,13 +527,22 @@ models:
           formal no TransfereGov.
         tests:
           - not_null
+      - name: servico_administrativo
+        description: >
+          true quando a NC paga a operação do próprio MIR, não um parceiro: o favorecido é
+          UG de serviço compartilhado (ted_execucao_ugs_excluidas: CSC/MGI 170607, Diárias e
+          Passagens 170605, Central de Compras 201057, logística do MDHC 810005) ou a ação é
+          administrativa (ted_execucao_acoes_excluidas: 2000, 216H, 4641). Vale por linha.
+        tests:
+          - not_null
       - name: tedinho_provavel
         description: >
-          true quando o instrumento NÃO está registrado no TransfereGov E nenhum código TED
-          foi citado em nenhuma NC dele, em lugar nenhum — o sinal mais forte de tedinho
-          genuíno que dá para derivar só do SIAFI. false inclui tanto instrumentos formais
-          quanto TEDs normais ainda em trânsito (nc_transferencia desatualizado mas já com
-          código citado no texto).
+          true quando o instrumento NÃO está registrado no TransfereGov, nenhum código TED
+          foi citado em nenhuma NC dele, em lugar nenhum, e a linha não é serviço
+          administrativo — o sinal mais forte de tedinho genuíno que dá para derivar só do
+          SIAFI. false inclui instrumentos formais, TEDs normais ainda em trânsito
+          (nc_transferencia desatualizado mas já com código citado no texto) e serviço
+          administrativo.
         tests:
           - not_null
       - name: emissao_dia

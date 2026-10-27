@@ -30,6 +30,16 @@
   tedinho. Mesmo assim, o texto da NC às vezes já cita um código antes do
   campo estruturado ser atualizado (ex.: TED normal em trânsito) -- por isso
   também extraímos codigo_mencionado_no_texto como segundo sinal.
+
+  Serviço administrativo não é tedinho. A NC para o centro de serviços
+  compartilhados (CSC/MGI, Diárias e Passagens, Central de Compras), para a
+  logística do MDHC ou numa ação administrativa (2000, 216H, 4641) paga a
+  operação do próprio MIR, não um parceiro -- e era ~95% do crédito que caía
+  aqui. O recorte é o mesmo que a consulta oficial "Execução TED por UG"
+  aplica (macros ted_execucao_ugs_excluidas/acoes_excluidas, usadas em
+  execucao_ted_ne), e vale por linha: NC de serviço com ação finalística
+  (passagem de evento pelo CSC) também sai. A linha continua no modelo com
+  servico_administrativo = true, só não vira tedinho_provavel.
 #}
 
 with
@@ -38,6 +48,13 @@ with
             nc,
             nc_ug_responsavel,
             nc_ug_responsavel_descricao,
+            favorecido_doc,
+            acao_governo,
+            coalesce(
+                favorecido_doc in {{ ted_execucao_ugs_excluidas() }}
+                or upper(acao_governo) in {{ ted_execucao_acoes_excluidas() }},
+                false
+            ) as servico_administrativo,
             valor_celula,
             nc_evento_descricao,
             nc_transferencia,
@@ -130,6 +147,8 @@ select
     nd.processo,
     nd.nc_ug_responsavel,
     nd.nc_ug_responsavel_descricao,
+    nd.favorecido_doc,
+    nd.acao_governo,
     nd.valor_celula,
     nd.nc_evento_descricao,
     nd.nc_transferencia,
@@ -139,9 +158,11 @@ select
     c.nc_transferencia_atual,
     c.codigo_mencionado_no_texto,
     coalesce(c.registrado_no_transferegov, false) as registrado_no_transferegov,
+    nd.servico_administrativo,
     (
         not coalesce(c.registrado_no_transferegov, false)
         and c.codigo_mencionado_no_texto is null
+        and not nd.servico_administrativo
     ) as tedinho_provavel
 from chaveada nd
 left join classificacao_por_instrumento c using (instrumento_key)

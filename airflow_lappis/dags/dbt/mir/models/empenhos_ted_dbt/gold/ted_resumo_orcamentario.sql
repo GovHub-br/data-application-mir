@@ -81,10 +81,14 @@ with
     -- vez como TED (bloco abaixo) e outra como Tedinho (CTE tedinhos).
     -- Tedinhos com nc_transferencia = '-8' ja ficam de fora naturalmente
     -- (filtro `nc_transferencia != '-8'` do proprio nc_plano_acao).
+    -- O filtro e "sem registro e sem codigo no texto", e nao tedinho_provavel:
+    -- NC de servico administrativo com codigo nao registrado tambem nao e TED,
+    -- e nao pode voltar para o bloco de TED so por ter deixado de ser tedinho.
     tedinhos_com_codigo as (
         select distinct nc_transferencia_atual
         from {{ ref("tedinhos_mir") }}
-        where tedinho_provavel
+        where not registrado_no_transferegov
+            and codigo_mencionado_no_texto is null
             and nc_transferencia_atual is not null
             and nc_transferencia_atual <> '-8'
     ),
