@@ -469,11 +469,11 @@ models:
       também extrai qualquer código citado em codigo_mencionado_no_texto; um instrumento só
       é classificado como tedinho forte (tedinho_provavel) quando os dois sinais concordam:
       não registrado no TransfereGov E nenhum código citado em lugar nenhum do texto.
-      Serviço administrativo não é tedinho: a NC para UG de serviço compartilhado (CSC/MGI,
-      Diárias e Passagens, Central de Compras, logística do MDHC) ou numa ação administrativa
-      (2000, 216H, 4641) fica com servico_administrativo = true e tedinho_provavel = false.
-      É o mesmo recorte da consulta oficial "Execução TED por UG" (macros
-      ted_execucao_ugs_excluidas/acoes_excluidas), e era ~95% do crédito classificado como
+      Serviço administrativo não é tedinho: o instrumento com alguma NC para UG de serviço
+      compartilhado (CSC/MGI, Diárias e Passagens, Central de Compras, logística do MDHC) ou
+      numa ação administrativa fica com servico_administrativo = true e tedinho_provavel =
+      false. A lista é a das macros ted_execucao_ugs_excluidas/acoes_excluidas (o recorte da
+      consulta oficial "Execução TED por UG"), e era ~95% do crédito classificado como
       tedinho antes da regra.
       Grão: uma linha por NC com evento de descentralização de crédito (não por instrumento —
       um instrumento pode ter várias NCs ao longo do tempo, incluindo anulações/reemissões).
@@ -529,10 +529,13 @@ models:
           - not_null
       - name: servico_administrativo
         description: >
-          true quando a NC paga a operação do próprio MIR, não um parceiro: o favorecido é
-          UG de serviço compartilhado (ted_execucao_ugs_excluidas: CSC/MGI 170607, Diárias e
-          Passagens 170605, Central de Compras 201057, logística do MDHC 810005) ou a ação é
-          administrativa (ted_execucao_acoes_excluidas: 2000, 216H, 4641). Vale por linha.
+          true quando o instrumento paga a operação do próprio MIR, não um parceiro: alguma
+          linha dele tem o favorecido em ted_execucao_ugs_excluidas() ou a ação em
+          ted_execucao_acoes_excluidas() (macros/mir_silver/ted_execucao_instrumento.sql — o
+          recorte da consulta oficial "Execução TED por UG"; hoje dispara pelo CSC/MGI, Diárias
+          e Passagens, Central de Compras, logística do MDHC e ação 2000). É do instrumento, não
+          da linha: basta uma linha administrativa para o instrumento inteiro sair, para não
+          entrar crédito pela metade num instrumento misto.
         tests:
           - not_null
       - name: tedinho_provavel
