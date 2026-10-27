@@ -846,3 +846,68 @@ models:
       - name: dt_ingest
         description: Data e hora da ingestão do anexo.
 
+  - name: planos_acao_meta_ted
+    description: "Metas do plano de acao de TED (API de TED, plano_acao_meta)."
+    columns:
+      - name: id_meta
+        tests: [unique, not_null]
+      - name: id_plano_acao
+        tests: [not_null]
+
+  - name: planos_acao_etapa_ted
+    description: "Etapas das metas do plano de acao de TED (API de TED, plano_acao_etapa)."
+    columns:
+      - name: id_etapa
+        tests: [unique, not_null]
+      - name: id_meta
+        tests:
+          - not_null
+          - relationships:
+              to: ref('planos_acao_meta_ted')
+              field: id_meta
+
+  - name: termos_execucao_ted
+    description: "Termo de execucao do TED (API de TED, termo_execucao): processo SEI e datas."
+    columns:
+      - name: id_termo
+        tests: [unique, not_null]
+      - name: id_plano_acao
+        tests: [not_null]
+
+  - name: planos_acao_analise_ted
+    description: "Analises do plano de acao de TED (API de TED, plano_acao_analise)."
+    columns:
+      - name: id_analise
+        tests: [unique, not_null]
+
+  - name: planos_acao_parecer_ted
+    description: "Pareceres do plano de acao de TED (API de TED, plano_acao_parecer)."
+    columns:
+      - name: id_parecer
+        tests: [unique, not_null]
+
+  - name: eventos_nota_credito_ted
+    description: >
+      Eventos contabeis das notas de credito de TED (API de TED, evento). Sem
+      chave na fonte: varias linhas por id_nota.
+    columns:
+      - name: id_nota
+        tests: [not_null]
+
+  - name: trf_programacao_financeira_ted
+    description: "TRF das programacoes financeiras de TED (API de TED, trf). Sem chave na fonte."
+    columns:
+      - name: id_programacao
+        tests: [not_null]
+
+  - name: programas_acao_orcamentaria_ted
+    description: "Acoes orcamentarias dos programas de TED (API de TED, programa_acao_orcamentaria)."
+    columns:
+      - name: id_programa
+        tests: [not_null]
+
+  - name: programas_beneficiario_ted
+    description: "Beneficiarios dos programas de TED por codigo Siorg (API de TED, programa_beneficiario)."
+    columns:
+      - name: id_programa
+        tests: [not_null]
