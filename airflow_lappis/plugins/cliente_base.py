@@ -48,7 +48,11 @@ class ClienteBase:
                     f"[cliente_base.py] Request successful with status "
                     f"{response.status_code}"
                 )
-                return HTTPStatus(response.status_code), response.json()
+                try:
+                    status_ok = HTTPStatus(response.status_code)
+                except ValueError:
+                    status_ok = response.status_code
+                return status_ok, response.json()
             except httpx.HTTPError as e:
                 status = self._status_do_erro(e)
                 if not self._deve_repetir(e):
