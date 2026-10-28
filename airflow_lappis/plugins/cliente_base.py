@@ -86,9 +86,10 @@ class ClienteBase:
         if not response.content:
             return None
         try:
-            return response.json()
+            corpo: dict | list = response.json()
         except ValueError as e:
             raise Exception("API returned a non-JSON response") from e
+        return corpo
 
     @staticmethod
     def _converter_status(code: int) -> HTTPStatus | int:
