@@ -107,15 +107,20 @@ class ClientPostgresDB:
         raw = f"uq_{table_name}_{'_'.join(columns)}"
         return re.sub(r"[^\w]", "_", raw)[:63]
 
-    def _flatten_data(self, data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _flatten_data(
+        self, data: List[Dict[str, Any]], preserva_nulos: bool = False
+    ) -> List[Dict[str, Any]]:
+        df = json_normalize(data, sep=ClientPostgresDB.SEPARATOR)
+        if preserva_nulos:
+            # o pandas troca o nulo por NaN numa coluna que mistura nulo e valor,
+            # e o NaN seria gravado como o texto 'NaN'
+            df = df.astype(object).where(df.notna(), None)
         return list(
             map(
                 lambda d: {
                     str(k): v if type(v) is not list else str(v) for k, v in d.items()
                 },
-                json_normalize(data, sep=ClientPostgresDB.SEPARATOR).to_dict(
-                    orient="records"
-                ),
+                df.to_dict(orient="records"),
             )
         )
 
@@ -197,6 +202,7 @@ class ClientPostgresDB:
         primary_key: Optional[List[str]] = None,
         schema: str = "raw",
         conn=None,
+        preserva_nulos: bool = False,
     ) -> None:
         if not data:
             logging.warning(
@@ -204,7 +210,7 @@ class ClientPostgresDB:
             )
             return
 
-        flattened_data = self._flatten_data(data)
+        flattened_data = self._flatten_data(data, preserva_nulos=preserva_nulos)
         columns = list(flattened_data[0].keys())
         column_probe = {col: None for col in columns}
 
@@ -270,12 +276,14 @@ class ClientPostgresDB:
         delete_where: str,
         delete_params: Tuple[Any, ...],
         schema: str = "raw",
+        preserva_nulos: bool = False,
     ) -> int:
         """
         Substitui um recorte da tabela: apaga as linhas que casam com
         delete_where e insere data, numa unica transacao. Para fontes que mandam
         o retrato completo do recorte a cada carga, em que linhas identicas sao
         registros distintos e nao podem ser deduplicadas por conteudo.
+        preserva_nulos: grava nulo onde o pandas produziria NaN (ver _flatten_data).
         Retorna o numero de linhas apagadas.
         """
         if not data:
@@ -298,7 +306,13 @@ class ClientPostgresDB:
                     delete_params,
                 )
                 deleted = cursor.rowcount
-            self.insert_data(data, table_name, schema=schema, conn=conn)
+            self.insert_data(
+                data,
+                table_name,
+                schema=schema,
+                conn=conn,
+                preserva_nulos=preserva_nulos,
+            )
             conn.commit()
 
         logging.info(
@@ -342,6 +356,26 @@ class ClientPostgresDB:
             with conn.cursor() as cursor:
                 cursor.execute(query)
                 return [row[0] for row in cursor.fetchall()]
+
+    def _get_ids_inteiros(self, table_name: str, column: str) -> List[int]:
+        """Ids distintos de transfere_gov.<tabela>. A ingestao grava texto e o
+        pandas pode transformar inteiro em '64.0'; por isso o float antes do int."""
+        self._validate_identifiers("transfere_gov", table_name)
+        query = f"SELECT DISTINCT {column} FROM transfere_gov.{table_name}"
+        with self._connect() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query)
+                valores = [row[0] for row in cursor.fetchall()]
+        return sorted({int(float(v)) for v in valores if v not in (None, "", "NaN")})
+
+    def get_id_metas(self) -> List[int]:
+        return self._get_ids_inteiros("planos_acao_meta", "id_meta")
+
+    def get_id_notas_credito(self) -> List[int]:
+        return self._get_ids_inteiros("notas_de_credito", "id_nota")
+
+    def get_id_programacoes_financeiras(self) -> List[int]:
+        return self._get_ids_inteiros("programacao_financeira", "id_programacao")
 
     def drop_table_if_exists(self, table_name: str, schema: str = "raw") -> None:
         with self._connect() as conn:

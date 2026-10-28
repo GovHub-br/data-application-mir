@@ -161,3 +161,41 @@ def test_export_csv_espacos_sem_quebra_de_linha_ficam_como_estao() -> None:
     texto = "a" + " " * 5000 + "b\tc"
 
     assert _exportar_csv(["obs"], [(texto,)]) == f"obs\n{texto}\n"
+
+
+@pytest.mark.parametrize(
+    "metodo, tabela, coluna",
+    [
+        ("get_id_metas", "planos_acao_meta", "id_meta"),
+        ("get_id_notas_credito", "notas_de_credito", "id_nota"),
+        ("get_id_programacoes_financeiras", "programacao_financeira", "id_programacao"),
+    ],
+)
+def test_get_ids_converte_texto_e_descarta_vazios(
+    metodo: str, tabela: str, coluna: str
+) -> None:
+    # a ingestao grava texto e o pandas pode transformar inteiro em '64.0'
+    conn = _mock_connect([coluna], [("64.0",), ("3",), (None,), ("",), ("NaN",), (3,)])
+
+    with patch("cliente_postgres.psycopg2.connect", return_value=conn):
+        ids = getattr(ClientPostgresDB("dsn"), metodo)()
+
+    assert ids == [3, 64]
+    conn.cursor.return_value.execute.assert_called_once_with(
+        f"SELECT DISTINCT {coluna} FROM transfere_gov.{tabela}"
+    )
+
+
+def test_flatten_data_sem_preserva_nulos_mantem_o_comportamento_atual() -> None:
+    achatado = ClientPostgresDB("dsn")._flatten_data([{"a": None}, {"a": "x"}])
+
+    assert achatado[1] == {"a": "x"}
+    assert achatado[0]["a"] != achatado[0]["a"]  # NaN, como antes
+
+
+def test_flatten_data_preserva_nulos_troca_nan_por_none() -> None:
+    achatado = ClientPostgresDB("dsn")._flatten_data(
+        [{"a": None, "b": {"c": 1}}, {"a": "x", "b": {"c": None}}], preserva_nulos=True
+    )
+
+    assert achatado == [{"a": None, "b__c": 1.0}, {"a": "x", "b__c": None}]

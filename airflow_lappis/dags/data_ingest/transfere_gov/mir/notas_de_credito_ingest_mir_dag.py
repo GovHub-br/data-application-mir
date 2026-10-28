@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from schedule_loader import get_dynamic_schedule
 from postgres_helpers import get_postgres_conn
 from cliente_postgres import ClientPostgresDB
-from cliente_ted import ClienteTed
+from cliente_ted import ClienteTed, numeros_como_texto
 
 
 @dag(
@@ -19,33 +19,48 @@ from cliente_ted import ClienteTed
     tags=["notas de credito", "ted_api", "MIR"],
 )
 def notas_de_credito_mir_dag() -> None:
+    """Notas de crédito dos planos de ação (endpoint nota_credito), por id_plano_acao.
+
+    A API devolve o retrato completo, entao a carga substitui a tabela inteira
+    (linhas removidas na fonte saem do banco). Se a API falhar para qualquer
+    plano de ação, a DAG falha e a tabela fica como estava, sem gravar um retrato
+    incompleto.
+    """
+
     @task
     def fetch_and_store_notas_de_credito() -> None:
-        logging.info("Iniciando fetch_and_store_notas_de_credito")
-
         api = ClienteTed()
-        postgres_conn_str = get_postgres_conn("postgres_mir")
-        db = ClientPostgresDB(postgres_conn_str)
-        id_planos_acao = db.get_id_planos_acao()
+        db = ClientPostgresDB(get_postgres_conn("postgres_mir"))
 
-        for id_plano_acao in id_planos_acao:
-            notas_de_credito = api.get_notas_de_credito_by_id_plano_acao(id_plano_acao)
-            if notas_de_credito:
-                for nota in notas_de_credito:
-                    nota["dt_ingest"] = datetime.now().isoformat()
+        linhas: list = []
+        for id_plano_acao in db.get_id_planos_acao():
+            dados = api.get_notas_de_credito_by_id_plano_acao(id_plano_acao)
+            if dados is None:
+                raise RuntimeError(
+                    f"Falha na API de TED ao buscar notas de crédito "
+                    f"(id_plano_acao {id_plano_acao})"
+                )
+            linhas.extend(numeros_como_texto(dados))
 
-                db.insert_data(
-                    notas_de_credito,
-                    "notas_de_credito",
-                    conflict_fields=["id_nota"],
-                    primary_key=["id_nota"],
-                    schema="transfere_gov",
-                )
-            else:
-                logging.warning(
-                    f"Nenhuma nota de crédito encontrada plano de ação {id_plano_acao}"
-                )
+        if not linhas:
+            logging.warning("API de TED sem notas de crédito; tabela mantida")
+            return
+
+        dt_ingest = datetime.now().isoformat()
+        for linha in linhas:
+            linha["dt_ingest"] = dt_ingest
+
+        db.replace_rows(
+            linhas,
+            "notas_de_credito",
+            delete_where="true",
+            delete_params=(),
+            schema="transfere_gov",
+            preserva_nulos=True,
+        )
+        logging.info(f"{len(linhas)} linhas gravadas em transfere_gov.notas_de_credito")
 
     fetch_and_store_notas_de_credito()
+
 
 notas_de_credito_mir_dag()
