@@ -51,7 +51,13 @@ class ClienteBase:
                     f"[cliente_base.py] Request successful with status "
                     f"{response.status_code}"
                 )
-                return self._converter_status(response.status_code), response.json()
+                if not response.content:
+                    return self._converter_status(response.status_code), None
+                try:
+                    corpo = response.json()
+                except ValueError as e:
+                    raise Exception("API returned a non-JSON response") from e
+                return self._converter_status(response.status_code), corpo
             except httpx.HTTPError as e:
                 status = self._status_do_erro(e)
                 if not self._deve_repetir(e):
