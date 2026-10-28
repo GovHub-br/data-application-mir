@@ -51,13 +51,10 @@ class ClienteBase:
                     f"[cliente_base.py] Request successful with status "
                     f"{response.status_code}"
                 )
-                if not response.content:
-                    return self._converter_status(response.status_code), None
-                try:
-                    corpo = response.json()
-                except ValueError as e:
-                    raise Exception("API returned a non-JSON response") from e
-                return self._converter_status(response.status_code), corpo
+                return (
+                    self._converter_status(response.status_code),
+                    self._ler_corpo(response),
+                )
             except httpx.HTTPError as e:
                 status = self._status_do_erro(e)
                 if not self._deve_repetir(e):
@@ -78,6 +75,20 @@ class ClienteBase:
                     ) from e
 
         return HTTPStatus.INTERNAL_SERVER_ERROR, None
+
+    @staticmethod
+    def _ler_corpo(response: httpx.Response) -> Optional[dict | list]:
+        """
+        Corpo vazio (ex.: 204) vira None. Corpo não vazio que não é JSON
+        indica resposta inesperada e falha explicitamente, para que a DAG
+        não ingira dados vazios em silêncio.
+        """
+        if not response.content:
+            return None
+        try:
+            return response.json()
+        except ValueError as e:
+            raise Exception("API returned a non-JSON response") from e
 
     @staticmethod
     def _converter_status(code: int) -> HTTPStatus | int:
