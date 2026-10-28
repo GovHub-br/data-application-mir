@@ -83,18 +83,6 @@ def test_CP2_corpo_json_valido_e_devolvido(corpo):
     assert dados == corpo
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="DEFEITO: 2xx sem corpo JSON (ex.: 204 No Content) levanta "
-    "JSONDecodeError fora do bloco try/except de retry",
-)
-@pytest.mark.parametrize("resp", [httpx.Response(204), httpx.Response(200, text="ok")])
-def test_CP2_sucesso_sem_json_nao_deveria_quebrar(resp):
-    st, dados = _cliente(_sequencia(resp)).request("DELETE", "/x")
-    assert st == HTTPStatus(resp.status_code)
-    assert dados is None
-
-
 # ---- CP3: Particionamento do parâmetro timeout
 @pytest.mark.parametrize(
     "kwargs, esperado",
@@ -215,3 +203,34 @@ def test_TDD2_status_2xx_nao_registrado_retorna_codigo_numerico(status):
 def test_TDD2_status_registrado_continua_sendo_httpstatus(status):
     st, _ = _cliente(_sequencia(httpx.Response(status, json={}))).request("GET", "/x")
     assert isinstance(st, HTTPStatus)
+
+
+# ======================================================================
+# TDD ciclo 3: sucesso sem corpo JSON
+# Corpo vazio é legítimo (204, DELETE) -> (status, None).
+# Corpo não vazio e não JSON (ex.: página HTML de manutenção) -> erro claro.
+# ======================================================================
+@pytest.mark.parametrize(
+    "resp",
+    [httpx.Response(204), httpx.Response(200, content=b""), httpx.Response(202)],
+)
+def test_TDD3_sucesso_com_corpo_vazio_retorna_none(resp):
+    st, dados = _cliente(_sequencia(resp)).request("DELETE", "/x")
+    assert st == resp.status_code
+    assert dados is None
+
+
+@pytest.mark.parametrize(
+    "resp",
+    [
+        httpx.Response(200, text="ok"),
+        httpx.Response(200, html="<html>Em manutenção</html>"),
+        httpx.Response(200, text=" "),
+    ],
+)
+def test_TDD3_sucesso_com_corpo_nao_json_falha_com_mensagem_clara(resp):
+    handler = _sequencia(resp)
+    with pytest.raises(Exception, match="non-JSON response") as exc:
+        _cliente(handler).request("GET", "/x")
+    assert isinstance(exc.value.__cause__, ValueError)
+    assert len(handler.chamadas) == 1
