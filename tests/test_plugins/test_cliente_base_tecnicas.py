@@ -58,25 +58,11 @@ def sem_espera(monkeypatch):
 # Classes: [200..299] sucesso | [300..399] redirecionamento | [400..499]
 # erro do cliente | [500..599] erro do servidor.
 # Limites testados: 299/300, 399/400, 499/500, 599 e 200.
-@pytest.mark.parametrize(
-    "status",
-    [
-        200,
-        201,
-        pytest.param(
-            299,
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason="DEFEITO: 299 é 2xx válido pela RFC 9110, mas "
-                "HTTPStatus(299) levanta ValueError (código não registrado)",
-            ),
-        ),
-    ],
-)
+@pytest.mark.parametrize("status", [200, 201, 299])
 def test_CP1_status_2xx_retorna_status_e_json(status):
     handler = _sequencia(httpx.Response(status, json={"ok": True}))
     st, dados = _cliente(handler).request("GET", "/x")
-    assert st == HTTPStatus(status)
+    assert st == status
     assert dados == {"ok": True}
     assert len(handler.chamadas) == 1
 
@@ -211,3 +197,21 @@ def _erro_status(code):
 )
 def test_MCDC_deve_repetir(caso, erro, deve_repetir):
     assert ClienteBase._deve_repetir(erro) is deve_repetir
+
+
+# ======================================================================
+# TDD ciclo 2: status 2xx fora do enum HTTPStatus não pode quebrar
+# ======================================================================
+@pytest.mark.parametrize("status", [218, 250, 299])
+def test_TDD2_status_2xx_nao_registrado_retorna_codigo_numerico(status):
+    handler = _sequencia(httpx.Response(status, json={"ok": True}))
+    st, dados = _cliente(handler).request("GET", "/x")
+    assert st == status
+    assert dados == {"ok": True}
+    assert len(handler.chamadas) == 1
+
+
+@pytest.mark.parametrize("status", [200, 201, 226])
+def test_TDD2_status_registrado_continua_sendo_httpstatus(status):
+    st, _ = _cliente(_sequencia(httpx.Response(status, json={}))).request("GET", "/x")
+    assert isinstance(st, HTTPStatus)
