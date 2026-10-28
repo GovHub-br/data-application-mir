@@ -23,7 +23,7 @@ class ClienteBase:
 
     def request(
         self, method: str, path: str, **kwargs: Any
-    ) -> Tuple[HTTPStatus, Optional[dict | list]]:
+    ) -> Tuple[HTTPStatus | int, Optional[dict | list]]:
         """
         Faz uma requisição HTTP em até DEFAULT_MAX_RETRIES+1 tentativas.
 
@@ -32,7 +32,10 @@ class ClienteBase:
             path (str): URL path.
 
         Returns:
-            Tuple[HTTPStatus, dict]: status e resposta da requisição HTTP.
+            Tuple[HTTPStatus | int, dict | list | None]: status e resposta da
+            requisição HTTP. O status é int quando o código não existe no enum
+            HTTPStatus (ex.: 299); como HTTPStatus é IntEnum, comparações com
+            int continuam funcionando nos chamadores.
         """
         kwargs["timeout"] = kwargs.get("timeout", self.DEFAULT_TIMEOUT)
 
@@ -48,11 +51,7 @@ class ClienteBase:
                     f"[cliente_base.py] Request successful with status "
                     f"{response.status_code}"
                 )
-                try:
-                    status_ok = HTTPStatus(response.status_code)
-                except ValueError:
-                    status_ok = response.status_code
-                return status_ok, response.json()
+                return self._converter_status(response.status_code), response.json()
             except httpx.HTTPError as e:
                 status = self._status_do_erro(e)
                 if not self._deve_repetir(e):
@@ -73,6 +72,14 @@ class ClienteBase:
                     ) from e
 
         return HTTPStatus.INTERNAL_SERVER_ERROR, None
+
+    @staticmethod
+    def _converter_status(code: int) -> HTTPStatus | int:
+        """HTTPStatus quando o código é registrado; caso contrário, o int."""
+        try:
+            return HTTPStatus(code)
+        except ValueError:
+            return code
 
     @staticmethod
     def _status_do_erro(erro: httpx.HTTPError) -> int | str:
