@@ -12,6 +12,20 @@ seeds:
       column_types:
         sigla_origem: text
         sigla_canonica: text
+  - name: ods
+    description: >
+      Os 18 Objetivos de Desenvolvimento Sustentável, com o ODS 18 (Igualdade
+      Étnico-Racial) adotado pelo Brasil. Dá nome aos ODS em coleta_lista_agenda,
+      porque o catálogo de agendas do PPA só traz "ODS 18" e as metas.
+    config:
+      column_types:
+        numero: integer
+        nome: text
+    columns:
+      - name: numero
+        tests:
+          - unique
+          - not_null
   - name: ugs_mir
     description: >
       Unidades gestoras do MIR. Lista explicita (decisao do usuario em

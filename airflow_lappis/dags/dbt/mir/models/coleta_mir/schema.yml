@@ -340,3 +340,140 @@ models:
           Crédito que ficou com o TED: descentralizado menos anulado menos devolvido, em
           R$. Soma todos os eventos da NC, então um evento além dos três faz a conta não
           fechar e o build falhar.
+
+  - name: coleta_lista_ppa
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para o item 3.1 do formulário de TEDs (vinculação ao PPA):
+      a lista em cascata dos programas do MIR no PPA. Do programa saem o objetivo geral e
+      os objetivos estratégicos, que o formulário preenche sozinho, e os objetivos
+      específicos e medidas institucionais, que o servidor escolhe; do objetivo
+      específico saem as entregas e as medidas institucionais dele. A opção "Não se
+      aplica" é do formulário, não da lista.
+
+      Entram os itens de todas as revisões do PPA, com o texto da revisão mais recente
+      em que aparecem; quem saiu da última revisão fica com in_vigente = false.
+    columns:
+      - name: chave
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: primary_key
+        description: >
+          Chave do item: nível e código do PPA (ex.: 'programa:5802',
+          'objetivo_especifico:0264', 'objetivo_estrategico:5802:1.9'). É o que a
+          resposta do Coleta deve guardar.
+
+      - name: nivel
+        data_type: text
+        description: >
+          programa, objetivo_geral, objetivo_estrategico, objetivo_especifico, entrega,
+          medida_institucional_programa ou medida_institucional_objetivo_especifico.
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - programa
+                - objetivo_geral
+                - objetivo_estrategico
+                - objetivo_especifico
+                - entrega
+                - medida_institucional_programa
+                - medida_institucional_objetivo_especifico
+
+      - name: codigo
+        data_type: text
+        description: "Código do item no PPA (ex.: 5802, 0264, 0547). O do objetivo estratégico se repete entre programas."
+
+      - name: chave_pai
+        data_type: text
+        description: "Chave do item de que este depende na cascata. Nulo no programa."
+        tests:
+          - relationships:
+              to: ref('coleta_lista_ppa')
+              field: chave
+
+      - name: titulo
+        data_type: text
+        description: "Enunciado do item (no programa, o título)."
+
+      - name: descricao
+        data_type: text
+        description: "Descrição do item, quando o PPA traz."
+
+      - name: ds_publico_alvo
+        data_type: text
+        description: "Público-alvo do programa. Só preenchido no nível programa."
+
+      - name: ano_ppa
+        data_type: integer
+        description: "Revisão do PPA de onde vem o texto: a mais recente em que o item aparece."
+
+      - name: in_vigente
+        data_type: boolean
+        description: "O item está na revisão mais recente do PPA."
+
+  - name: coleta_lista_agenda
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para os itens 3.1 (agendas transversais) e 3.2 (ODS) do
+      formulário de TEDs: o catálogo nacional de agendas do PPA. Agenda transversal ->
+      subagenda; ODS -> meta ODS. O catálogo só traz as metas ODS que o PPA usa (as dez
+      do ODS 18 estão todas). Revisões a partir de 2025; quem saiu da última fica com
+      in_vigente = false.
+
+      Ficam de fora as agendas prioritárias, as territoriais e o PPA Participativo
+      (macro coleta_agenda_tipos_fora), que o formulário não pergunta.
+    columns:
+      - name: chave
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: primary_key
+        description: >
+          Chave do item: 'ods:<número>' para o ODS e 'agenda:<código SIOP>' para agenda,
+          subagenda e meta ODS. É o que a resposta do Coleta deve guardar.
+
+      - name: nivel
+        data_type: text
+        description: "agenda_transversal, subagenda, ods ou meta_ods."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['agenda_transversal', 'subagenda', 'ods', 'meta_ods']
+
+      - name: codigo
+        data_type: text
+        description: "Código do item no catálogo do SIOP; no ODS, o número."
+
+      - name: chave_pai
+        data_type: text
+        description: "Agenda mãe da subagenda ou ODS da meta. Nulo na agenda transversal e no ODS."
+        tests:
+          - relationships:
+              to: ref('coleta_lista_agenda')
+              field: chave
+
+      - name: titulo
+        data_type: text
+        description: "Nome do item (ex.: 'Igualdade Racial', 'ODS 18 - Igualdade Étnico-Racial', 'ODS META 18.1')."
+
+      - name: descricao
+        data_type: text
+        description: "Descrição do item no catálogo; na meta ODS, o texto da meta."
+
+      - name: ano_ppa
+        data_type: integer
+        description: >
+          Revisão do catálogo de onde vem o texto: a mais recente em que o item aparece.
+          Nulo no ODS, que vem do seed ods.
+
+      - name: in_vigente
+        data_type: boolean
+        description: >
+          O item está na revisão mais recente do catálogo. Sempre verdadeiro no ODS: o
+          seed lista os 18, mesmo os que não têm meta no catálogo.
