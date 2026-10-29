@@ -138,3 +138,90 @@ models:
         description: >
           Código Siorg do órgão que recebeu o crédito, do beneficiário do programa. Nulo
           quando o programa tem mais de um beneficiário.
+
+  - name: coleta_ted_produto
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para o item 5.2 do formulário de TEDs (produtos previstos no
+      plano de trabalho): uma linha por meta e uma por etapa de cada TED de coleta_ted.
+      A meta é o produto pactuado; as etapas são as ações previstas dentro dela. Fonte:
+      API de TED (plano_acao_meta e plano_acao_etapa).
+
+      Se o plano de ação for refeito no portal e as metas ganharem ids novos, as linhas
+      antigas somem e entram outras; quem consome deve ligar as respostas a id_origem e
+      tratar a ausência como produto retirado do plano.
+    columns:
+      - name: id_origem
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: primary_key
+        description: >
+          Chave da linha: 'meta:' ou 'etapa:' seguido do id da meta ou da etapa na API
+          de TED. É o que a resposta do Coleta deve guardar.
+
+      - name: id_plano_acao
+        data_type: integer
+        constraints:
+          - type: not_null
+        description: "TED da linha (coleta_ted.id_plano_acao)."
+        tests:
+          - relationships:
+              to: ref('coleta_ted')
+              field: id_plano_acao
+
+      - name: tp_nivel
+        data_type: text
+        description: "'meta' (produto pactuado) ou 'etapa' (ação prevista dentro da meta)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['meta', 'etapa']
+
+      - name: id_origem_pai
+        data_type: text
+        description: "Na etapa, o id_origem da meta a que ela pertence. Nulo na meta."
+
+      - name: nr_meta
+        data_type: integer
+        description: "Número da meta no plano de trabalho. Na etapa, o número da meta a que ela pertence."
+
+      - name: nr_etapa
+        data_type: integer
+        description: "Número da etapa dentro da meta. Nulo na meta."
+
+      - name: no_item
+        data_type: text
+        description: "Nome da meta ou da etapa."
+
+      - name: ds_item
+        data_type: text
+        description: "Descrição da meta ou da etapa."
+
+      - name: ds_unidade
+        data_type: text
+        description: "Unidade de medida da etapa (ex.: UNIDADE). A API não traz unidade na meta."
+
+      - name: qt_prevista
+        data_type: numeric
+        description: "Quantidade prevista da etapa. A API não traz quantidade na meta."
+
+      - name: vl_unitario
+        data_type: numeric
+        description: "Valor unitário previsto da etapa, em R$. A API não traz valor na meta."
+
+      - name: dt_inicio
+        data_type: date
+        description: "Início previsto da meta ou da etapa."
+
+      - name: dt_fim
+        data_type: date
+        description: "Fim previsto da meta ou da etapa."
+
+      - name: dt_atualizacao
+        data_type: timestamptz
+        description: >
+          Carga mais antiga entre as fontes da linha. Herda o dt_ingest das bronzes, que
+          interpretam como horário de Brasília um horário gravado em UTC (3 h adiantado).
