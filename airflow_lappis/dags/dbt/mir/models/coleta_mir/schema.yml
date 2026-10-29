@@ -220,12 +220,6 @@ models:
         data_type: date
         description: "Fim previsto da meta ou da etapa."
 
-      - name: dt_atualizacao
-        data_type: timestamptz
-        description: >
-          Carga mais antiga entre as fontes da linha. Herda o dt_ingest das bronzes, que
-          interpretam como horário de Brasília um horário gravado em UTC (3 h adiantado).
-
   - name: coleta_ted_fonte
     config:
       contract:

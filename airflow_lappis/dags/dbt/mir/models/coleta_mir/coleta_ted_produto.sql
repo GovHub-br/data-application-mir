@@ -32,8 +32,7 @@ with
             qt_meta as qt_prevista,
             vl_unitario,
             dt_inicio,
-            dt_fim,
-            dt_ingest as dt_atualizacao
+            dt_fim
         from meta
 
         union all
@@ -51,8 +50,7 @@ with
             e.qt_etapa as qt_prevista,
             e.vl_unitario,
             e.dt_inicio,
-            e.dt_fim,
-            least(m.dt_ingest, e.dt_ingest) as dt_atualizacao
+            e.dt_fim
         from {{ ref("planos_acao_etapa_ted") }} as e
         join meta as m on m.id_meta = e.id_meta
     )
@@ -70,6 +68,5 @@ select
     qt_prevista::numeric as qt_prevista,
     vl_unitario::numeric as vl_unitario,
     dt_inicio::date as dt_inicio,
-    dt_fim::date as dt_fim,
-    dt_atualizacao::timestamptz as dt_atualizacao
+    dt_fim::date as dt_fim
 from linhas
