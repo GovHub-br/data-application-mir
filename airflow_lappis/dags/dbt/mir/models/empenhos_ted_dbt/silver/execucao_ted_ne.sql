@@ -15,6 +15,14 @@
   da NE, e o relatório repete a NE com "NAO SE APLICA" em parte das linhas, então o número
   do TED citado ali dependia da ordem do CSV. Aqui entram todos os valores distintos.
 
+  Restos a pagar: o exercício de cada linha é o ano no fim de emissao_mes ("000/2026" na
+  inscrição), como na DAG do PPA. A NE não paga é reinscrita a cada exercício, então o
+  RAP inscrito não se soma entre exercícios:
+  - insc_rap: inscrito no exercício seguinte ao da NE, o que passou para restos a pagar;
+  - pag_rap: restos a pagar pagos, somados em todos os exercícios seguintes;
+  - saldo_rap: inscrito menos pago no último exercício do relatório, o que falta pagar
+    (o relatório não traz o RAP cancelado durante esse exercício).
+
   A var `ted_execucao_corte_emissao` (YYYY-MM-DD) corta as NEs emitidas depois da data de
   posição da consulta oficial, quando as duas extrações não são do mesmo dia.
 #}
@@ -50,6 +58,10 @@ with
             despesas_empenhadas as emp,
             despesas_liquidadas as liq,
             despesas_pagas as pag,
+            right(emissao_mes, 4)::integer as exercicio,
+            max(right(emissao_mes, 4)::integer) over () as ultimo_exercicio,
+            restos_a_pagar_inscritos as insc_rap,
+            restos_a_pagar_pagos as pag_rap,
             ne_ccor_descricao,
             coalesce(ne_info_complementar, '') as info,
             coalesce(doc_observacao, '') as doc,
@@ -100,6 +112,13 @@ with
             sum(emp) as emp,
             sum(liq) as liq,
             sum(pag) as pag,
+            coalesce(sum(insc_rap) filter (where exercicio = ano + 1), 0) as insc_rap,
+            coalesce(sum(pag_rap), 0) as pag_rap,
+            coalesce(
+                sum(insc_rap - pag_rap)
+                filter (where exercicio = ultimo_exercicio and exercicio > ano),
+                0
+            ) as saldo_rap,
             -- o Python escolhe as NEs a atribuir pela linha com valor, não pela soma
             bool_or(abs(emp) > 0.005 or abs(liq) > 0.005 or abs(pag) > 0.005) as tem_movimento,
             min(ne_ccor_descricao) as ne_ccor_descricao,
@@ -129,6 +148,9 @@ select
     n.emp,
     n.liq,
     n.pag,
+    n.insc_rap,
+    n.pag_rap,
+    n.saldo_rap,
     n.tem_movimento,
     n.ne_ccor_descricao,
     n.processo,

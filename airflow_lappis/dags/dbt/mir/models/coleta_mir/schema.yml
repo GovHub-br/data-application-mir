@@ -14,10 +14,14 @@ models:
       Entra todo plano de ação com número de transferência que não foi rejeitado,
       vigente ou não: o Bloco 6 (relatório de cumprimento do objeto) também vale para
       TED encerrado. A tabela é refeita a cada carga: um TED some dela quando o plano é
-      rejeitado ou perde o número no portal.
+      rejeitado ou perde o número no portal. A ingestão do portal só insere e atualiza,
+      então um plano que deixe de vir na resposta do portal continua aqui com a última
+      situação conhecida.
 
       Lido pelo Coleta MIR: mudar o nome, o tipo ou o significado de uma coluna quebra o
-      consumidor. Coluna nova é segura.
+      consumidor. Coluna nova é segura. As regras de id_plano_acao, cd_ted e
+      nr_transferencia são constraints: um build que as viole falha antes de trocar a
+      tabela, e o Coleta continua lendo a versão anterior.
     columns:
       - name: id_plano_acao
         data_type: integer
@@ -30,26 +34,29 @@ models:
 
       - name: cd_ted
         data_type: text
+        constraints:
+          - type: not_null
+          - type: unique
         description: >
           Número do TED no formulário: o código do programa do TED no portal, com 14
           dígitos (id do MIR no portal, 308823, mais ano e sequencial). Ex.:
-          30882320220003.
-        tests:
-          - not_null
-          - unique
+          30882320220003. Enquanto o programa não chega à API de dados abertos, sai do
+          código do plano no portal.
 
       - name: no_ted
         data_type: text
-        description: "Nome do programa do TED, o título que o formulário mostra ao lado do número."
+        description: >
+          Nome do programa do TED, o título que o formulário mostra ao lado do número.
+          Nulo enquanto o programa não chega à API de dados abertos.
 
       - name: nr_transferencia
         data_type: text
+        constraints:
+          - type: not_null
+          - type: unique
         description: >
           Número da transferência no SIAFI, o que as NCs e NEs citam. Numérico até 2025
           (ex.: 930164); alfanumérico nos TEDs novos de 2026 (ex.: 7AAFAJ).
-        tests:
-          - not_null
-          - unique
 
       - name: aa_instrumento
         data_type: integer
@@ -57,7 +64,16 @@ models:
 
       - name: ds_situacao_plano
         data_type: text
-        description: "Situação do plano de ação no portal (ex.: APROVADO, ANALISE_APROVADA)."
+        description: >
+          Situação do plano de ação no portal (ex.: APROVADO, ANALISE_APROVADA). O
+          filtro só exclui REJEITADO; o teste avisa quando surgir outra situação.
+        tests:
+          - accepted_values:
+              values:
+                - APROVADO
+                - ANALISE_APROVADA
+              config:
+                severity: warn
 
       - name: ds_situacao_termo
         data_type: text
@@ -122,6 +138,87 @@ models:
         description: >
           Código Siorg do órgão que recebeu o crédito, do beneficiário do programa. Nulo
           quando o programa tem mais de um beneficiário.
+
+  - name: coleta_ted_produto
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para o item 5.2 do formulário de TEDs (produtos previstos no
+      plano de trabalho): uma linha por meta e uma por etapa de cada TED de coleta_ted.
+      A meta é o produto pactuado; as etapas são as ações previstas dentro dela. Fonte:
+      API de TED (plano_acao_meta e plano_acao_etapa).
+
+      Se o plano de ação for refeito no portal e as metas ganharem ids novos, as linhas
+      antigas somem e entram outras; quem consome deve ligar as respostas a id_origem e
+      tratar a ausência como produto retirado do plano.
+    columns:
+      - name: id_origem
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: primary_key
+        description: >
+          Chave da linha: 'meta:' ou 'etapa:' seguido do id da meta ou da etapa na API
+          de TED. É o que a resposta do Coleta deve guardar.
+
+      - name: id_plano_acao
+        data_type: integer
+        constraints:
+          - type: not_null
+        description: "TED da linha (coleta_ted.id_plano_acao)."
+        tests:
+          - relationships:
+              to: ref('coleta_ted')
+              field: id_plano_acao
+
+      - name: tp_nivel
+        data_type: text
+        description: "'meta' (produto pactuado) ou 'etapa' (ação prevista dentro da meta)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['meta', 'etapa']
+
+      - name: id_origem_pai
+        data_type: text
+        description: "Na etapa, o id_origem da meta a que ela pertence. Nulo na meta."
+
+      - name: nr_meta
+        data_type: integer
+        description: "Número da meta no plano de trabalho. Na etapa, o número da meta a que ela pertence."
+
+      - name: nr_etapa
+        data_type: integer
+        description: "Número da etapa dentro da meta. Nulo na meta."
+
+      - name: no_item
+        data_type: text
+        description: "Nome da meta ou da etapa."
+
+      - name: ds_item
+        data_type: text
+        description: "Descrição da meta ou da etapa."
+
+      - name: ds_unidade
+        data_type: text
+        description: "Unidade de medida da etapa (ex.: UNIDADE). A API não traz unidade na meta."
+
+      - name: qt_prevista
+        data_type: numeric
+        description: "Quantidade prevista da etapa. A API não traz quantidade na meta."
+
+      - name: vl_unitario
+        data_type: numeric
+        description: "Valor unitário previsto da etapa, em R$. A API não traz valor na meta."
+
+      - name: dt_inicio
+        data_type: date
+        description: "Início previsto da meta ou da etapa."
+
+      - name: dt_fim
+        data_type: date
+        description: "Fim previsto da meta ou da etapa."
 
       - name: dt_atualizacao
         data_type: timestamptz

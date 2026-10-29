@@ -11,18 +11,27 @@
   empenhado_<camada>: parte do empenhado que veio de cada camada de identificação
   (execucao_ted_ne_vinculo.grupo_regra). Instrumento mesclado ("A + B", "NC_A / NC_B") é
   a junção que o crédito não permite separar.
+
+  Restos a pagar (execucao_ted_ne), na linha do ano de emissão da NE: rap_inscrito é o
+  que passou para restos a pagar no fim do ano, pago_rap o que foi pago depois e
+  rap_a_pagar o que falta pagar no último exercício do relatório. pago_total = pago +
+  pago_rap.
 #}
 with
     vinculo as (
         select
-            ano,
-            coalesce(instrumento, '(não identificado)') as instrumento,
-            tipo_instrumento,
-            grupo_regra,
-            emp,
-            liq,
-            pag
-        from {{ ref("execucao_ted_ne_vinculo") }}
+            v.ano,
+            coalesce(v.instrumento, '(não identificado)') as instrumento,
+            v.tipo_instrumento,
+            v.grupo_regra,
+            v.emp,
+            v.liq,
+            v.pag,
+            b.insc_rap,
+            b.pag_rap,
+            b.saldo_rap
+        from {{ ref("execucao_ted_ne_vinculo") }} as v
+        inner join {{ ref("execucao_ted_ne") }} as b on b.ne_ccor = v.ne_ccor
     ),
 
     planos as (
@@ -81,6 +90,10 @@ select
     round(sum(v.emp), 2) as empenhado,
     round(sum(v.liq), 2) as liquidado,
     round(sum(v.pag), 2) as pago,
+    round(sum(v.insc_rap), 2) as rap_inscrito,
+    round(sum(v.pag_rap), 2) as pago_rap,
+    round(sum(v.pag + v.pag_rap), 2) as pago_total,
+    round(sum(v.saldo_rap), 2) as rap_a_pagar,
     round(
         sum(v.emp) filter (where v.grupo_regra = '1 cascata dbt'), 2
     ) as empenhado_cascata_dbt,

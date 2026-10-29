@@ -38,7 +38,11 @@ select
     v.grupo_regra,
     v.emp as empenhado,
     v.liq as liquidado,
-    v.pag as pago
+    v.pag as pago,
+    b.insc_rap as rap_inscrito,
+    b.pag_rap as pago_rap,
+    v.pag + b.pag_rap as pago_total,
+    b.saldo_rap as rap_a_pagar
 from {{ ref("execucao_ted_ne_vinculo") }} as v
 inner join {{ ref("execucao_ted_ne") }} as b on b.ne_ccor = v.ne_ccor
 left join nomes as n on n.ug_executora_codigo = v.ug
