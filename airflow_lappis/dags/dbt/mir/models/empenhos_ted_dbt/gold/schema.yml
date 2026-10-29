@@ -515,6 +515,20 @@ models:
         description: "Liquidado no exercício."
       - name: pago
         description: "Pago no exercício, sem RAP (mesmo escopo do liquidado). Deve ser <= liquidado (teste test_ted_execucao_por_instrumento_pago_le_liquidado)."
+      - name: rap_inscrito
+        description: >
+          Inscrito em restos a pagar no fim do ano das NEs (inscrição no exercício
+          seguinte; as reinscrições não entram, porque repetem o saldo).
+      - name: pago_rap
+        description: >
+          Restos a pagar pagos nos exercícios seguintes, somados, das NEs do ano (ano =
+          emissão da NE, não o ano do pagamento).
+      - name: pago_total
+        description: "pago + pago_rap: tudo o que já foi pago das NEs do ano. Deve ser <= empenhado."
+      - name: rap_a_pagar
+        description: >
+          Restos a pagar ainda a pagar: inscrito menos pago no último exercício do
+          relatório. Menor que rap_inscrito - pago_rap quando houve cancelamento de RAP.
       - name: empenhado_cascata_dbt
         description: "Parte do empenhado ligada pela cascata dbt (empenhos_por_plano_acao)."
       - name: empenhado_regras_deterministicas
@@ -578,3 +592,11 @@ models:
         description: "Liquidado no exercício."
       - name: pago
         description: "Pago no exercício."
+      - name: rap_inscrito
+        description: "Inscrito em restos a pagar no fim do ano da NE."
+      - name: pago_rap
+        description: "Restos a pagar pagos da NE nos exercícios seguintes, somados."
+      - name: pago_total
+        description: "pago + pago_rap."
+      - name: rap_a_pagar
+        description: "Restos a pagar da NE ainda a pagar no último exercício do relatório."
