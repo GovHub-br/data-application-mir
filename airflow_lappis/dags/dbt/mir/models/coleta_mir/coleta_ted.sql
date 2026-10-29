@@ -10,8 +10,13 @@
   não dava.
 
   cd_ted é o código do programa do TED (14 dígitos), o "Número do TED" do formulário.
-  nr_transferencia é o número que as NCs e NEs do SIAFI citam. Hoje programa, plano e
-  TED são 1 para 1 (testes unique); a chave do contrato é id_plano_acao.
+  O programa vem da API de dados abertos, atrás do portal; sem ele, o número sai do
+  código do plano no portal ("30882320220003-000328"). nr_transferencia é o número que
+  as NCs e NEs do SIAFI citam. Hoje programa, plano e TED são 1 para 1 (constraints
+  unique); a chave do contrato é id_plano_acao.
+
+  Sem data de carga: o dt_ingest das bronzes lê como horário de Brasília um horário
+  gravado em UTC. A coluna entra quando as bronzes forem corrigidas.
 
   Os valores executados (empenhado, liquidado, pago) entram depois, a partir de
   ted_execucao_por_instrumento.
@@ -32,8 +37,7 @@ with
             id_plano_acao,
             nr_processo_sei,
             dt_assinatura,
-            ds_situacao,
-            dt_ingest
+            ds_situacao
         from {{ ref("termos_execucao_ted") }}
         order by id_plano_acao, dt_assinatura, id_termo
     ),
@@ -41,7 +45,7 @@ with
     -- Siorg do parceiro: só quando o programa tem um beneficiário. Com mais de um,
     -- não há como saber qual é o do plano.
     beneficiario as (
-        select id_programa, max(cd_siorg) as cd_siorg, max(dt_ingest) as dt_ingest
+        select id_programa, max(cd_siorg) as cd_siorg
         from {{ ref("programas_beneficiario_ted") }}
         group by id_programa
         having count(*) = 1
@@ -49,7 +53,8 @@ with
 
 select
     p.id_plano_acao::integer as id_plano_acao,
-    g.tx_codigo_programa::text as cd_ted,
+    coalesce(g.tx_codigo_programa, split_part(p.codigo_plano_acao, '-', 1))::text
+    as cd_ted,
     g.tx_nome_programa::text as no_ted,
     p.sq_instrumento::text as nr_transferencia,
     p.aa_instrumento::integer as aa_instrumento,
@@ -67,9 +72,7 @@ select
     p.sigla_unidade_descentralizada::text as sg_parceiro,
     p.unidade_descentralizada::text as no_parceiro,
     p.cd_ug_unidade_descentralizada::text as cd_ug_parceiro,
-    b.cd_siorg::text as cd_siorg_parceiro,
-    least(p.dt_ingest, g.dt_ingest, t.dt_ingest, b.dt_ingest)::timestamptz
-    as dt_atualizacao
+    b.cd_siorg::text as cd_siorg_parceiro
 from plano as p
 left join {{ ref("programas_ted") }} as g on g.id_programa = p.id_programa
 left join termo as t on t.id_plano_acao = p.id_plano_acao
