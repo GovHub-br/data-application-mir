@@ -128,3 +128,89 @@ models:
         description: >
           Carga mais antiga entre as fontes da linha. Herda o dt_ingest das bronzes, que
           interpretam como horário de Brasília um horário gravado em UTC (3 h adiantado).
+
+  - name: coleta_ted_fonte
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para o item 3.5 do formulário de TEDs (programa orçamentário
+      e fonte de recursos): o crédito descentralizado pelo MIR a cada TED de coleta_ted,
+      uma linha por ano de emissão, programa, ação, PTRES, fonte e natureza de despesa.
+      Fonte: notas de crédito do SIAFI (nc_unificado), ligadas pelo número da
+      transferência que a NC traz. Só há NC carregada a partir de 2023; TED sem NC não
+      tem linha.
+    columns:
+      - name: id_plano_acao
+        data_type: integer
+        constraints:
+          - type: not_null
+        description: "TED da linha (coleta_ted.id_plano_acao)."
+        tests:
+          - relationships:
+              to: ref('coleta_ted')
+              field: id_plano_acao
+
+      - name: aa_emissao
+        data_type: integer
+        description: "Ano de emissão das NCs."
+
+      - name: cd_programa
+        data_type: text
+        description: "Código do programa orçamentário (ex.: 5804). Em 2023 aparecem programas do PPA 2020-2023 (ex.: 5034)."
+
+      - name: no_programa
+        data_type: text
+        description: "Nome do programa orçamentário."
+
+      - name: cd_acao
+        data_type: text
+        description: "Código da ação orçamentária (ex.: 21FC)."
+
+      - name: no_acao
+        data_type: text
+        description: "Nome da ação orçamentária."
+
+      - name: cd_uo
+        data_type: text
+        description: "Unidade orçamentária do crédito, pelo PTRES no relatório de execução do PPA (67101 = MIR). Nulo se o PTRES não aparece lá."
+
+      - name: cd_ptres
+        data_type: text
+        description: "PTRES (programa de trabalho resumido) da NC."
+
+      - name: cd_fonte
+        data_type: text
+        description: "Fonte de recursos da NC."
+
+      - name: no_fonte
+        data_type: text
+        description: "Nome da fonte de recursos."
+
+      - name: cd_natureza_despesa
+        data_type: text
+        description: "Natureza de despesa da NC (ex.: 339039)."
+
+      - name: no_natureza_despesa
+        data_type: text
+        description: "Nome da natureza de despesa."
+
+      - name: vl_descentralizado
+        data_type: numeric(15, 2)
+        description: "Crédito descentralizado ao TED, em R$. Nulo quando a linha só tem anulação ou devolução."
+
+      - name: vl_anulado
+        data_type: numeric(15, 2)
+        description: "Anulação de descentralização feita pelo MIR, em R$ (positivo). Nulo quando não houve."
+
+      - name: vl_devolvido
+        data_type: numeric(15, 2)
+        description: "Devolução de crédito feita pelo parceiro, em R$ (positivo). Nulo quando não houve."
+
+      - name: vl_liquido
+        data_type: numeric(15, 2)
+        description: "Crédito que ficou com o TED: descentralizado menos anulado menos devolvido, em R$."
+
+      - name: dt_atualizacao
+        data_type: timestamptz
+        description: "Carga mais antiga das NCs da linha (dt_ingest de nc_unificado)."
