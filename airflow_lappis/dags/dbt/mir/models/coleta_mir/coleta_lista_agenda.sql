@@ -11,12 +11,17 @@
   Só entram as revisões a partir de 2025: em 2025 o SIOP recodificou as agendas, e de
   2025 para 2026 os códigos não mudaram. O nome dos ODS vem do seed ods, porque o
   catálogo só traz "ODS 18". Quem saiu da última revisão fica com in_vigente = false.
+
+  Ficam de fora os tipos de coleta_agenda_tipos_fora() (agendas prioritárias,
+  territoriais e PPA Participativo), que o formulário não pergunta. Um tipo novo do SIOP
+  que não seja agenda transversal, subagenda ou ODS também não vira linha; o teste
+  test_coleta_lista_agenda_catalogo_completo avisa.
 #}
 with
     catalogo as (
         select codigo, tipo, nome, descricao, ano_ppa
         from {{ ref("agenda") }}
-        where ano_ppa >= 2025
+        where ano_ppa >= 2025 and tipo not in {{ coleta_agenda_tipos_fora() }}
     ),
 
     revisao as (select max(ano_ppa) as ano_ppa from catalogo),
@@ -71,8 +76,9 @@ select
     'ods'::text as nivel,
     o.numero::text as codigo,
     cast(null as text) as chave_pai,
-    ('ODS ' || o.numero || ' - ' || o.nome)::text as nome,
+    ('ODS ' || o.numero || ' - ' || o.nome)::text as titulo,
     cast(null as text) as descricao,
+    cast(null as integer) as ano_ppa,
     true as in_vigente
 from {{ ref("ods") }} as o
 
@@ -85,6 +91,7 @@ select
     u.chave_pai::text,
     u.nome::text,
     u.descricao::text,
+    u.ano_ppa::integer,
     (u.ano_ppa = r.ano_ppa)::boolean
 from ultima as u
 cross join revisao as r

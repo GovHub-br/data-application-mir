@@ -425,6 +425,9 @@ models:
       subagenda; ODS -> meta ODS. O catálogo só traz as metas ODS que o PPA usa (as dez
       do ODS 18 estão todas). Revisões a partir de 2025; quem saiu da última fica com
       in_vigente = false.
+
+      Ficam de fora as agendas prioritárias, as territoriais e o PPA Participativo
+      (macro coleta_agenda_tipos_fora), que o formulário não pergunta.
     columns:
       - name: chave
         data_type: text
@@ -455,7 +458,7 @@ models:
               to: ref('coleta_lista_agenda')
               field: chave
 
-      - name: nome
+      - name: titulo
         data_type: text
         description: "Nome do item (ex.: 'Igualdade Racial', 'ODS 18 - Igualdade Étnico-Racial', 'ODS META 18.1')."
 
@@ -463,6 +466,14 @@ models:
         data_type: text
         description: "Descrição do item no catálogo; na meta ODS, o texto da meta."
 
+      - name: ano_ppa
+        data_type: integer
+        description: >
+          Revisão do catálogo de onde vem o texto: a mais recente em que o item aparece.
+          Nulo no ODS, que vem do seed ods.
+
       - name: in_vigente
         data_type: boolean
-        description: "O item está na revisão mais recente do catálogo. Sempre verdadeiro no ODS."
+        description: >
+          O item está na revisão mais recente do catálogo. Sempre verdadeiro no ODS: o
+          seed lista os 18, mesmo os que não têm meta no catálogo.

@@ -15,6 +15,10 @@
   a resposta antiga do Coleta não apontar para uma linha que sumiu.
 #}
 with
+    -- A revisão vigente sai do programa e vale para todos os níveis. Supõe que cada
+    -- revisão do PPA chega inteira: se o programa de uma revisão nova for carregado
+    -- antes das entregas, todas as entregas ficam com in_vigente = false até a carga
+    -- terminar.
     revisao as (select max(ano_ppa) as ano_ppa from {{ ref("programa_filtrado_mir") }}),
 
     nos as (
