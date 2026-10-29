@@ -1,0 +1,140 @@
+version: 2
+
+models:
+
+  - name: coleta_ted
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para os Blocos 1 e 2 do formulário de TEDs: um registro por
+      TED firmado do MIR, com os campos que o formulário preenche sozinho. Fonte: portal
+      TED (planos de ação, programa e termo de execução).
+
+      Entra todo plano de ação com número de transferência que não foi rejeitado,
+      vigente ou não: o Bloco 6 (relatório de cumprimento do objeto) também vale para
+      TED encerrado. A tabela é refeita a cada carga: um TED some dela quando o plano é
+      rejeitado ou perde o número no portal. A ingestão do portal só insere e atualiza,
+      então um plano que deixe de vir na resposta do portal continua aqui com a última
+      situação conhecida.
+
+      Lido pelo Coleta MIR: mudar o nome, o tipo ou o significado de uma coluna quebra o
+      consumidor. Coluna nova é segura. As regras de id_plano_acao, cd_ted e
+      nr_transferencia são constraints: um build que as viole falha antes de trocar a
+      tabela, e o Coleta continua lendo a versão anterior.
+    columns:
+      - name: id_plano_acao
+        data_type: integer
+        constraints:
+          - type: not_null
+          - type: primary_key
+        description: >
+          Chave do contrato: o id do plano de ação no portal TED. É o que o Coleta deve
+          guardar para ligar as respostas ao TED.
+
+      - name: cd_ted
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: unique
+        description: >
+          Número do TED no formulário: o código do programa do TED no portal, com 14
+          dígitos (id do MIR no portal, 308823, mais ano e sequencial). Ex.:
+          30882320220003. Enquanto o programa não chega à API de dados abertos, sai do
+          código do plano no portal.
+
+      - name: no_ted
+        data_type: text
+        description: >
+          Nome do programa do TED, o título que o formulário mostra ao lado do número.
+          Nulo enquanto o programa não chega à API de dados abertos.
+
+      - name: nr_transferencia
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: unique
+        description: >
+          Número da transferência no SIAFI, o que as NCs e NEs citam. Numérico até 2025
+          (ex.: 930164); alfanumérico nos TEDs novos de 2026 (ex.: 7AAFAJ).
+
+      - name: aa_instrumento
+        data_type: integer
+        description: "Ano da transferência."
+
+      - name: ds_situacao_plano
+        data_type: text
+        description: >
+          Situação do plano de ação no portal (ex.: APROVADO, ANALISE_APROVADA). O
+          filtro só exclui REJEITADO; o teste avisa quando surgir outra situação.
+        tests:
+          - accepted_values:
+              values:
+                - APROVADO
+                - ANALISE_APROVADA
+              config:
+                severity: warn
+
+      - name: ds_situacao_termo
+        data_type: text
+        description: >
+          Situação do termo de execução (ex.: EM_EXECUCAO, CUMPRIMENTO_OBJETO_INICIADO,
+          PENDENTE_REGISTRO_NO_SIAFI). Nulo quando o termo ainda não aparece na API de
+          TED.
+
+      - name: nr_processo_sei
+        data_type: text
+        description: "Processo SEI de formalização do TED, do termo de execução. Nulo quando o termo não traz."
+
+      - name: dt_assinatura
+        data_type: date
+        description: "Data de celebração: assinatura do primeiro termo de execução do plano."
+
+      - name: ds_objeto
+        data_type: text
+        description: "Objeto do TED, como está no plano de ação."
+
+      - name: ds_justificativa
+        data_type: text
+        description: "Justificativa do plano de ação (item 3.6 do formulário)."
+
+      - name: vl_total
+        data_type: numeric(15, 2)
+        description: "Valor total pactuado no plano de ação, em R$."
+
+      - name: dt_inicio_vigencia
+        data_type: date
+        description: "Início da vigência do plano de ação."
+
+      - name: dt_fim_vigencia
+        data_type: date
+        description: "Fim da vigência do plano de ação."
+
+      - name: sg_unidade_acompanhamento
+        data_type: text
+        description: >
+          Sigla da unidade do MIR que acompanha o TED (Bloco 2: unidade descentralizadora
+          responsável). Ex.: SEPAR, SENAPIR-MIR, SQPT; MIR quando o plano não indica uma
+          secretaria.
+
+      - name: no_unidade_acompanhamento
+        data_type: text
+        description: "Nome da unidade do MIR que acompanha o TED."
+
+      - name: sg_parceiro
+        data_type: text
+        description: "Sigla do órgão que recebeu o crédito (unidade descentralizada), cujo gestor preenche os Blocos 4 e 5."
+
+      - name: no_parceiro
+        data_type: text
+        description: "Nome do órgão que recebeu o crédito."
+
+      - name: cd_ug_parceiro
+        data_type: text
+        description: "UG (código SIAFI) do órgão que recebeu o crédito, segundo o portal TED."
+
+      - name: cd_siorg_parceiro
+        data_type: text
+        description: >
+          Código Siorg do órgão que recebeu o crédito, do beneficiário do programa. Nulo
+          quando o programa tem mais de um beneficiário.
