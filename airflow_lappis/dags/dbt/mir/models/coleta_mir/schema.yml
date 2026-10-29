@@ -14,10 +14,14 @@ models:
       Entra todo plano de ação com número de transferência que não foi rejeitado,
       vigente ou não: o Bloco 6 (relatório de cumprimento do objeto) também vale para
       TED encerrado. A tabela é refeita a cada carga: um TED some dela quando o plano é
-      rejeitado ou perde o número no portal.
+      rejeitado ou perde o número no portal. A ingestão do portal só insere e atualiza,
+      então um plano que deixe de vir na resposta do portal continua aqui com a última
+      situação conhecida.
 
       Lido pelo Coleta MIR: mudar o nome, o tipo ou o significado de uma coluna quebra o
-      consumidor. Coluna nova é segura.
+      consumidor. Coluna nova é segura. As regras de id_plano_acao, cd_ted e
+      nr_transferencia são constraints: um build que as viole falha antes de trocar a
+      tabela, e o Coleta continua lendo a versão anterior.
     columns:
       - name: id_plano_acao
         data_type: integer
@@ -30,26 +34,29 @@ models:
 
       - name: cd_ted
         data_type: text
+        constraints:
+          - type: not_null
+          - type: unique
         description: >
           Número do TED no formulário: o código do programa do TED no portal, com 14
           dígitos (id do MIR no portal, 308823, mais ano e sequencial). Ex.:
-          30882320220003.
-        tests:
-          - not_null
-          - unique
+          30882320220003. Enquanto o programa não chega à API de dados abertos, sai do
+          código do plano no portal.
 
       - name: no_ted
         data_type: text
-        description: "Nome do programa do TED, o título que o formulário mostra ao lado do número."
+        description: >
+          Nome do programa do TED, o título que o formulário mostra ao lado do número.
+          Nulo enquanto o programa não chega à API de dados abertos.
 
       - name: nr_transferencia
         data_type: text
+        constraints:
+          - type: not_null
+          - type: unique
         description: >
           Número da transferência no SIAFI, o que as NCs e NEs citam. Numérico até 2025
           (ex.: 930164); alfanumérico nos TEDs novos de 2026 (ex.: 7AAFAJ).
-        tests:
-          - not_null
-          - unique
 
       - name: aa_instrumento
         data_type: integer
@@ -57,7 +64,16 @@ models:
 
       - name: ds_situacao_plano
         data_type: text
-        description: "Situação do plano de ação no portal (ex.: APROVADO, ANALISE_APROVADA)."
+        description: >
+          Situação do plano de ação no portal (ex.: APROVADO, ANALISE_APROVADA). O
+          filtro só exclui REJEITADO; o teste avisa quando surgir outra situação.
+        tests:
+          - accepted_values:
+              values:
+                - APROVADO
+                - ANALISE_APROVADA
+              config:
+                severity: warn
 
       - name: ds_situacao_termo
         data_type: text
@@ -122,12 +138,6 @@ models:
         description: >
           Código Siorg do órgão que recebeu o crédito, do beneficiário do programa. Nulo
           quando o programa tem mais de um beneficiário.
-
-      - name: dt_atualizacao
-        data_type: timestamptz
-        description: >
-          Carga mais antiga entre as fontes da linha. Herda o dt_ingest das bronzes, que
-          interpretam como horário de Brasília um horário gravado em UTC (3 h adiantado).
 
   - name: coleta_ted_produto
     config:

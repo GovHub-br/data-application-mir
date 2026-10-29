@@ -706,6 +706,17 @@ models:
         description: "Liquidado no exercício."
       - name: pag
         description: "Pago no exercício."
+      - name: insc_rap
+        description: >
+          RAP inscrito no exercício seguinte ao da NE (o que passou para restos a
+          pagar). As reinscrições dos exercícios seguintes não entram, porque repetem o
+          saldo.
+      - name: pag_rap
+        description: "Restos a pagar pagos da NE, somados em todos os exercícios seguintes."
+      - name: saldo_rap
+        description: >
+          RAP inscrito menos RAP pago no último exercício do relatório: o que falta
+          pagar. Zero para NE do último exercício, que ainda não foi para restos a pagar.
       - name: tem_movimento
         description: "Alguma linha da NE tem empenhado, liquidado ou pago diferente de zero."
       - name: ne_ccor_descricao
