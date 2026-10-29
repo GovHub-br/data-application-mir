@@ -21,6 +21,9 @@ vars:
   # pertencem ao MIR — os CSVs do PPA trazem o órgão como "67000 - Ministério
   # da Igualdade Racial", daí o ilike por trecho em vez de igualdade exata.
   orgao_mir: "Ministério da Igualdade Racial"
+  # Papel do Postgres com que o Coleta MIR lê o schema coleta_mir. Vazio, nenhum
+  # grant é feito. Fica aqui e não em --vars porque o mir_cosmos_dag não passa vars.
+  coleta_mir_leitor: ""
 
 models:
   mir: 
@@ -49,6 +52,11 @@ models:
     mir_silver:
       +materialized: table
       +schema: mir_silver
+    coleta_mir:
+      +materialized: table
+      +schema: coleta_mir
+      +post-hook:
+        - "{{ coleta_mir_grants() }}"
 
 
 
