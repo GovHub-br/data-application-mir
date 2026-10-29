@@ -235,14 +235,35 @@ models:
       e fonte de recursos): o crédito descentralizado pelo MIR a cada TED de coleta_ted,
       uma linha por ano de emissão, programa, ação, PTRES, fonte e natureza de despesa.
       Fonte: notas de crédito do SIAFI (nc_unificado), ligadas pelo número da
-      transferência que a NC traz. Só há NC carregada a partir de 2023; TED sem NC não
-      tem linha.
+      transferência que a NC traz.
+
+      TED sem linha não quer dizer TED sem crédito. Só há NC carregada a partir de 2023:
+      os TEDs de 2022 receberam crédito, mas as NCs desse ano não estão aqui. Fora 2022,
+      a ausência quer dizer que ainda não houve NC (termo pendente de registro no SIAFI
+      ou ainda não emitido).
+
+      As regras do grão e de vl_liquido são constraints: um build que as viole falha
+      antes de trocar a tabela, e o Coleta continua lendo a versão anterior.
+    constraints:
+      - type: primary_key
+        columns:
+          - id_plano_acao
+          - aa_emissao
+          - cd_programa
+          - cd_acao
+          - cd_ptres
+          - cd_fonte
+          - cd_natureza_despesa
+      - type: check
+        expression: >
+          vl_liquido = coalesce(vl_descentralizado, 0) - coalesce(vl_anulado, 0)
+          - coalesce(vl_devolvido, 0)
     columns:
       - name: id_plano_acao
         data_type: integer
         constraints:
           - type: not_null
-        description: "TED da linha (coleta_ted.id_plano_acao)."
+        description: "TED da linha (coleta_ted.id_plano_acao). Parte da chave."
         tests:
           - relationships:
               to: ref('coleta_ted')
@@ -250,11 +271,15 @@ models:
 
       - name: aa_emissao
         data_type: integer
-        description: "Ano de emissão das NCs."
+        constraints:
+          - type: not_null
+        description: "Ano de emissão das NCs. Parte da chave."
 
       - name: cd_programa
         data_type: text
-        description: "Código do programa orçamentário (ex.: 5804). Em 2023 aparecem programas do PPA 2020-2023 (ex.: 5034)."
+        constraints:
+          - type: not_null
+        description: "Código do programa orçamentário (ex.: 5804). Em 2023 aparecem programas do PPA 2020-2023 (ex.: 5034). Parte da chave."
 
       - name: no_programa
         data_type: text
@@ -262,7 +287,9 @@ models:
 
       - name: cd_acao
         data_type: text
-        description: "Código da ação orçamentária (ex.: 21FC)."
+        constraints:
+          - type: not_null
+        description: "Código da ação orçamentária (ex.: 21FC). Parte da chave."
 
       - name: no_acao
         data_type: text
@@ -270,15 +297,22 @@ models:
 
       - name: cd_uo
         data_type: text
-        description: "Unidade orçamentária do crédito, pelo PTRES no relatório de execução do PPA (67101 = MIR). Nulo se o PTRES não aparece lá."
+        description: >
+          Unidade orçamentária do crédito, pelo PTRES no relatório de execução do PPA
+          (67101 = MIR). Nulo se o PTRES não aparece lá. Fica fora da chave porque sai
+          do PTRES: se um PTRES tiver duas UOs, a linha se duplica e o build falha.
 
       - name: cd_ptres
         data_type: text
-        description: "PTRES (programa de trabalho resumido) da NC."
+        constraints:
+          - type: not_null
+        description: "PTRES (programa de trabalho resumido) da NC. Parte da chave."
 
       - name: cd_fonte
         data_type: text
-        description: "Fonte de recursos da NC."
+        constraints:
+          - type: not_null
+        description: "Fonte de recursos da NC. Parte da chave."
 
       - name: no_fonte
         data_type: text
@@ -286,7 +320,9 @@ models:
 
       - name: cd_natureza_despesa
         data_type: text
-        description: "Natureza de despesa da NC (ex.: 339039)."
+        constraints:
+          - type: not_null
+        description: "Natureza de despesa da NC (ex.: 339039). Parte da chave."
 
       - name: no_natureza_despesa
         data_type: text
@@ -306,8 +342,7 @@ models:
 
       - name: vl_liquido
         data_type: numeric(15, 2)
-        description: "Crédito que ficou com o TED: descentralizado menos anulado menos devolvido, em R$."
-
-      - name: dt_atualizacao
-        data_type: timestamptz
-        description: "Carga mais antiga das NCs da linha (dt_ingest de nc_unificado)."
+        description: >
+          Crédito que ficou com o TED: descentralizado menos anulado menos devolvido, em
+          R$. Soma todos os eventos da NC, então um evento além dos três faz a conta não
+          fechar e o build falhar.

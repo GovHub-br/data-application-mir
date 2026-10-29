@@ -19,12 +19,12 @@ with
         join {{ ref("coleta_ted") }} as c on c.nr_transferencia = n.nc_transferencia
     ),
 
+    -- Sem desempate de propósito: um PTRES com duas UOs duplica a linha, e a chave do
+    -- contrato derruba o build antes da troca da tabela.
     uo_por_ptres as (
-        select distinct
-            on (ptres) ptres::text as ptres, plano_orcamentario_codigo_uo as cd_uo
+        select distinct ptres::text as ptres, plano_orcamentario_codigo_uo as cd_uo
         from {{ ref("ppa_tesouro") }}
         where plano_orcamentario_codigo_uo is not null
-        order by ptres, right(emissao_mes, 4) desc
     )
 
 select
@@ -49,14 +49,15 @@ select
     sum(nc.valor_celula) filter (
         where nc.nc_evento_descricao = 'DEVOLUCAO DE DESCENTRALIZACAO DE CREDITO'
     )::numeric(15, 2) as vl_devolvido,
+    -- Soma todos os eventos, não só os três acima: um evento novo entra aqui e em
+    -- nenhuma das três colunas, e o check do contrato derruba o build.
     sum(
         case
             when nc.nc_evento_descricao = 'DESCENTRALIZACAO DE CREDITO'
             then nc.valor_celula
             else - nc.valor_celula
         end
-    )::numeric(15, 2) as vl_liquido,
-    min(nc.dt_ingest)::timestamptz as dt_atualizacao
+    )::numeric(15, 2) as vl_liquido
 from nc
 left join uo_por_ptres as u on u.ptres = nc.ptres
 group by
