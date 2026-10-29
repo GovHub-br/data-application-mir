@@ -18,6 +18,8 @@
     Brasileira de Cooperação, recebe TED do MIR).
     ted_execucao_emitentes_mir: UGs do MIR que emitem as NCs citadas nas NEs.
     ted_execucao_lado_mir(col): a UG da coluna está no lado do MIR (prefixos acima).
+    ted_execucao_divergencia_oficial(exercicios): células em que as NEs não reproduzem a
+    consulta oficial, base dos testes de reconciliação (documentada abaixo).
 #}
 
 {% macro ted_execucao_ugs_excluidas() -%}
@@ -47,12 +49,14 @@
 {#
   Células (ano x UG x ação x PO x PTRES x grupo x fonte) em que as NEs de execucao_ted_ne
   não reproduzem o empenhado, liquidado e pago da consulta oficial "Execução TED por UG".
-  Base dos dois testes de reconciliação, que separam os exercícios pelo último ano da
-  consulta oficial (o corrente):
-    exercicios='fechados': os anos anteriores. Os dois relatórios são definitivos e têm de
-      bater ao centavo (test_execucao_ted_ne_reconcilia_oficial_exercicios_fechados).
-    exercicios='corrente': o último ano e os seguintes. As duas extrações podem ser de
-      dias diferentes (test_execucao_ted_ne_reconcilia_oficial).
+  Base dos dois testes de reconciliação. Um exercício conta como fechado a partir de 1º de
+  março do ano seguinte: os lançamentos de encerramento entram até o fim de janeiro, e em
+  janeiro e fevereiro as duas extrações do ano anterior ainda podem ser de dias diferentes.
+    exercicios='fechados': os exercícios fechados. Os dois relatórios são definitivos e têm
+      de bater ao centavo (test_execucao_ted_ne_reconcilia_oficial_exercicios_fechados).
+    exercicios='corrente': os demais (o ano de hoje e, em janeiro e fevereiro, também o
+      anterior). As duas extrações podem ser de dias diferentes
+      (test_execucao_ted_ne_reconcilia_oficial).
 #}
 {% macro ted_execucao_divergencia_oficial(exercicios) %}
     {% if exercicios not in ["fechados", "corrente"] %}
@@ -74,7 +78,10 @@ with
         from {{ ref("execucao_ted_ug") }}
     ),
 
-    corrente as (select max(ano) as ano from oficial),
+    -- primeiro exercício ainda não fechado: o ano de hoje menos dois meses
+    primeiro_aberto as (
+        select extract(year from current_date - interval '2 months')::integer as ano
+    ),
 
     ne as (
         select ano, ug, acao, po, ptres, grupo, fonte, sum(emp) as emp, sum(liq) as liq, sum(pag) as pag
@@ -105,7 +112,7 @@ where
         or abs(coalesce(o.liq, 0) - coalesce(n.liq, 0)) >= 0.01
         or abs(coalesce(o.pag, 0) - coalesce(n.pag, 0)) >= 0.01
     )
-    and coalesce(o.ano, n.ano) {{ "<" if exercicios == "fechados" else ">=" }} (select ano from corrente)
+    and coalesce(o.ano, n.ano) {{ "<" if exercicios == "fechados" else ">=" }} (select ano from primeiro_aberto)
 {% endmacro %}
 
 {#
