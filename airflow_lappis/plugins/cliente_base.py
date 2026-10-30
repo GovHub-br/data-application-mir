@@ -9,6 +9,10 @@ class ClienteBase:
     DEFAULT_TIMEOUT = 10
     DEFAULT_MAX_RETRIES = 3
     DEFAULT_SLEEP_SECONDS = 2
+    # Erros 4xx que ainda valem nova tentativa (timeout e rate limit).
+    RETRYABLE_CLIENT_ERRORS = frozenset(
+        {HTTPStatus.REQUEST_TIMEOUT, HTTPStatus.TOO_MANY_REQUESTS}
+    )
 
     def __init__(self, base_url: str, headers: Optional[dict] = None) -> None:
         self.base_url = base_url
@@ -19,7 +23,7 @@ class ClienteBase:
 
     def request(
         self, method: str, path: str, **kwargs: Any
-    ) -> Tuple[HTTPStatus, Optional[dict | list]]:
+    ) -> Tuple[HTTPStatus | int, Optional[dict | list]]:
         """
         Faz uma requisição HTTP em até DEFAULT_MAX_RETRIES+1 tentativas.
 
@@ -28,10 +32,12 @@ class ClienteBase:
             path (str): URL path.
 
         Returns:
-            Tuple[HTTPStatus, dict]: status e resposta da requisição HTTP.
+            Tuple[HTTPStatus | int, dict | list | None]: status e resposta da
+            requisição HTTP. O status é int quando o código não existe no enum
+            HTTPStatus (ex.: 299); como HTTPStatus é IntEnum, comparações com
+            int continuam funcionando nos chamadores.
         """
         kwargs["timeout"] = kwargs.get("timeout", self.DEFAULT_TIMEOUT)
-        response = None
 
         for attempt in range(self.DEFAULT_MAX_RETRIES + 1):
             try:
@@ -45,9 +51,14 @@ class ClienteBase:
                     f"[cliente_base.py] Request successful with status "
                     f"{response.status_code}"
                 )
-                return HTTPStatus(response.status_code), response.json()
+                return (
+                    self._converter_status(response.status_code),
+                    self._ler_corpo(response),
+                )
             except httpx.HTTPError as e:
-                status = response.status_code if response else "Unknown"
+                status = self._status_do_erro(e)
+                if not self._deve_repetir(e):
+                    raise Exception(f"API returned client error {status}") from e
                 logging.warning(
                     f"[cliente_base.py] API failed with status {status} on "
                     f"attempt {attempt + 1}. Error: {str(e)}"
@@ -57,10 +68,53 @@ class ClienteBase:
                 else:
                     logging.error(
                         f"[cliente_base.py] API failed after "
-                        f"{self.DEFAULT_MAX_RETRIES} attempts. Error: {str(e)}"
+                        f"{attempt + 1} attempts. Error: {str(e)}"
                     )
                     raise Exception(
                         "API failed after the maximum number of attempts!"
                     ) from e
 
         return HTTPStatus.INTERNAL_SERVER_ERROR, None
+
+    @staticmethod
+    def _ler_corpo(response: httpx.Response) -> Optional[dict | list]:
+        """
+        Corpo vazio (ex.: 204) vira None. Corpo não vazio que não é JSON
+        indica resposta inesperada e falha explicitamente, para que a DAG
+        não ingira dados vazios em silêncio.
+        """
+        if not response.content:
+            return None
+        try:
+            corpo: dict | list = response.json()
+        except ValueError as e:
+            raise Exception("API returned a non-JSON response") from e
+        return corpo
+
+    @staticmethod
+    def _converter_status(code: int) -> HTTPStatus | int:
+        """HTTPStatus quando o código é registrado; caso contrário, o int."""
+        try:
+            return HTTPStatus(code)
+        except ValueError:
+            return code
+
+    @staticmethod
+    def _status_do_erro(erro: httpx.HTTPError) -> int | str:
+        """Status da tentativa que falhou ("Unknown" em erros de rede)."""
+        if isinstance(erro, httpx.HTTPStatusError):
+            return erro.response.status_code
+        return "Unknown"
+
+    @classmethod
+    def _deve_repetir(cls, erro: httpx.HTTPError) -> bool:
+        """
+        Indica se vale nova tentativa. Erros 4xx são definitivos (repetir
+        não muda o resultado), exceto 408 e 429; erros de rede, 3xx e 5xx
+        são considerados transitórios.
+        """
+        if not isinstance(erro, httpx.HTTPStatusError):
+            return True
+        code = erro.response.status_code
+        erro_cliente = 400 <= code <= 499
+        return not (erro_cliente and code not in cls.RETRYABLE_CLIENT_ERRORS)
