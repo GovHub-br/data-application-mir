@@ -1,0 +1,46 @@
+version: 2
+
+models:
+
+  - name: coleta_unidade
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para o Bloco 2 do formulário de TEDs: código Siorg e CNPJ da
+      unidade descentralizadora responsável, uma linha por unidade do MIR. Liga com
+      coleta_ted por coleta_ted.sg_unidade_acompanhamento = coleta_unidade.sg_unidade.
+
+      Vem do seed coleta_unidade_mir, uma lista manual. Uma sigla nova no portal TED fica
+      sem linha até entrar no seed: use left join para não perder o TED.
+    columns:
+      - name: sg_unidade
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: primary_key
+        description: "Chave do contrato: a sigla da unidade, como em coleta_ted.sg_unidade_acompanhamento."
+
+      - name: no_unidade
+        data_type: text
+        constraints:
+          - type: not_null
+        description: "Nome da unidade no Siorg."
+
+      - name: cd_siorg
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: check
+            expression: "cd_siorg ~ '^[0-9]+$'"
+        description: "Código da unidade no Siorg. Ex.: 308823 (MIR), 73235 (SENAPIR-MIR)."
+
+      - name: nr_cnpj
+        data_type: text
+        constraints:
+          - type: check
+            expression: "nr_cnpj ~ '^[0-9]{14}$'"
+        description: >
+          CNPJ com 14 dígitos, sem máscara. É o do ministério também nas linhas das
+          secretarias, porque é o que os termos de TED declaram para o órgão
+          descentralizador. Nulo se não houver fonte oficial para a unidade.
