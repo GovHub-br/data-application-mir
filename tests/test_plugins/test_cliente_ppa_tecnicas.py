@@ -589,34 +589,39 @@ def test_TDD2_nenhuma_coluna_do_csv_e_perdida(tmp_path: Path) -> None:
     assert "y" in registro.values()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "DEF-3: zip(nomes, linha) para no mais curto dos dois. Uma linha com "
-        "mais campos que o cabeçalho tem o excedente descartado em silêncio, "
-        "em vez de erro. Encontrado pelo ramo D10, que não tem nenhuma "
-        "decisão validando a aridade da linha."
-    ),
-)
-def test_DEF3_linha_mais_longa_que_o_cabecalho_e_truncada(tmp_path: Path) -> None:
-    """Campo a mais na linha: deveria falhar, mas é descartado."""
-    cliente = _cliente(tmp_path, _csv("A;B", "1;2;3"))
+def test_TDD3_linha_mais_longa_que_o_cabecalho_falha(tmp_path: Path) -> None:
+    """Campo a mais na linha é erro, não dado para descartar em silêncio.
 
-    with pytest.raises(ValueError):
+    A mensagem tem de dizer a posição e as duas aridades: é o mínimo para
+    alguém abrir o CSV e achar a linha problemática.
+    """
+    cliente = _cliente(tmp_path, _csv("A;B", "1;2", "1;2;3"))
+
+    with pytest.raises(ValueError, match=r"2 colunas.*3 campos"):
         _ler(cliente)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "DEF-3 (variante): uma linha com menos campos que o cabeçalho rende um "
-        "registro parcial, e como _id_hash percorre só as chaves presentes, "
-        "esse registro recebe um hash diferente do mesmo registro com a coluna "
-        "final vazia. A reingestão deixa de ser idempotente."
-    ),
-)
-def test_DEF3_linha_mais_curta_gera_registro_parcial(tmp_path: Path) -> None:
-    """Linha truncada e linha completa com campo vazio deveriam coincidir."""
+def test_TDD3_rodape_em_branco_mais_longo_nao_vira_erro(tmp_path: Path) -> None:
+    """Guarda de regressão da ordem entre o descarte de linha em branco e a
+    validação de aridade.
+
+    Um rodapé ``;;;`` num cabeçalho de 2 colunas tem mais campos que o
+    cabeçalho, mas é linha em branco: tem de ser descartado, não virar erro.
+    Já passava antes da correção; está aqui para travar a ordem das duas
+    verificações.
+    """
+    cliente = _cliente(tmp_path, _csv("A;B", "1;2", ";;;"))
+
+    assert len(_ler(cliente)) == 1
+
+
+def test_TDD3_linha_mais_curta_e_completada_com_vazio(tmp_path: Path) -> None:
+    """Linha truncada e linha completa com campo vazio têm de coincidir.
+
+    O CSV do SIOP omite o ``;`` final em algumas linhas. As duas formas são o
+    mesmo registro, então precisam render as mesmas colunas e o mesmo
+    ``id_hash`` — senão a reingestão deixa de ser idempotente.
+    """
     curta = _cliente(tmp_path / "curta", _csv("A;B;C", "1;2"))
     completa = _cliente(tmp_path / "completa", _csv("A;B;C", "1;2;"))
 

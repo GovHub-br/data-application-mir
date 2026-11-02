@@ -107,6 +107,30 @@ class ClientePPA:
         return nomes
 
     @staticmethod
+    def _alinhar(linha: list, nomes: list, alvo: str, n_linha: int) -> list:
+        """Ajusta a linha à aridade do cabeçalho, ou falha se houver excedente.
+
+        O ``zip(nomes, linha)`` que monta o registro para no mais curto dos
+        dois, então sem esta checagem a aridade errada passa em silêncio:
+
+        - campos **a mais** significam que o CSV não corresponde ao cabeçalho
+          (ex.: um ``;`` não escapado dentro de um campo de texto). Descartar o
+          excedente perderia dado, então é erro, com a posição no arquivo para
+          o diagnóstico;
+        - campos **a menos** acontecem quando a fonte omite o ``;`` final. São
+          completados com vazio, para que a linha curta e a linha completa
+          rendam o mesmo registro e o mesmo ``id_hash``.
+        """
+        if len(linha) > len(nomes):
+            raise ValueError(
+                f"[cliente_ppa.py] Linha {n_linha} de {alvo}: o cabeçalho tem "
+                f"{len(nomes)} colunas, mas a linha tem {len(linha)} campos"
+            )
+        if len(linha) < len(nomes):
+            return linha + [""] * (len(nomes) - len(linha))
+        return linha
+
+    @staticmethod
     def _id_hash(registro: dict) -> str:
         """Surrogate idempotente do registro (md5 das colunas + ``ano_ppa``).
 
@@ -173,6 +197,8 @@ class ClientePPA:
                         continue
                     if not any(valor.strip() for valor in linha):
                         continue
+
+                    linha = self._alinhar(linha, nomes, alvo, i + 2)
 
                     registro: dict = {
                         nome: valor
