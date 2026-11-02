@@ -659,24 +659,39 @@ def test_TDD4_slug_e_identificador_valido_no_postgres(
     assert slug[0].isalpha() or slug[0] == "_", slug
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "DEF-5: um CSV cuja primeira linha está em branco rende cabecalho == "
-        "[], o laço de _nomes_colunas não itera e todo registro sai sem coluna "
-        "de negócio alguma. Como o hash passa a ser md5('ano_ppa=<ano>'), "
-        "todos os registros do arquivo recebem o MESMO id_hash e o dedup do "
-        "DAG reduz o lote a uma única linha. Alcançável só pelo ramo falso de "
-        "D11, que nenhum caso derivado da especificação constrói."
-    ),
+@pytest.mark.parametrize(
+    "conteudo",
+    [
+        pytest.param(_csv("", "A;B", "1;2", "3;4"), id="linha-em-branco-inicial"),
+        pytest.param(_csv(";;", "1;2;3"), id="cabecalho-so-de-campos-vazios"),
+        pytest.param(_csv("  ;  ", "1;2"), id="cabecalho-so-de-espacos"),
+    ],
 )
-def test_DEF5_cabecalho_vazio_colapsa_todos_os_registros(tmp_path: Path) -> None:
-    """Linha em branco inicial: 3 linhas de dados, 1 id_hash."""
-    cliente = _cliente(tmp_path, _csv("", "A;B", "1;2", "3;4"))
+def test_TDD5_cabecalho_sem_coluna_utilizavel_falha(
+    tmp_path: Path, conteudo: str
+) -> None:
+    """Um cabeçalho que não rende nenhuma coluna de negócio é erro.
 
-    registros = _ler(cliente)
+    Sem esta checagem todo registro sai só com ``ano_ppa``, o que faz o
+    ``id_hash`` ser idêntico para o arquivo inteiro e o dedup do DAG reduzir o
+    lote a uma linha só. É perda silenciosa do arquivo todo, então tem de
+    falhar alto.
+    """
+    cliente = _cliente(tmp_path, conteudo)
 
-    assert len({r["id_hash"] for r in registros}) == len(registros)
+    with pytest.raises(ValueError, match="nenhuma coluna"):
+        _ler(cliente)
+
+
+def test_TDD5_cabecalho_com_uma_coluna_utilizavel_segue(tmp_path: Path) -> None:
+    """Limite inferior do aceitável: basta **uma** coluna nomeada.
+
+    Guarda o outro lado da decisão: o ``;`` final legítimo do SIOP rende uma
+    coluna ``None``, e isso não pode ser confundido com cabeçalho inútil.
+    """
+    cliente = _cliente(tmp_path, _csv("A;", "1;"))
+
+    assert _negocio(_ler(cliente)[0]) == {"a": "1"}
 
 
 # ===========================================================================

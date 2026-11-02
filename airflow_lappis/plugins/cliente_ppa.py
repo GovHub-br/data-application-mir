@@ -168,6 +168,18 @@ class ClientePPA:
 
         Cada registro sai como ``dict`` já com colunas normalizadas, mais
         ``ano_ppa`` e ``id_hash``.
+
+        Args:
+            nome_arquivo: basename do CSV no zip, sem o sufixo ``_{ano}.csv``.
+            skip_rows: linhas de dados a descartar após o cabeçalho (contadas
+                antes do descarte de linhas em branco).
+            colunas_esperadas: se informado, o cabeçalho tem de conter todas.
+
+        Raises:
+            FileNotFoundError: o CSV do ano não está no zip.
+            ValueError: o cabeçalho não rende nenhuma coluna nomeada, falta
+                alguma das ``colunas_esperadas``, ou alguma linha tem mais
+                campos que o cabeçalho.
         """
         alvo = f"{nome_arquivo}_{self.ano_ppa}.csv"
         logging.info("[cliente_ppa.py] Lendo %s em modo streaming...", alvo)
@@ -190,6 +202,12 @@ class ClientePPA:
                     return
 
                 nomes = self._nomes_colunas(cabecalho)
+
+                if not any(nome is not None for nome in nomes):
+                    raise ValueError(
+                        f"[cliente_ppa.py] {alvo} não rendeu nenhuma coluna "
+                        f"nomeada; primeira linha do arquivo: {cabecalho!r}"
+                    )
 
                 if colunas_esperadas:
                     presentes = [n for n in nomes if n is not None]
