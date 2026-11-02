@@ -14,6 +14,26 @@ models:
 
       O vínculo entre área e objetivo estratégico é N:N e fica em
       coleta_lista_pei_area_objetivo. As fontes estão em seeds/coleta_pei.yml.
+
+      ATENÇÃO, SUBÁRVORE ESPELHADA: OE5 e OE6 compartilham a mesma subárvore. Os dois
+      têm os mesmos 2 objetivos específicos e as mesmas 47 metas, que o PEI imprime uma
+      vez com numeração conjunta (5.2.31 e 6.2.31 são a mesma meta). Aqui cada um vira
+      linha própria sob o seu objetivo estratégico, para o item ser alcançável pelos
+      dois caminhos de navegação.
+
+      Duas consequências para quem lê. Contar linhas não dá o número de itens distintos
+      do PEI: 94 das 329 linhas de indicador_meta e 4 das 147 de objetivo_especifico são
+      o mesmo item aparecendo em dois lugares, então o PEI tem 282 metas e 145 objetivos
+      específicos. E duas respostas do Coleta para o mesmo item podem guardar chaves
+      diferentes, conforme o objetivo estratégico por onde o usuário navegou: agregar por
+      chave separa o que é um item só.
+
+      Cuidado ao contar por título, que dá 278 metas e não 282: além do espelhamento, há
+      4 pares sob o OE7 (7.5.1 e 7.6.1, 7.30.1 e 7.32.1, 7.37.1 e 7.39.1, 7.44.1 e
+      7.46.1) em que o texto é o mesmo mas as metas são distintas, cada uma com código
+      próprio sob um objetivo específico diferente. Essas não devem ser agrupadas. Para
+      desduplicar só o espelhamento, o critério é o par de chaves 5.x e 6.x com o mesmo
+      título, não o título sozinho.
     columns:
       - name: chave
         data_type: text
