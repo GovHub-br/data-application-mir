@@ -1,0 +1,99 @@
+version: 2
+
+models:
+
+  - name: coleta_ted_execucao
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para o Bloco 1 do formulário de TEDs ("Valor empenhado" e
+      "Valor liquidado / pago"): uma linha por TED de coleta_ted, com o acumulado de todos
+      os exercícios. Fica separado de coleta_ted para uma falha na cadeia do SIAFI não
+      travar os dados de identificação.
+
+      Fonte: a consulta oficial "Execução TED por UG" aberta por instrumento
+      (ted_execucao_por_instrumento). A consulta só traz EOF primário discricionário;
+      para os TEDs que ela não traz (emenda, UG fora do recorte), soma as notas de empenho
+      da UG favorecida da NC no mesmo PTRES. ds_origem_execucao diz de onde veio o valor
+      de cada TED.
+
+      Lido pelo Coleta MIR: mudar o nome, o tipo ou o significado de uma coluna quebra o
+      consumidor. Coluna nova é segura. A tabela não traz RAP a pagar nem data de carga.
+    columns:
+      - name: id_plano_acao
+        data_type: integer
+        constraints:
+          - type: not_null
+          - type: primary_key
+        description: "TED da linha (coleta_ted.id_plano_acao). Chave do contrato."
+        tests:
+          - relationships:
+              to: ref('coleta_ted')
+              field: id_plano_acao
+
+      - name: vl_empenhado
+        data_type: numeric(15, 2)
+        description: >
+          "Valor empenhado" do formulário: empenhado líquido de todos os exercícios, em
+          R$. Não inclui instrumento mesclado (vl_empenhado_compartilhado). Nulo quando
+          ds_origem_execucao = 'sem_dado'; 0 quer dizer que não há empenho além do
+          compartilhado.
+
+          As NEs da UG 364150 do CNPq estão em dólar em 2023-25 até a reextração no
+          Tesouro Gerencial, sem conversão aqui. Por isso o TED 946358 fica cerca de
+          R$ 2,17 mi abaixo do real.
+
+      - name: vl_pago
+        data_type: numeric(15, 2)
+        description: >
+          "Valor liquidado / pago" do formulário, um campo só: o pago no exercício mais os
+          restos a pagar pagos depois (pago_total de ted_execucao_por_instrumento), em
+          R$. O liquidado fica fora de propósito: o relatório só traz o do exercício, sem
+          o RAP, e não é comparável (nos TEDs de 2023, liquidado de R$ 27,85 mi e pago
+          total de R$ 47,71 mi). Não inclui instrumento mesclado (vl_pago_compartilhado).
+          Nulo quando ds_origem_execucao = 'sem_dado'. As NEs do CNPq em dólar (ver
+          vl_empenhado) também afetam esta coluna.
+
+      - name: vl_credito_liquido
+        data_type: numeric(15, 2)
+        description: >
+          Crédito que ficou com o TED, em R$: soma de coleta_ted_fonte.vl_liquido. Fica
+          para ser mostrado ao lado de coleta_ted.vl_total, sem escolher um dos dois:
+          vl_total é a soma das etapas do plano, e há TED com crédito acima dele. Nulo
+          quando o TED não tem linha em coleta_ted_fonte.
+
+      - name: vl_empenhado_compartilhado
+        data_type: numeric(15, 2)
+        description: >
+          Empenhado de instrumento mesclado da gold ("A + B"), junção que o crédito não
+          permite separar. Sem rateio: o valor inteiro aparece em cada TED da junção,
+          então não se soma entre TEDs. Nulo quando o TED não está em nenhuma.
+
+      - name: vl_pago_compartilhado
+        data_type: numeric(15, 2)
+        description: "Pago total do mesmo instrumento mesclado, com a mesma regra de vl_empenhado_compartilhado."
+
+      - name: ds_instrumento_compartilhado
+        data_type: text
+        description: "Instrumento mesclado em que o TED aparece (ex.: 949197 + 986437), separados por '; ' se houver mais de um."
+
+      - name: ds_origem_execucao
+        data_type: text
+        constraints:
+          - type: not_null
+        description: >
+          De onde vêm os valores. consulta_oficial: ted_execucao_por_instrumento.
+          nota_de_empenho: NEs da UG favorecida da NC no mesmo PTRES, a partir do ano da
+          primeira NC, porque a consulta não traz o TED (emenda, UG fora do recorte).
+          sem_empenho: a consulta não traz o TED e não há NE com valor; vl_empenhado e
+          vl_pago são 0. sem_dado: não há como dizer o valor, e os dois ficam nulos; o TED
+          é anterior ao primeiro exercício da consulta, ou divide a célula (UG, PTRES) com
+          outro TED fora da consulta (teste test_coleta_ted_execucao_celula_dividida).
+        tests:
+          - accepted_values:
+              values:
+                - consulta_oficial
+                - nota_de_empenho
+                - sem_empenho
+                - sem_dado

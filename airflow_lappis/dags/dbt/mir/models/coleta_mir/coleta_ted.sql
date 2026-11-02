@@ -18,8 +18,7 @@
   Sem data de carga: o dt_ingest das bronzes lê como horário de Brasília um horário
   gravado em UTC. A coluna entra quando as bronzes forem corrigidas.
 
-  Os valores executados (empenhado, liquidado, pago) entram depois, a partir de
-  ted_execucao_por_instrumento.
+  Os valores executados (empenhado e pago) estão em coleta_ted_execucao.
 #}
 with
     plano as (
