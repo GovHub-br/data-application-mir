@@ -506,8 +506,13 @@ def test_CB2_combining_filter_preserva_caractere_de_compatibilidade() -> None:
     ``"º"`` não é combinante: o NFKD o decompõe por compatibilidade em ``"o"``,
     que **permanece**. Já o acento de ``"ç"`` é combinante e é removido. Sem
     este caso o ramo falso de D14 fica exercitado sem validação do resultado.
+
+    O ordinal vai no fim do cabeçalho de propósito, para o caso isolar só o
+    filtro de ``combining``: com ele na frente, o resultado também passaria
+    pela regra de dígito inicial, que é coberta em
+    ``test_TDD4_slug_e_identificador_valido_no_postgres``.
     """
-    assert ClientePPA.normalizar_coluna("1º ano") == "1o_ano"
+    assert ClientePPA.normalizar_coluna("Ano 1º") == "ano_1o"
     assert ClientePPA.normalizar_coluna("Ação") == "acao"
 
 
@@ -628,22 +633,29 @@ def test_TDD3_linha_mais_curta_e_completada_com_vazio(tmp_path: Path) -> None:
     assert _ler(curta)[0] == _ler(completa)[0]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "DEF-4: normalizar_coluna promete no docstring um identificador "
-        "'válido no Postgres', mas um cabeçalho cujo primeiro caractere "
-        "alfanumérico é dígito gera slug começando por dígito. O DDL de "
-        "cliente_postgres.py:171 interpola a coluna sem quotar "
-        "(f'{column} TEXT'), então o CREATE TABLE fica sintaticamente "
-        "inválido. Encontrado pela AVL do cabeçalho contra o contrato."
-    ),
+@pytest.mark.parametrize(
+    ("cabecalho", "esperado"),
+    [
+        pytest.param("1 ano PPA", "_1_ano_ppa", id="limite-digito-inicial"),
+        pytest.param("2024", "_2024", id="so-digitos"),
+        pytest.param("1º ano", "_1o_ano", id="ordinal-do-ppa"),
+        pytest.param("Ano 1", "ano_1", id="digito-no-fim-segue-igual"),
+        pytest.param("Ação", "acao", id="letra-inicial-segue-igual"),
+    ],
 )
-@pytest.mark.parametrize("cabecalho", ["1 ano PPA", "2024", "1º ano"])
-def test_DEF4_slug_pode_comecar_por_digito(cabecalho: str) -> None:
-    """Identificador sem quote no Postgres tem de começar por letra ou ``_``."""
+def test_TDD4_slug_e_identificador_valido_no_postgres(
+    cabecalho: str, esperado: str
+) -> None:
+    """Identificador sem quote no Postgres começa por letra ou ``_``.
+
+    O DDL de ``cliente_postgres.py`` interpola a coluna sem quotar
+    (``f"{column} TEXT"``), então um slug começando por dígito gera um
+    ``CREATE TABLE`` sintaticamente inválido. Os dois últimos casos travam o
+    limite: só o **primeiro** caractere importa, o resto não muda.
+    """
     slug = ClientePPA.normalizar_coluna(cabecalho)
 
+    assert slug == esperado
     assert slug[0].isalpha() or slug[0] == "_", slug
 
 

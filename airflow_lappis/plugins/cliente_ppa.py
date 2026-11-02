@@ -64,11 +64,18 @@ class ClientePPA:
         """Converte um cabeçalho humano em identificador snake_case ASCII.
 
         Ex.: ``"Despesa Corrente - 1º ano PPA"`` -> ``despesa_corrente_1o_ano_ppa``.
+
+        O resultado é um identificador **válido sem quote** no Postgres, porque
+        o DDL de ``cliente_postgres.py`` interpola a coluna direto
+        (``f"{column} TEXT"``). Daí as duas correções de borda: um cabeçalho
+        sem nenhum alfanumérico (``"###"``) viraria string vazia e recebe o
+        nome ``coluna``; um que comece por dígito (``"1º ano"``) recebe ``_``
+        na frente, já que identificador não pode começar por número.
         """
         decomposto = unicodedata.normalize("NFKD", nome)
         sem_acentos = "".join(c for c in decomposto if not unicodedata.combining(c))
-        slug = re.sub(r"[^0-9a-zA-Z]+", "_", sem_acentos).strip("_").lower()
-        return slug or "coluna"
+        slug = re.sub(r"[^0-9a-zA-Z]+", "_", sem_acentos).strip("_").lower() or "coluna"
+        return f"_{slug}" if slug[0].isdigit() else slug
 
     @staticmethod
     def _nome_livre(slug: str, vistos: dict) -> str:
