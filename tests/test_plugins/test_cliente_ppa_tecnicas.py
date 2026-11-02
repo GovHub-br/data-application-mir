@@ -555,34 +555,32 @@ def test_TDD1_registros_distintos_do_csv_nao_colidem(tmp_path: Path) -> None:
     assert registros[0]["id_hash"] != registros[1]["id_hash"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "DEF-2: o sufixo de deduplicação de _nomes_colunas não verifica se o "
-        "nome gerado já está em uso. Com o cabeçalho ['Ano','Ano','Ano 2'] a "
-        "3ª coluna também vira 'ano_2' e sobrescreve a 2ª no dict do "
-        "registro. Encontrado pela análise de D13 somada à AVL do dedup."
-    ),
+@pytest.mark.parametrize(
+    "cabecalho",
+    [
+        pytest.param(["Ano", "Ano", "Ano 2"], id="sufixo-colide-com-nome-posterior"),
+        pytest.param(["Ano 2", "Ano", "Ano"], id="sufixo-colide-com-nome-anterior"),
+        pytest.param(["Ano", "Ano 2", "Ano"], id="sufixo-colide-no-meio"),
+    ],
 )
-def test_DEF2_sufixo_de_dedup_colide_com_nome_ja_existente() -> None:
-    """O sufixo gerado pode coincidir com um nome que já veio do cabeçalho."""
+def test_TDD2_sufixo_de_dedup_nao_colide_com_nome_ja_existente(
+    cabecalho: list,
+) -> None:
+    """O sufixo gerado não pode coincidir com nenhum outro nome do cabeçalho.
+
+    As três ordens importam: o nome que colide com o sufixo pode aparecer
+    depois, antes ou no meio das repetições, e cada ordem exercita um caminho
+    diferente da busca por um nome livre.
+    """
     cliente = ClientePPA(ano_ppa=ANO)
 
-    nomes = cliente._nomes_colunas(["Ano", "Ano", "Ano 2"])
+    nomes = cliente._nomes_colunas(cabecalho)
 
-    assert len(set(nomes)) == len(nomes)
+    assert len(set(nomes)) == len(nomes), nomes
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "DEF-2 (consequência): com os nomes colididos, o dict comprehension "
-        "de ler_csv faz a última coluna sobrescrever a anterior e o valor do "
-        "meio é perdido sem aviso."
-    ),
-)
-def test_DEF2_colisao_de_nome_perde_o_valor_da_coluna(tmp_path: Path) -> None:
-    """Três colunas no CSV, duas no registro: um valor desaparece."""
+def test_TDD2_nenhuma_coluna_do_csv_e_perdida(tmp_path: Path) -> None:
+    """Três colunas no CSV têm de render três colunas no registro."""
     cliente = _cliente(tmp_path, _csv("Ano;Ano;Ano 2", "x;y;z"))
 
     registro = _negocio(_ler(cliente)[0])

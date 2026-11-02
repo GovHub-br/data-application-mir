@@ -70,12 +70,30 @@ class ClientePPA:
         slug = re.sub(r"[^0-9a-zA-Z]+", "_", sem_acentos).strip("_").lower()
         return slug or "coluna"
 
+    @staticmethod
+    def _nome_livre(slug: str, vistos: dict) -> str:
+        """Devolve ``slug``, ou o primeiro sufixado que ainda não esteja em uso.
+
+        Não basta sufixar com a contagem de ocorrências: o nome sufixado pode
+        já existir por conta própria no cabeçalho (``["Ano", "Ano", "Ano 2"]``),
+        e aí duas colunas receberiam ``ano_2`` e uma sobrescreveria a outra no
+        registro. Por isso a busca avança até achar um nome realmente livre.
+        """
+        if slug not in vistos:
+            return slug
+
+        candidato = slug
+        while candidato in vistos:
+            vistos[slug] += 1
+            candidato = f"{slug}_{vistos[slug]}"
+        return candidato
+
     def _nomes_colunas(self, cabecalho: list) -> list:
         """Mapeia o cabeçalho para nomes de coluna, preservando a posição.
 
         Colunas vazias (ex.: o ``;`` final que gera um campo em branco) viram
         ``None`` para serem ignoradas sem desalinhar as demais. Nomes repetidos
-        recebem sufixo numérico.
+        recebem sufixo numérico, garantidamente único no cabeçalho.
         """
         nomes: list = []
         vistos: dict = {}
@@ -83,12 +101,8 @@ class ClientePPA:
             if not bruto or not bruto.strip():
                 nomes.append(None)
                 continue
-            slug = self.normalizar_coluna(bruto)
-            if slug in vistos:
-                vistos[slug] += 1
-                slug = f"{slug}_{vistos[slug]}"
-            else:
-                vistos[slug] = 1
+            slug = self._nome_livre(self.normalizar_coluna(bruto), vistos)
+            vistos[slug] = 1
             nomes.append(slug)
         return nomes
 
