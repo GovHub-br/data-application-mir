@@ -1,0 +1,109 @@
+version: 2
+
+seeds:
+  - name: coleta_pei_area
+    description: >
+      Áreas do MIR para coleta_lista_pei: as 23 unidades do art. 2º do Anexo I do Decreto
+      nº 11.346/2023, com o nome e a hierarquia do decreto. A sigla é a usada pelo PEI
+      quando ele cita a unidade (GAB.MIN, ASPADI, SENAPIR), e a do Siorg nas demais. O
+      cd_siorg vem da API do Siorg, aceito só se a unidade pertence à estrutura do MIR
+      (308823), porque há homônimos em outros órgãos.
+
+      Fontes, consultadas em 2026-11-02:
+      https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2023/decreto/d11346.htm e
+      https://estruturaorganizacional.dados.gov.br/doc/estrutura-organizacional/resumida?codigoPoder=1&codigoEsfera=1
+    config:
+      column_types:
+        codigo: text
+        codigo_pai: text
+        titulo: text
+        descricao: text
+        cd_siorg: text
+        nr_ordem: integer
+    columns:
+      - name: codigo
+        tests:
+          - unique
+          - not_null
+      - name: cd_siorg
+        tests:
+          - unique
+
+  - name: coleta_pei_objetivo_estrategico
+    description: >
+      Os 12 objetivos estratégicos do PEI 2023-2026, com o texto da página de cada objetivo.
+      O tipo vem do Mapa Estratégico (página 4): as páginas do OE10 dizem "Gerencial", mas o
+      Mapa e o relatório de integridade de 2024 o tratam como de Suporte. O texto do OE9 nas
+      páginas dele é mais longo que o do Mapa.
+
+      Fontes, consultadas em 2026-11-02: o Sumário Executivo do PEI (79 páginas, sha256
+      b3d6289b3bb50c34990a8e79378f754fef000778afc905d5e874c66e1a41b97c),
+      https://www.gov.br/igualdaderacial/pt-br/acesso-a-informacao/acoes-e-programas-1/ltimaVersoPlanejamentoMIRSumrioExecutivo.pdf ;
+      e o relatório de integridade de 2024, que atribui o Mapa à Portaria MIR nº 3, de 3 de
+      janeiro de 2025 (o texto da portaria não foi localizado),
+      https://www.gov.br/igualdaderacial/pt-br/acesso-a-informacao/integridade/resultados/RelatriodeMonitoramentoeAvaliaodoProgramadeIntegridade2024.pdf
+    config:
+      column_types:
+        codigo: text
+        tp_objetivo: text
+        titulo: text
+        nr_pagina: integer
+        nr_ordem: integer
+    columns:
+      - name: codigo
+        tests:
+          - unique
+          - not_null
+
+  - name: coleta_pei_objetivo_especifico
+    description: >
+      Objetivos específicos do Sumário Executivo do PEI (fonte em
+      coleta_pei_objetivo_estrategico), com o texto como publicado. codigo_area é a unidade
+      do selo "Atribuições da ..." da página do objetivo, o único vínculo entre área e
+      objetivo escrito no documento; DGA/CGAL/DIGEP fica em DGA. nr_pagina é a primeira
+      página do objetivo no PDF.
+
+      O PEI numera juntos os objetivos 5.x e 6.x (5.1/6.1 e 5.2/6.2): cada um vira uma
+      linha, ligada ao seu objetivo estratégico. O código impresso se repete uma vez com
+      outro texto (2.2); a segunda ocorrência fica com o sufixo :2 na chave.
+    config:
+      column_types:
+        chave: text
+        codigo: text
+        codigo_objetivo_estrategico: text
+        codigo_area: text
+        titulo: text
+        descricao: text
+        nr_pagina: integer
+        nr_ordem: integer
+    columns:
+      - name: chave
+        tests:
+          - unique
+          - not_null
+
+  - name: coleta_pei_indicador_meta
+    description: >
+      Itens da faixa "Entrega + Indicador + Meta" do Sumário Executivo do PEI (fonte em
+      coleta_pei_objetivo_estrategico), com o texto como publicado, inclusive os erros de
+      digitação e os textos repetidos entre objetivos (ex.: 7.30.1 e 7.32.1). O PEI não
+      separa entrega, indicador e meta, então o item fica em um texto só.
+
+      Cada item de 5.x/6.x traz os dois códigos e vira duas linhas. Códigos impressos mais
+      de uma vez com outro texto (4.1.1 a 4.1.5, 5.2.31 a 5.2.35, 6.2.31 a 6.2.35, 7.29.1
+      e 7.41.1) ficam com o sufixo :2 na chave da segunda ocorrência. codigo guarda o que
+      está impresso; chave_objetivo_especifico segue a faixa acima do item no PDF, não o
+      código (7.41.1:2 é de 7.42, e 2.3.1 a 2.3.5 são de 2.2:2).
+    config:
+      column_types:
+        chave: text
+        codigo: text
+        chave_objetivo_especifico: text
+        titulo: text
+        nr_pagina: integer
+        nr_ordem: integer
+    columns:
+      - name: chave
+        tests:
+          - unique
+          - not_null

@@ -1,0 +1,24 @@
+codigo,codigo_pai,titulo,descricao,cd_siorg,nr_ordem
+AEM,,Assessoria Especial do Ministro,,309153,1
+GAB.MIN,,Gabinete do Ministro,,308854,2
+ASPADI,,Assessoria de Participação Social e Diversidade,,309154,3
+AI,,Assessoria Internacional,,309155,4
+ASPAR,,Assessoria Especial de Assuntos Parlamentares,,309156,5
+ASCOM,,Assessoria Especial de Comunicação Social,,309157,6
+AECI,,Assessoria Especial de Controle Interno,,309158,7
+OUV,,Ouvidoria,,308858,8
+CORREG,,Corregedoria,,309159,9
+CONJUR,,Consultoria Jurídica,,308856,10
+SE,,Secretaria-Executiva,,308855,11
+DAG,SE,Diretoria de Ações Governamentais,,309534,12
+DGA,SE,Diretoria de Gestão e Administração,O PEI atribui os objetivos a DGA/CGAL/DIGEP.,309536,13
+SENAPIR,,Secretaria de Gestão do Sistema Nacional de Promoção da Igualdade Racial,,73235,14
+DAI,SENAPIR,Diretoria de Articulação Interfederativa,,309937,15
+DAMGI,SENAPIR,"Diretoria de Avaliação, Monitoramento e Gestão da Informação",,313084,16
+SEPAR,,"Secretaria de Políticas de Ações Afirmativas, Combate e Superação do Racismo",,309941,17
+DPA,SEPAR,Diretoria de Políticas de Ações Afirmativas,,309946,18
+DCR,SEPAR,Diretoria de Políticas de Combate e Superação do Racismo,,313091,19
+SQPT,,"Secretaria de Políticas para Quilombolas, Povos e Comunidades Tradicionais de Matriz Africana, Povos de Terreiros e Ciganos",,309949,20
+DQC,SQPT,Diretoria de Políticas para Quilombolas e Ciganos,,313099,21
+DPTMAT,SQPT,Diretoria de Políticas para Povos e Comunidades Tradicionais de Matriz Africana e de Terreiros,,313114,22
+CNPIR,,Conselho Nacional de Promoção da Igualdade Racial,,73242,23
