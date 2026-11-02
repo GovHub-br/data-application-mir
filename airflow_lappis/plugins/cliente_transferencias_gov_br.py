@@ -1,8 +1,7 @@
 import html
+import json
 import logging
 import re
-import time
-import httpx
 from cliente_base import ClienteBase
 
 # Início de um TED na página: "Termo de Execução Descentralizada nº X/AAAA" ou
@@ -36,20 +35,51 @@ RE_PARCEIRO = re.compile(
     r"(?:a|o|as|os)\s+([^.:]+?)(?:\.|:|,\s*cujo|\s+Processo)",
     re.I,
 )
+# Blocos do documento que não trazem o texto dos instrumentos (título e data da página).
+BLOCOS_SEM_CONTEUDO = {"title", "description", "dateSocialShareBlock"}
+
+
+def normalizar_texto(texto: str) -> str:
+    """Um parágrafo por linha, sem espaços repetidos nem linhas em branco."""
+    texto = re.sub(r"[ \t]+", " ", texto.replace("\xa0", " "))
+    return re.sub(r"\n\s*\n+", "\n", texto)
 
 
 def html_para_texto(conteudo_html: str) -> str:
-    """
-    Texto do corpo da página (div content-core do Plone), uma linha por parágrafo.
-    """
-    inicio = conteudo_html.find('id="content-core"')
-    fim = conteudo_html.find('id="viewlet-below-content"', inicio)
-    corpo = conteudo_html[inicio : fim if fim > 0 else None] if inicio >= 0 else ""
-    texto = re.sub(r"<(script|style)[^>]*>.*?</\1>", "", corpo, flags=re.S)
+    """Texto de um trecho de HTML, uma linha por parágrafo."""
+    texto = re.sub(r"<(script|style)[^>]*>.*?</\1>", "", conteudo_html, flags=re.S)
     texto = re.sub(r"<br\s*/?>|</p>|</li>|</h\d>|</div>|</tr>", "\n", texto)
-    texto = html.unescape(re.sub(r"<[^>]+>", " ", texto)).replace("\xa0", " ")
-    texto = re.sub(r"[ \t]+", " ", texto)
-    return re.sub(r"\n\s*\n+", "\n", texto)
+    return normalizar_texto(html.unescape(re.sub(r"<[^>]+>", " ", texto)))
+
+
+def slate_para_texto(no: dict) -> str:
+    """Texto de um nó do Slate. Cada elemento vale um espaço, como as tags no HTML."""
+    if "text" in no:
+        return str(no["text"])
+    return " " + "".join(slate_para_texto(f) for f in no.get("children", [])) + " "
+
+
+def documento_para_texto(documento: dict) -> str:
+    """
+    Texto do corpo de um documento do portal (Volto), uma linha por parágrafo: os
+    blocos de conteúdo, na ordem em que aparecem na página. Bloco de tipo novo vira
+    aviso no log, porque o conteúdo dele ficaria de fora do retrato.
+    """
+    blocos = documento.get("blocks", {})
+    partes = []
+    for id_bloco in documento.get("blocks_layout", {}).get("items", []):
+        bloco = blocos.get(id_bloco, {})
+        tipo = bloco.get("@type")
+        if tipo == "html":
+            partes.append(html_para_texto(bloco.get("html") or ""))
+        elif tipo == "slate":
+            partes.extend(slate_para_texto(no) for no in bloco.get("value") or [])
+        elif tipo not in BLOCOS_SEM_CONTEUDO:
+            logging.warning(
+                f"[cliente_transferencias_gov_br.py] Bloco {tipo} ignorado em "
+                f"{documento.get('@id')}"
+            )
+    return normalizar_texto("\n".join(partes))
 
 
 def extrair_teds(texto: str, pagina: str) -> list[dict]:
@@ -147,18 +177,21 @@ class ClienteTransferenciasGovBr(ClienteBase):
     (2023, 2024, 2025-1...) com o número/ano de cada TED e, quase sempre, o número
     da transferência no Transferegov. É a ponte entre o "TED nº 05/2026" citado
     nas NEs e o plano de ação.
+
+    Desde 10/2026 o portal é um front-end React (Volto): o HTML da página não traz
+    o corpo nem os links das subpáginas, que vêm da API do Plone (++api++).
     """
 
-    BASE_URL = (
+    URL_PUBLICA = (
         "https://www.gov.br/igualdaderacial/pt-br/acesso-a-informacao/"
         "convenios-e-transferencias/tranferencias-voluntarias"
     )
+    BASE_URL = URL_PUBLICA.replace("/pt-br/", "/++api++/pt-br/", 1)
     BASE_HEADER = {"User-Agent": "Mozilla/5.0"}
+    DEFAULT_TIMEOUT = 30
     # Subpáginas por ano: "2023", "2025-1"... ("transferencias-voluntarias-1" fica
-    # de fora).
-    RE_SUBPAGINA = re.compile(
-        r'href="[^"]*/tranferencias-voluntarias/(\d{4}(?:-\d+)?)/?"'
-    )
+    # de fora). Na página principal elas são os cards do bloco de colunas.
+    RE_SUBPAGINA = re.compile(r'"[^"]*/tranferencias-voluntarias/(\d{4}(?:-\d+)?)/?"')
 
     def __init__(self) -> None:
         super().__init__(
@@ -167,32 +200,15 @@ class ClienteTransferenciasGovBr(ClienteBase):
         )
         self.client.follow_redirects = True
 
-    def get_html(self, path: str) -> str:
-        """
-        GET de uma página HTML, com as mesmas tentativas do ClienteBase (que só
-        trata respostas JSON).
-        """
-        for attempt in range(self.DEFAULT_MAX_RETRIES + 1):
-            try:
-                response = self.client.get(path, timeout=30)
-                response.raise_for_status()
-                return response.text
-            except httpx.HTTPError as e:
-                logging.warning(
-                    f"[cliente_transferencias_gov_br.py] Falha ao buscar "
-                    f"{self.base_url}{path} na tentativa {attempt + 1}: {e}"
-                )
-                if attempt < self.DEFAULT_MAX_RETRIES:
-                    time.sleep(attempt**2 * self.DEFAULT_SLEEP_SECONDS)
-                else:
-                    raise Exception(
-                        "Página falhou após o número máximo de tentativas!"
-                    ) from e
-        return ""
+    def get_documento(self, path: str) -> dict:
+        """Documento da API do portal, com as tentativas do ClienteBase."""
+        _, documento = self.request("GET", path)
+        return documento if isinstance(documento, dict) else {}
 
     def listar_paginas(self) -> list[str]:
         """Subpáginas por ano linkadas na página principal."""
-        paginas = list(dict.fromkeys(self.RE_SUBPAGINA.findall(self.get_html(""))))
+        principal = json.dumps(self.get_documento(""))
+        paginas = list(dict.fromkeys(self.RE_SUBPAGINA.findall(principal)))
         logging.info(f"[cliente_transferencias_gov_br.py] Subpáginas: {paginas}")
         return paginas
 
@@ -202,11 +218,11 @@ class ClienteTransferenciasGovBr(ClienteBase):
 
     def get_transferencias_pagina(self, pagina: str) -> tuple[list[dict], list[dict]]:
         """TEDs e descentralizações sem TED de uma subpágina, numa leitura só."""
-        texto = html_para_texto(self.get_html(f"/{pagina}"))
+        texto = documento_para_texto(self.get_documento(f"/{pagina}"))
         teds = extrair_teds(texto, pagina)
         descentralizacoes = extrair_descentralizacoes(texto, pagina)
         for registro in teds + descentralizacoes:
-            registro["url"] = f"{self.BASE_URL}/{pagina}"
+            registro["url"] = f"{self.URL_PUBLICA}/{pagina}"
         logging.info(
             f"[cliente_transferencias_gov_br.py] {len(teds)} TEDs e "
             f"{len(descentralizacoes)} descentralizações na página {pagina}"
