@@ -1,0 +1,44 @@
+version: 2
+
+seeds:
+  - name: coleta_unidade_mir
+    description: >
+      Código Siorg e CNPJ das unidades do MIR que acompanham TEDs, os dois campos da
+      "unidade descentralizadora responsável" (Bloco 2 do Coleta MIR) que o portal TED
+      não traz. Lista manual, com as siglas de coleta_ted; uma sigla nova no portal
+      precisa de uma linha aqui (test_coleta_unidade_sigla_do_ted avisa).
+
+      Siorg, conferido em 2026-11-02 na API pública
+      (https://estruturaorganizacional.dados.gov.br/doc/estrutura-organizacional/resumida?codigoPoder=1&codigoEsfera=1):
+      as quatro unidades têm codigoOrgaoEntidade 308823 (MIR). A sigla SEPAR também
+      existe em outros órgãos, por isso a sigla sozinha não identifica a unidade. O nome é
+      o do Siorg, igual ao do portal TED.
+
+      CNPJ, conferido em 2026-11-02: é o do ministério, que os termos de TED publicados
+      pelo MIR declaram no campo "órgão descentralizador". A secretaria aparece no mesmo
+      bloco como unidade responsável pelo acompanhamento:
+      SEPAR no TED_46533492, SQPT no TED_61733380, SENAPIR e SEPAR no TED_62745335 (em
+      https://www.gov.br/igualdaderacial/pt-br/acesso-a-informacao/convenios-e-transferencias/tranferencias-voluntarias/).
+      O PNCP (https://pncp.gov.br/api/pncp/v1/orgaos/06064438000110/unidades) e o órgão
+      67000 do Compras.gov (modulo-uasg/2_consultarOrgao) confirmam o número, ainda com
+      a razão social antiga: Secretaria de Políticas de Promoção da Igualdade Racial.
+      O consultarUasg do Compras.gov dá outro CNPJ para a UASG 810008 (o do órgão 81000,
+      ao qual ela está ligada), que não é o do MIR.
+    config:
+      column_types:
+        sg_unidade: text
+        no_unidade: text
+        cd_siorg: text
+        nr_cnpj: text
+    columns:
+      - name: sg_unidade
+        description: "Sigla da unidade, como o portal TED a escreve."
+        tests:
+          - unique
+          - not_null
+      - name: no_unidade
+        description: "Nome da unidade no Siorg."
+      - name: cd_siorg
+        description: "Código da unidade no Siorg: só o número, sem a URL que a API devolve."
+      - name: nr_cnpj
+        description: "CNPJ com 14 dígitos, sem máscara. Fica vazio se não houver fonte oficial."
