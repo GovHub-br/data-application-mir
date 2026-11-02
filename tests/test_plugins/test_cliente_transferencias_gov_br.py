@@ -462,3 +462,48 @@ def test_dag_grava_retrato_com_mesmo_dt_ingest() -> None:
     assert {r["dt_ingest"] for r in teds.args[0] + descs.args[0]} == {
         teds.args[0][0]["dt_ingest"]
     }
+
+
+def test_documento_so_com_blocos_desconhecidos_devolve_vazio(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """
+    Causa raiz do retrato parcial: se todos os blocos de conteúdo da página são de
+    um tipo que o cliente não conhece, o texto sai vazio e a página não rende TED.
+    O cliente avisa no log, e é só isso que acontece.
+    """
+    documento = _documento(
+        {"@type": "tipoNovo"}, {"@type": "outroTipoNovo"}, **{"@id": "/2024"}
+    )
+
+    with caplog.at_level(logging.WARNING):
+        texto = documento_para_texto(documento)
+
+    assert texto == ""
+    assert "Bloco tipoNovo ignorado em /2024" in caplog.text
+    assert "Bloco outroTipoNovo ignorado em /2024" in caplog.text
+
+
+def test_dag_grava_retrato_sem_a_pagina_que_nao_rendeu_nada() -> None:
+    """
+    Lacuna conhecida: a DAG só falha quando NENHUMA página rende TED. Com uma
+    página rendendo e outra não, ela termina em sucesso e grava um retrato sem o
+    ano que falhou — e a bronze, que lê só o retrato mais recente, perde aquele ano
+    sem erro.
+
+    Quem acusa isso é o teste dbt test_teds_gov_br_retrato_cobre_paginas, no retrato
+    seguinte. Este teste fixa o comportamento atual da DAG para que a mudança dele
+    seja deliberada.
+    """
+    api, db = MagicMock(), MagicMock()
+    api.listar_paginas.return_value = ["2023", "2024"]
+    api.get_transferencias_pagina.side_effect = [
+        ([{"numero_ted": "01/2023"}], []),
+        ([], []),  # blocos ilegíveis: a página não rende nada
+    ]
+
+    _rodar_dag(api, db)
+
+    teds = db.insert_data.call_args_list[0]
+    assert [r["numero_ted"] for r in teds.args[0]] == ["01/2023"]
+    assert all(r["pagina"] != "2024" for r in teds.args[0] if "pagina" in r)
