@@ -530,34 +530,16 @@ def test_CB3_id_hash_cobre_todas_as_colunas_de_negocio() -> None:
 # suíte e falham se o código for corrigido sem remover a marcação. A correção
 # por TDD é a parte 2 do trabalho.
 # ===========================================================================
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "DEF-1: _id_hash concatena 'chave=valor' com '||' sem escapar. Um valor "
-        "que contenha o separador produz a mesma string base de outro registro, "
-        "e o md5 colide. Encontrado por inspeção estrutural de _id_hash e "
-        "expresso como a classe de equivalência 'valor contém o separador'."
-    ),
-)
-def test_DEF1_id_hash_colide_quando_o_valor_contem_o_separador() -> None:
-    """Dois registros com conjuntos de colunas diferentes e o mesmo hash."""
+def test_TDD1_id_hash_nao_colide_quando_o_valor_contem_o_separador() -> None:
+    """Conjuntos de colunas diferentes não podem compartilhar o hash."""
     um = {"a": "1||b=2"}
     outro = {"a": "1", "b": "2"}
 
     assert ClientePPA._id_hash(um) != ClientePPA._id_hash(outro)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "DEF-1 (consequência): a colisão é alcançável a partir do CSV. O DAG "
-        "deduplica o lote por id_hash (ppa_ingestao_dag.py:52) e usa id_hash "
-        "como chave de conflito do upsert, então um dos dois registros é "
-        "perdido em silêncio, sem erro nem log."
-    ),
-)
-def test_DEF1_colisao_de_id_hash_alcancavel_pelo_csv(tmp_path: Path) -> None:
-    """Duas linhas distintas do CSV saem com o mesmo ``id_hash``."""
+def test_TDD1_registros_distintos_do_csv_nao_colidem(tmp_path: Path) -> None:
+    """Duas linhas distintas do CSV têm de sair com ``id_hash`` distinto."""
     cliente = _cliente(
         tmp_path,
         _csv(

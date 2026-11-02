@@ -1,6 +1,7 @@
 import csv
 import hashlib
 import io
+import json
 import logging
 import re
 import unicodedata
@@ -23,8 +24,9 @@ class ClientePPA:
       (com acentos, espaços e pontuação), que são normalizados para
       identificadores ``snake_case`` ASCII válidos no Postgres;
     - cada registro é enriquecido com ``ano_ppa`` (versão de origem) e
-      ``id_hash`` (surrogate = md5 das colunas de negócio + ano), usado como
-      chave de conflito para tornar a reingestão idempotente.
+      ``id_hash`` (surrogate = md5 de uma serialização injetiva das colunas de
+      negócio + ano), usado como chave de conflito para tornar a reingestão
+      idempotente.
     """
 
     ENCODING = "latin-1"
@@ -92,7 +94,20 @@ class ClientePPA:
 
     @staticmethod
     def _id_hash(registro: dict) -> str:
-        base = "||".join(f"{chave}={registro[chave]}" for chave in sorted(registro))
+        """Surrogate idempotente do registro (md5 das colunas + ``ano_ppa``).
+
+        A string base é uma serialização **injetiva** do registro: dois
+        registros diferentes nunca produzem a mesma base. Por isso ela usa JSON
+        em vez de concatenar ``chave=valor`` com um separador — um valor que
+        contivesse o separador colidiria com outro registro, e como o
+        ``id_hash`` é a chave de conflito do upsert, um dos dois seria perdido
+        em silêncio.
+        """
+        base = json.dumps(
+            [[chave, registro[chave]] for chave in sorted(registro)],
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
         return hashlib.md5(base.encode("utf-8")).hexdigest()
 
     # ------------------------------------------------------------------ #
