@@ -1,0 +1,130 @@
+version: 2
+
+models:
+  - name: coleta_lista_pei
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para o item 3.3 do formulário de TEDs: as áreas do MIR e a
+      cascata do PEI 2023-2026 (objetivo estratégico -> objetivo específico ->
+      indicador/meta). O PEI tem 12 objetivos estratégicos; os seis finalísticos são os de
+      tp_objetivo = 'finalistico', e as áreas que não são finalísticas só têm objetivo
+      entre os demais.
+
+      O vínculo entre área e objetivo estratégico é N:N e fica em
+      coleta_lista_pei_area_objetivo. As fontes estão em seeds/coleta_pei.yml.
+    columns:
+      - name: chave
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: primary_key
+        description: >
+          Chave do item: nível e código (ex.: 'area:DAMGI', 'objetivo_estrategico:OE1',
+          'objetivo_especifico:1.1', 'indicador_meta:1.1.1'). O PEI imprime alguns códigos
+          mais de uma vez com outro texto; a segunda ocorrência fica com o sufixo ':2'. É o
+          que a resposta do Coleta deve guardar.
+
+      - name: nivel
+        data_type: text
+        description: "area, objetivo_estrategico, objetivo_especifico ou indicador_meta."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['area', 'objetivo_estrategico', 'objetivo_especifico', 'indicador_meta']
+
+      - name: codigo
+        data_type: text
+        description: >
+          Sigla da área, OE1 a OE12, ou o código impresso no PEI. Não é único no objetivo
+          específico e no indicador/meta: use a chave.
+
+      - name: chave_pai
+        data_type: text
+        description: >
+          Item de que este depende na cascata: a secretaria da diretoria, o objetivo
+          estratégico do objetivo específico, o objetivo específico do indicador/meta. Nulo
+          nas áreas de primeiro nível e no objetivo estratégico.
+        tests:
+          - relationships:
+              to: ref('coleta_lista_pei')
+              field: chave
+
+      - name: titulo
+        data_type: text
+        description: >
+          Texto do item. Na área, o nome por extenso no Decreto nº 11.346/2023; nos demais
+          níveis, o texto como publicado no PEI.
+        tests:
+          - not_null
+
+      - name: descricao
+        data_type: text
+        description: "Observação sobre o item no PEI, quando há (ex.: numeração compartilhada 5.1/6.1)."
+
+      - name: cd_siorg
+        data_type: text
+        description: "Código da unidade no Siorg. Só preenchido na área."
+        tests:
+          - unique
+
+      - name: tp_objetivo
+        data_type: text
+        description: "finalistico, gerencial ou suporte, conforme o Mapa Estratégico. Só preenchido no objetivo estratégico."
+        tests:
+          - accepted_values:
+              values: ['finalistico', 'gerencial', 'suporte']
+
+      - name: chave_area
+        data_type: text
+        description: "Área a que o PEI atribui o objetivo específico. Só preenchido nesse nível."
+        tests:
+          - relationships:
+              to: ref('coleta_lista_pei')
+              field: chave
+
+      - name: nr_ordem
+        data_type: integer
+        description: >
+          Ordem do item dentro do nível: a do decreto nas áreas, a do PEI nos demais. Os
+          códigos são texto e não ordenam sozinhos (7.10 viria antes de 7.2).
+        tests:
+          - not_null
+
+  - name: coleta_lista_pei_area_objetivo
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para o item 3.3 do formulário de TEDs: os pares de área e
+      objetivo estratégico escritos no PEI, no selo "Atribuições da ..." de cada página.
+
+      O PEI cita as secretarias finalísticas e não as diretorias, então as diretorias de
+      SEPAR, SENAPIR e SQPT não têm par próprio. Para listar os objetivos de uma área, use
+      os pares dela e, se não houver, os da área mãe (chave_pai em coleta_lista_pei).
+    constraints:
+      - type: primary_key
+        columns:
+          - chave_area
+          - chave_objetivo
+    columns:
+      - name: chave_area
+        data_type: text
+        constraints:
+          - type: not_null
+        description: "Área, com a mesma chave de coleta_lista_pei (ex.: 'area:SEPAR')."
+        tests:
+          - relationships:
+              to: ref('coleta_lista_pei')
+              field: chave
+
+      - name: chave_objetivo
+        data_type: text
+        constraints:
+          - type: not_null
+        description: "Objetivo estratégico, com a mesma chave de coleta_lista_pei (ex.: 'objetivo_estrategico:OE1')."
+        tests:
+          - relationships:
+              to: ref('coleta_lista_pei')
+              field: chave

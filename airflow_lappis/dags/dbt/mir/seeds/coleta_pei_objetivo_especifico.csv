@@ -1,0 +1,148 @@
+chave,codigo,codigo_objetivo_estrategico,codigo_area,titulo,descricao,nr_pagina,nr_ordem
+objetivo_especifico:1.1,1.1,OE1,SEPAR,"Aperfeiçoar as políticas de educação para ampliar a participação de pessoas negras na educação básica, no ensino superior e na pós-graduação",,5,1
+objetivo_especifico:1.2,1.2,OE1,SEPAR,Fomentar o ingresso de pessoas negras no mercado de trabalho privado,,6,2
+objetivo_especifico:2.1,2.1,OE2,SEPAR,Ampliar ações de combate ao racismo e promoção da igualdade racial na comunicação social e na comunicação pública,,7,3
+objetivo_especifico:2.2,2.2,OE2,SEPAR,"Fortalecer a participação do Brasil nos diálogos multilaterais e bilaterais, a partir da perspectiva da justiça racial",,7,4
+objetivo_especifico:2.2:2,2.2,OE2,SEPAR,Criar ferramentas nacionais de recebimento e encaminhamento de denúncias de racismo,"O PEI imprime 2.2 neste objetivo, mas numera as metas dele como 2.3.1 a 2.3.5.",7,5
+objetivo_especifico:2.4,2.4,OE2,SEPAR,Estabelecer programa de combate ao racismo no esporte,,8,6
+objetivo_especifico:2.5,2.5,OE2,SEPAR,Estabelecer política de combate ao racismo ambiental (criar uma linha incluindo a criação do comitê),,8,7
+objetivo_especifico:2.6,2.6,OE2,SEPAR,"Apoiar a regularização fundiária para população negra em situação de vulnerabilidade social, com fins na garantia do bem viver e valorização do território",,9,8
+objetivo_especifico:2.7,2.7,OE2,SEPAR,Ampliar o número de municípios com a Política Nacional de Saúde Integral da População Negra implantada e implementada,,9,9
+objetivo_especifico:2.8,2.8,OE2,SEPAR,"Promover o combate ao racismo por meio da preservação e salvaguarda dos patrimônios afrodiaspóricos, garantindo a reparação e valorização da memória e do território das comunidades relacionadas aos bens culturais.",,9,10
+objetivo_especifico:2.9,2.9,OE2,SEPAR,Promover a saúde da juventude negra,,10,11
+objetivo_especifico:2.10,2.10,OE2,SEPAR,Territorializar a atenção aos Direitos Humanos para a Juventude Negra em territórios periféricos,,10,12
+objetivo_especifico:2.11,2.11,OE2,SEPAR,"Ampliar os projetos de incentivo ao esporte amador destinado à juventude negra nas periferias urbanas, periurbanas e em territórios rurais",,11,13
+objetivo_especifico:2.12,2.12,OE2,SEPAR,"Ampliar mecanismos de letramento racial para a segurança pública com cidadania, com foco na proteção da vida dos jovens negros vítimas de violação de direitos",,11,14
+objetivo_especifico:3.1,3.1,OE3,SENAPIR,Ampliar e fortalecer o SINAPIR quadruplicando as adesões até 2026,,12,15
+objetivo_especifico:3.2,3.2,OE3,SENAPIR,"Promover a gestão das políticas de promoção de Igualdade Racial no âmbito do Sinapir, com vistas a sua institucionalização",,12,16
+objetivo_especifico:4.1,4.1,OE4,SENAPIR,"Promover a gestão das políticas de promoção de igualdade racial no âmbito do Sistema Nacional de Promoção da Igualdade Racial, com vistas à sua institucionalização",,13,17
+objetivo_especifico:5.1,5.1,OE5,SQPT,"Criar mecanismos de identificação e de enfrentamento à violência e à discriminação contra quilombolas, povos e comunidades tradicionais de matriz africana, povos de terreiros e ciganos.",O PEI numera este objetivo como 5.1/6.1: o texto e as metas são os mesmos do objetivo 6.1.,15,18
+objetivo_especifico:6.1,6.1,OE6,SQPT,"Criar mecanismos de identificação e de enfrentamento à violência e à discriminação contra quilombolas, povos e comunidades tradicionais de matriz africana, povos de terreiros e ciganos.",O PEI numera este objetivo como 5.1/6.1: o texto e as metas são os mesmos do objetivo 5.1.,15,19
+objetivo_especifico:5.2,5.2,OE5,SQPT,"Fomentar ações que fortaleçam as práticas agroecológicas, o fornecimento energético, o saneamento, a soberania alimentar, a valorização cultural, social, os saberes e fazeres dos quilombolas, povos e comunidades tradicionais de matriz africana, povos de terreiros e ciganos.",O PEI numera este objetivo como 5.2/6.2: o texto e as metas são os mesmos do objetivo 6.2.,16,20
+objetivo_especifico:6.2,6.2,OE6,SQPT,"Fomentar ações que fortaleçam as práticas agroecológicas, o fornecimento energético, o saneamento, a soberania alimentar, a valorização cultural, social, os saberes e fazeres dos quilombolas, povos e comunidades tradicionais de matriz africana, povos de terreiros e ciganos.",O PEI numera este objetivo como 5.2/6.2: o texto e as metas são os mesmos do objetivo 5.2.,16,21
+objetivo_especifico:7.1,7.1,OE7,AECI,Implementação do Programa e do Plano de Integridade,,25,22
+objetivo_especifico:7.2,7.2,OE7,AECI,Assessorar a Ministra de Estado nas prestações e supervisionar as tomadas de contas especiais,,25,23
+objetivo_especifico:7.3,7.3,OE7,AECI,Articular e prestar apoio às atividades de controle externo e interno,,25,24
+objetivo_especifico:7.4,7.4,OE7,AECI,Monitorar a implementação de recomendações de auditoria,,25,25
+objetivo_especifico:7.5,7.5,OE7,AECI,Apoiar as medidas de fortalecimento das estruturas de governança interna,,25,26
+objetivo_especifico:7.6,7.6,OE7,AECI,Prestar apoio na gestão de riscos,,26,27
+objetivo_especifico:7.7,7.7,OE7,AECI,Monitoramento dos riscos de integridade e seus controles,,26,28
+objetivo_especifico:7.8,7.8,OE7,AECI,"Elaboração de Notas e Pareceres Técnicos voltados para o aprimoramento da gestão dos instrumentos contratuais da pasta, sejam de área meio ou finalísticos",,26,29
+objetivo_especifico:7.9,7.9,OE7,AECI,Prestar orientação técnica na formulação de normas e manuais em temas afetos ao controle interno,,26,30
+objetivo_especifico:7.10,7.10,OE7,CONJUR,Fortalecer o relacionamento e o envolvimento da Consultoria Jurídica dentro do Ministério da Igualdade Racial.,,27,31
+objetivo_especifico:7.11,7.11,OE7,CONJUR,Zelar pela probidade administrativa e pela integridade das ações do Ministério da Igualdade Racial.,,27,32
+objetivo_especifico:7.12,7.12,OE7,AI,"Aconselhamento do Gabinete, da SE e das áreas finalísticas para que as atuações internacionais sejam mais estratégicas",,28,33
+objetivo_especifico:7.13,7.13,OE7,AI,Criar e alimentar um acervo de atuação internacional,,28,34
+objetivo_especifico:7.14,7.14,OE7,AI,Reagir em tempo hábil aos pedidos de subsídios do MRE,,28,35
+objetivo_especifico:7.15,7.15,OE7,ASPAR,"Aprimorar as estratégias de comunicação interna de divulgação das atividades legislativas e orçamentárias da Câmara dos Deputados, do Senado Federal e Congresso Nacional, no que se refere a matérias de interesse do Ministério, até 2024.",,29,36
+objetivo_especifico:7.16,7.16,OE7,ASPAR,"Aprimorar a elaboração das análises de conjuntura política visando sofisticar o assessoramento à Ministra e Secretários Nacionais no âmbito de articulação com a Câmara dos Deputados, do Senado Federal e Congresso Nacional, no que se refere a matérias de interesse do Ministério, até 2024.",,29,37
+objetivo_especifico:7.17,7.17,OE7,ASPAR,Fortalecer a capacidade dos servidores das áreas finalísticas na elaboração de notas técnicas e documentos legislativos,,29,38
+objetivo_especifico:7.18,7.18,OE7,DAG,Acompanhar casos de justiça racial respondidos pelo Estado Brasileiro,,30,39
+objetivo_especifico:7.19,7.19,OE7,DAG,"Aprimorar as rotinas de trabalho interno. Definir fluxos, processos e normas de gestão de recursos, pessoas e cuidados.",,30,40
+objetivo_especifico:7.20,7.20,OE7,DGA,Promover o Mapeamento da Força de Trabalho do Ministério,,31,41
+objetivo_especifico:7.21,7.21,OE7,DGA,Promover a Capacitação da Força de Trabalho,,31,42
+objetivo_especifico:7.22,7.22,OE7,DGA,Implantar programa de qualidade de vida no MIR,,31,43
+objetivo_especifico:7.23,7.23,OE7,DGA,Aprimorar os processos de Gestão Corporativa,,31,44
+objetivo_especifico:7.24,7.24,OE7,DGA,Aprimorar o acompanhamento da Execução orçamentária-financeira,,31,45
+objetivo_especifico:7.25,7.25,OE7,AEM,Fomentar a criação de memória institucional,,32,46
+objetivo_especifico:7.26,7.26,OE7,AEM,Informar e atualizar a Ministra sobre assuntos estratégicos,,32,47
+objetivo_especifico:7.27,7.27,OE7,AEM,Estruturar a estratégia de gestão de pessoas,,32,48
+objetivo_especifico:7.28,7.28,OE7,AEM,Acompanhar e colaborar para fluxo de diálogo entre assessorias e finalísticas,,32,49
+objetivo_especifico:7.29,7.29,OE7,OUV,Subsidiar o MIR com informações relevantes extraídas do atendimento da Ouvidoria à população,,33,50
+objetivo_especifico:7.30,7.30,OE7,OUV,Promover ciclo de debates internos sobre temas de interesse do MIR que são pertinentes à atuação da Ouvidoria,,33,51
+objetivo_especifico:7.31,7.31,OE7,GAB.MIN,"Capacitar internamente a equipe do gabinete referente as ferramentas utilizadas nos fluxos, Capacitação nos fluxos de passagem",,34,52
+objetivo_especifico:7.32,7.32,OE7,GAB.MIN,"Atuar junto com a DGA na busca por aperfeiçoamento no fluxo do processo de passagens, diminuindo os ruidos e gargalos",,34,53
+objetivo_especifico:7.33,7.33,OE7,GAB.MIN,"Garantir melhor planejamento nas agendas realizadas no ministério com as agendas da ministra, garantir que a ministra realize interna e externamente seus compromissos com toda a estrutura necessária, com segurança gerando êxito nas agendas",,34,54
+objetivo_especifico:7.34,7.34,OE7,GAB.MIN,Garantir que as equipes tenham conhecimento dos objetivos estratégicos,,34,55
+objetivo_especifico:7.35,7.35,OE7,GAB.MIN,Promover uma cultura institucional onde chefias e coordenações acompanham e dão retorno para suas equipes,,34,56
+objetivo_especifico:7.36,7.36,OE7,GAB.MIN,Garantir que seja periódico reuniões da ministra com secretarias e assessorias,,35,57
+objetivo_especifico:7.37,7.37,OE7,GAB.MIN,Zelar pelo cumprimento das normas do cerimonial público conforme legislação vigente.,,35,58
+objetivo_especifico:7.38,7.38,OE7,ASCOM,"Garantir o fluxo de interlocução interna, de acordo com a governança estratégica, entre assessorias, secretarias e diretorias",,36,59
+objetivo_especifico:7.39,7.39,OE7,ASCOM,Garantir a transparência das ações de interesse público realizadas por todas as unidades,,36,60
+objetivo_especifico:7.40,7.40,OE7,ASCOM,"Coordenar o desenvolvimento de conteúdos (campanhas, ações e programas) da Comunicação Institucional, Imprensa, Redes e Design dentro dos prazos estabelecidos e com conexão da memória institucional de acordo com as padronizações do MIR e do Governo Federal",,36,61
+objetivo_especifico:7.41,7.41,OE7,ASCOM,Acompanhar os canais internos do ministério para os devidos encaminhamentos,,36,62
+objetivo_especifico:7.42,7.42,OE7,ASCOM,Acompanhar a formulação de falas institucionais,,36,63
+objetivo_especifico:7.43,7.43,OE7,SE,Aprimorar as rotinas de trabalho interno.,,37,64
+objetivo_especifico:7.44,7.44,OE7,SE,Definir fluxos internos de trabalho,,37,65
+objetivo_especifico:7.45,7.45,OE7,CORREG,Lançar e publicar o Manual da Corregedoria,,38,66
+objetivo_especifico:7.46,7.46,OE7,CORREG,Criar e Publicar a norma de regimento interno da Corregedoria,,38,67
+objetivo_especifico:7.47,7.47,OE7,CORREG,Criar e Publicar Guia MIR e Portaria do Plano Federal de Prevenção e Enfrentamento ao Assédio,,38,68
+objetivo_especifico:7.48,7.48,OE7,CORREG,Construir e Publicar a Portaria de Mediação do Ministério da Igualdade Racial,,38,69
+objetivo_especifico:8.1,8.1,OE8,CONJUR,Fortalecer as relações entre as Consultorias Jurídicas dos demais Ministérios e/ou AGU para viabilizar juridicamente as políticas públicas.,,39,70
+objetivo_especifico:8.2,8.2,OE8,AI,Atuação mais propositiva junto ao Ministério das Relações Exteriores,,40,71
+objetivo_especifico:8.3,8.3,OE8,AI,"Aprimorar o diálogo com as Assessorias Internacionais dos demais Ministérios estratégicos (esportes, turismo, SGPR..)",,40,72
+objetivo_especifico:8.4,8.4,OE8,AI,Aprimorar o diálogo com organismos internacionais estratégicos,,40,73
+objetivo_especifico:8.5,8.5,OE8,ASPAR,Fortalecer a estratégia de comunicação e a capacidade de captação e formalização de emendas orçamentárias,,41,74
+objetivo_especifico:8.6,8.6,OE8,DAG,Facilitar o diálogo entre as secretarias finalísticas e os órgãos externos na construção de parcerias,,42,75
+objetivo_especifico:8.7,8.7,OE8,DAG,Promover uma integração entre o MIR e os demais ministérios,,42,76
+objetivo_especifico:8.8,8.8,OE8,AEM,"Articular, acompanhar e propor políticas estratégicas desenvolvidas pelo MIR em colaboração com demais órgãos",,43,77
+objetivo_especifico:8.9,8.9,OE8,AEM,Estabelecer e manter o diálogo com demais ministérios e autoridades estratégicas,,43,78
+objetivo_especifico:8.10,8.10,OE8,OUV,"Sensibilizar (tanto o órgão central do sistema de Ouvidorias Públicas, quanto os órgãos do Sinapir) sobre as especificidades das Ouvidorias de Igualdade Racial",,44,79
+objetivo_especifico:8.11,8.11,OE8,OUV,Estreitar a relação da Ouvidoria da Igualdade Racial com órgãos do sistema de justiça e de defesa de direitos,,44,80
+objetivo_especifico:8.12,8.12,OE8,OUV,Desenvolver parcerias inovadoras e/ou projetos piloto que fomentem o combate ao racismo e a promoção da igualdade racial,,44,81
+objetivo_especifico:8.13,8.13,OE8,GAB.MIN,Estabelecer uma cultura do uso de ferramentas assertivas na administração e deliberação de agendas,,45,82
+objetivo_especifico:8.14,8.14,OE8,GAB.MIN,Orientar as equipes do ministério sobre as normativas de construção de processos,,45,83
+objetivo_especifico:8.15,8.15,OE8,GAB.MIN,Construir agendas que tenham bom alinhamento político com as prioridades do ministério,,45,84
+objetivo_especifico:8.16,8.16,OE8,GAB.MIN,Garantir que as agendas da ministra sejam acompanhadas e registradas para acompanhar o desdobramento,,45,85
+objetivo_especifico:8.17,8.17,OE8,GAB.MIN,Promover agilidade no envio de convites em eventos de grande porte realizados pelo MIR.,,45,86
+objetivo_especifico:8.18,8.18,OE8,ASCOM,Acompanhar e propor agendas estratégicas com a SECOM e outras ASCOMs da esplanada,,46,87
+objetivo_especifico:8.19,8.19,OE8,ASCOM,Assegurar consistência nas divulgações sobre as agendas transversais com demais órgãos,,46,88
+objetivo_especifico:8.20,8.20,OE8,ASCOM,"Produzir conteúdo, fazer cobertura audiovisual, acompanhar as agendas necessárias e publicizar as ações e programas transversais desenvolvidos pelo MIR",,46,89
+objetivo_especifico:8.21,8.21,OE8,ASCOM,Ampliar diálogos parlamentares,,46,90
+objetivo_especifico:8.22,8.22,OE8,SE,Acompanhar e formular a estratégia da promoção da igualdade racial com os entes federados e SGPR/SRI,,47,91
+objetivo_especifico:8.23,8.23,OE8,SE,"Estabelecer, em conjunto com a SENAPIR, uma agenda da política de promoção da igualdade racial do Governo Federal com os entes federados",,47,92
+objetivo_especifico:8.24,8.24,OE8,SE,"Estabelecer, em conjunto com a Aspadi, uma agenda da política de promoção da igualdade racial do Governo Federal com a sociedade civil",,47,93
+objetivo_especifico:8.25,8.25,OE8,SE,Dar suporte a Secretaria Executiva do CNPIR para a realização das ações no âmbito do Conselho,,47,94
+objetivo_especifico:8.26,8.26,OE8,SE,Acompanhar a atuação da ASPAR na relação do MIR com o Parlamento,,47,95
+objetivo_especifico:9.1,9.1,OE9,AECI,Implementar e monitorar da política de dados abertos,,48,96
+objetivo_especifico:9.2,9.2,OE9,AECI,Monitorar a política de transparência,,48,97
+objetivo_especifico:9.3,9.3,OE9,AECI,Monitorar a política de acesso à informação,,48,98
+objetivo_especifico:9.4,9.4,OE9,AI,Garantir maior participação social nas agendas internacionais dentro e fora do Brasil,,49,99
+objetivo_especifico:9.5,9.5,OE9,AI,Aprimorar o diálogo com o movimento negro sobre as agendas internacionais,,49,100
+objetivo_especifico:9.6,9.6,OE9,ASPAR,"Promover estratégias legislativas transversais, para a Promoção da Igualdade Racial e Combate ao Racismo em relacionamento com diversos atores",,50,101
+objetivo_especifico:9.7,9.7,OE9,ASPAR,Articular a participação de Parlamentares para a CONAPIR,,52,102
+objetivo_especifico:9.8,9.8,OE9,DAG,Fortalecer o relacionamento com instituições da sociedade civil organizada.,,53,103
+objetivo_especifico:9.9,9.9,OE9,AEM,"Articular, deliberar e assegurar momentos estratégicos da Ministra com Sociedade Civil",,54,104
+objetivo_especifico:9.10,9.10,OE9,ASPADI,Promover a participação com transformação digital inovadora no âmbito das políticas de promoção de igualdade racial,,55,105
+objetivo_especifico:9.11,9.11,OE9,ASPADI,Consolidar diálogo e articulação com a sociedade civil em sua diversidade,,55,106
+objetivo_especifico:9.12,9.12,OE9,ASPADI,Aprimorar a transversalidade do gerenciamento da formulação das políticas de igualdade no Sistema de Participação Social,,56,107
+objetivo_especifico:9.13,9.13,OE9,ASPADI,Contribuir com os diversos órgãos no MIR nas estratégias de colaboração entre governo e sociedade civil organizada,,56,108
+objetivo_especifico:9.14,9.14,OE9,CNPIR,Garantir o pleno funcionamento do Conselho e fortalecer a Governança da SE/CNPIR,,57,109
+objetivo_especifico:9.15,9.15,OE9,CNPIR,"Promover ampla articulação do CNPIR com outros colegiados, conselhos, conferências e fóruns interconselhos",,58,110
+objetivo_especifico:9.16,9.16,OE9,CNPIR,Apoiar a Comissão Organizadora na realização da V CONAPIR,,58,111
+objetivo_especifico:9.17,9.17,OE9,OUV,"Implementar o Disque Racismo, instituído em lei e com garantia de orçamento próprio, para possibilitar o atendimento permanente, gratuito e 24h a qualquer cidadão vítima de racismo, no Brasil ou no exterior",,60,112
+objetivo_especifico:9.18,9.18,OE9,GAB.MIN,"Acompanhar e motivar as equipes do ministério a participarem de atividades coletivas ligadas a política de cuidado, capacitação, avaliação, e integração.",,61,113
+objetivo_especifico:9.19,9.19,OE9,GAB.MIN,Compreender as representações diversas da sociedade em agendas da Ministra,,61,114
+objetivo_especifico:9.20,9.20,OE9,ASCOM,Divulgação de ações do relacionamento do MIR com a sociedade civil,,62,115
+objetivo_especifico:9.21,9.21,OE9,ASCOM,Informar com qualidade e transparência as políticas articuladas e desenvolvidas pelo ministério,,62,116
+objetivo_especifico:9.22,9.22,OE9,ASCOM,Manutenção e atualização do site eletrônico institucional,,62,117
+objetivo_especifico:9.23,9.23,OE9,SE,Garantir a divulgação dos decretos e portarias no site do MIR,,63,118
+objetivo_especifico:10.1,10.1,OE10,AECI,Secretariar a gestão da ética pública,,64,119
+objetivo_especifico:10.2,10.2,OE10,AECI,"Coordenar ações de comunicação, engajamento e formação previstas no plano de integridade",,64,120
+objetivo_especifico:10.3,10.3,OE10,CONJUR,Prevenir e reduzir a litigiosidade em processos judiciais envolvendo a União,,65,121
+objetivo_especifico:10.4,10.4,OE10,CONJUR,Estimular o processo de qualificação de seus profissionais e dos serviços oferecidos.,,65,122
+objetivo_especifico:10.5,10.5,OE10,AEM,Realizar junto à Ministra e SE o Feedback da equipe do MIR,,66,123
+objetivo_especifico:10.6,10.6,OE10,AEM,Elaborar o Planejamento Estratégico do Ministério da Igualdade Racial 2023-2026,,66,124
+objetivo_especifico:10.7,10.7,OE10,AEM,Propor iniciativas de acolhimento e valorização da equipe,,66,125
+objetivo_especifico:10.8,10.8,OE10,OUV,Promover oficinas de sensibilização sobre temas sensíveis e pertinentes à construção de um ambiente de trabalho acolhedor e respeitoso,,67,126
+objetivo_especifico:10.9,10.9,OE10,GAB.MIN,Fomentar e orientar através de dados a realização de agendas estratégicas para a ministra,,68,127
+objetivo_especifico:10.10,10.10,OE10,CORREG,Realizar um trabalho pedagógico (Semente de Integridade da Corregedoria) divulgando semanalmente informações que envolvem a integridade entre colaboradores do MIR nas plataformas de comunicação entre colaboradores,,69,128
+objetivo_especifico:10.11,10.11,OE10,CORREG,"Realizar Treinamentos e Cursos, IPS, PAD, PAR, Risco e Integridade, e Sindicância em parceria com a CGU",,69,129
+objetivo_especifico:11.1,11.1,OE11,GAB.MIN,Mapear demandas de infraestrutura física de digital necessária para fortalecimento das unidades,,70,130
+objetivo_especifico:11.2,11.2,OE11,GAB.MIN,"Acompanhar e orientar sobre as definições e necessidades da elaboração e execução de layouts e obras pra acomodação das equipes do MIR, buscando reduzir os impactos das obras no dia a dia",,70,131
+objetivo_especifico:11.3,11.3,OE11,ASCOM,"Produzir condições para a analise de dados, monitoramento e avaliação do desempenho das redes sociais do MIR, incluindo o uso de métricas avançadas para acompanhar o engajamento, alcance e impacto das postagens, fornecendo insights",,71,132
+objetivo_especifico:11.4,11.4,OE11,ASCOM,"Efetivar condições para práticas de segurança cibernética avançadas, capacitação contínua da equipe em medidas de proteção de dados e o cumprimento das melhores práticas de governança digital.",,71,133
+objetivo_especifico:12.1,12.1,OE12,AECI,Coordenar as ações de engajamento previstas no plano de integridade,,72,134
+objetivo_especifico:12.2,12.2,OE12,AECI,Prestar apoio à gestão de processos relativos transferências voluntárias e instrumentos congêneres,,72,135
+objetivo_especifico:12.3,12.3,OE12,CONJUR,Estimular o diálogo entre as áreas antes da formalização do ato administrativo.,,73,136
+objetivo_especifico:12.4,12.4,OE12,DAG,Garantir a agilidade na execução das atividades de rotina,,74,137
+objetivo_especifico:12.5,12.5,OE12,DAG,Aprimorar o fluxo de diálogo nas reuniões realizadas dentro MIR e/ou agendas externas,,74,138
+objetivo_especifico:12.6,12.6,OE12,DAG,Otimizar a elaboração dos pareceres e notas a fim de conferir maior eficiência ao processo.,,74,139
+objetivo_especifico:12.7,12.7,OE12,AEM,Mapear Fluxos e Processos Rotineiros do Ministério da Igualdade Racial,,75,140
+objetivo_especifico:12.8,12.8,OE12,AI,Compartilhar informações relevantes para o MIR como um todo,,76,141
+objetivo_especifico:12.9,12.9,OE12,OUV,"Normatizar e aprimorar continuadamente o tratamento de manifestação de Ouvidoria, em especial denúncias, e de pedidos de acesso à informação pela Ouvidoria e pelas áreas técnicas",,77,142
+objetivo_especifico:12.10,12.10,OE12,OUV,"Qualificar o quadro de servidores que lidam com o acolhimento, classificação, tratamento e encaminhamentos decorrentes de manifestações de Ouvidoria e de pedidos de acesso à informação",,77,143
+objetivo_especifico:12.11,12.11,OE12,GAB.MIN,Zelar pela boa manutenção dos fluxos,,78,144
+objetivo_especifico:12.12,12.12,OE12,ASCOM,"Oferecer capacitação contínua em redação e estratégias de mídia, criar uma política de relacionamentos interno com jornalistas e veículos de mídia e promover transparência nas informações divulgadas",,79,145
+objetivo_especifico:12.13,12.13,OE12,ASCOM,"Fortalecer a presença do MIR na imprensa local, nacional e internacional, aprimorando também a relação com as mídias negras e populares",,79,146
+objetivo_especifico:12.14,12.14,OE12,ASCOM,Aprimorar a estratégia de comunicação direta,,79,147
