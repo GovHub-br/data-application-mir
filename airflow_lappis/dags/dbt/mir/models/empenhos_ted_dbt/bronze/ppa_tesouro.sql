@@ -1,3 +1,5 @@
+-- Valores em moeda de origem do CNPq (2023-25) saem convertidos em R$ pela PTAX de
+-- fechamento do ano de emissao (seed cambio_fechamento_exercicio).
 -- Table, nao incremental: a raw guarda so a foto mais recente de cada
 -- exercicio, e uma linha cujo valor muda (ex.: NE em moeda estrangeira,
 -- reavaliada pelo cambio do dia) ganha id_hash novo. Um merge manteria a
@@ -40,14 +42,22 @@ with
             resultado_eof_nome::text as resultado_eof_nome,
             grupo_despesa::integer as grupo_despesa,
             grupo_despesa_desc::text as grupo_despesa_desc,
-            {{ parse_financial_value("dotacao_atualizada") }} as dotacao_atualizada,
-            {{ parse_financial_value("despesas_empenhadas") }} as despesas_empenhadas,
-            {{ parse_financial_value("despesas_liquidadas") }} as despesas_liquidadas,
-            {{ parse_financial_value("despesas_pagas") }} as despesas_pagas,
-            {{ parse_financial_value("restos_a_pagar_inscritos") }} as restos_a_pagar_inscritos,
-            {{ parse_financial_value("restos_a_pagar_pagos") }} as restos_a_pagar_pagos,
+            round({{ parse_financial_value("dotacao_atualizada") }} * coalesce(cambio.taxa_cambio, 1), 2) as dotacao_atualizada,
+            round({{ parse_financial_value("despesas_empenhadas") }} * coalesce(cambio.taxa_cambio, 1), 2) as despesas_empenhadas,
+            round({{ parse_financial_value("despesas_liquidadas") }} * coalesce(cambio.taxa_cambio, 1), 2) as despesas_liquidadas,
+            round({{ parse_financial_value("despesas_pagas") }} * coalesce(cambio.taxa_cambio, 1), 2) as despesas_pagas,
+            round({{ parse_financial_value("restos_a_pagar_inscritos") }} * coalesce(cambio.taxa_cambio, 1), 2) as restos_a_pagar_inscritos,
+            round({{ parse_financial_value("restos_a_pagar_pagos") }} * coalesce(cambio.taxa_cambio, 1), 2) as restos_a_pagar_pagos,
             (dt_ingest || '-03:00')::timestamptz as dt_ingest
         from {{ source("siafi", "ne_tesouro_ppa") }}
+        -- NE em dólar carregada com a métrica "Moeda Origem" (ver o seed): converte
+        -- pela taxa de fechamento do ano de emissão. As datas são texto de propósito
+        -- (right(...) e ne_ccor_ano_emissao ainda não passaram pelo filtro abaixo).
+        left join
+            {{ ref("cambio_fechamento_exercicio") }} as cambio
+            on left(ne_ccor, 6) = cambio.ug_emitente
+            and ne_ccor_ano_emissao = cambio.ano_emissao::text
+            and right(emissao_mes, 4) <= cambio.ate_exercicio_anexo::text
         -- Modelo unico de bronze do relatorio "Notas de empenhos por
         -- programa PPA" do Tesouro Gerencial. Reune os dois graos que
         -- vem na tabela raw:

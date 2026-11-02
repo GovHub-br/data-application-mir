@@ -43,6 +43,33 @@ seeds:
           - unique
           - not_null
 
+  - name: cambio_fechamento_exercicio
+    description: >
+      Taxa de câmbio (R$ por US$) com que ppa_tesouro converte as NEs em moeda de origem
+      cujo relatório do Tesouro Gerencial foi carregado antes de 16/10/2026, quando a
+      métrica "Moeda Origem" ainda valia. É a PTAX de venda do último dia útil do ano de
+      emissão da NE, a mesma que a consulta oficial "Execução TED por UG" usa nos
+      exercícios fechados (4,8413 / 6,1923 / 5,5024 reproduzem ao centavo o oficial do
+      CNPq). Vale para as linhas dos anexos até ate_exercicio_anexo; o anexo de 2026 já
+      vem em R$. Quando 2023-25 forem reextraídos em R$, apague as linhas deste seed.
+    config:
+      column_types:
+        ug_emitente: text
+        ano_emissao: integer
+        taxa_cambio: numeric(10, 4)
+        ate_exercicio_anexo: integer
+        fonte: text
+    columns:
+      - name: ug_emitente
+        tests:
+          - not_null
+      - name: ano_emissao
+        tests:
+          - not_null
+      - name: taxa_cambio
+        tests:
+          - not_null
+
   - name: tedinhos_identificados_mir
     description: >
       Lista de referência dos instrumentos "Descentralização de Crédito" (tedinho) do MIR
