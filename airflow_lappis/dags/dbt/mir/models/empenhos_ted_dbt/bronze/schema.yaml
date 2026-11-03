@@ -111,7 +111,13 @@ models:
       acrescentando a UG responsável, a classificação do plano orçamentário e
       o resultado EOF. Realiza a limpeza do número do processo, padronização
       de nomes de favorecidos e conversão de valores financeiros de string
-      para numeric(15,2) via macro.
+      para numeric(15,2) via macro. Não é cópia fiel da raw nas NEs em moeda
+      estrangeira: as da UG 364150 (CNPq) dos anexos de 2023-25, carregados
+      quando o relatório ainda usava a métrica "Moeda Origem", saem
+      convertidas em R$ pela PTAX de fechamento do ano de emissão (seed
+      cambio_fechamento_exercicio). Todos os valores de uma NE usam a mesma
+      taxa. Limitação: o RAP inscrito/pago do anexo de 2026 já vem em R$ pela
+      cotação do dia, então vl_pago (pago + RAP pago) do CNPq mistura bases.
     columns:
       - name: programa_governo
         description: >
@@ -218,19 +224,19 @@ models:
           convertido para numeric(15,2).
       - name: despesas_empenhadas
         description: >
-          Valor total das despesas empenhadas, convertido para numeric(15,2).
+          Valor total das despesas empenhadas, convertido para numeric(15,2) (em R$; ver a descrição do modelo para o CNPq).
       - name: despesas_liquidadas
         description: >
-          Valor das despesas que já passaram pela liquidação, convertido para numeric(15,2).
+          Valor das despesas que já passaram pela liquidação, convertido para numeric(15,2) (em R$; ver a descrição do modelo para o CNPq).
       - name: despesas_pagas
         description: >
-          Valor efetivamente pago ao favorecido, convertido para numeric(15,2).
+          Valor efetivamente pago ao favorecido, convertido para numeric(15,2) (em R$; ver a descrição do modelo para o CNPq).
       - name: restos_a_pagar_inscritos
         description: >
-          Valor inscrito em Restos a Pagar (RP), convertido para numeric(15,2).
+          Valor inscrito em Restos a Pagar (RP), convertido para numeric(15,2) (em R$; ver a descrição do modelo para o CNPq).
       - name: restos_a_pagar_pagos
         description: >
-          Valor de Restos a Pagar que já foram quitados, convertido para numeric(15,2).
+          Valor de Restos a Pagar que já foram quitados, convertido para numeric(15,2) (em R$; ver a descrição do modelo para o CNPq).
       - name: dt_ingest
         description: >
           Timestamp da ingestão dos dados na camada raw, ajustado para o fuso horário de Brasília (UTC-3).

@@ -40,9 +40,9 @@ models:
           ds_origem_execucao = 'sem_dado'; 0 quer dizer que não há empenho além do
           compartilhado.
 
-          As NEs da UG 364150 do CNPq estão em dólar em 2023-25 até a reextração no
-          Tesouro Gerencial, sem conversão aqui. Por isso o TED 946358 fica cerca de
-          R$ 2,17 mi abaixo do real.
+          As NEs da UG 364150 do CNPq em 2023-25 chegam do Tesouro Gerencial em dólar e
+          são convertidas em ppa_tesouro pela taxa de fechamento do ano de emissão
+          (seed cambio_fechamento_exercicio), o que reproduz o valor oficial.
 
       - name: vl_pago
         data_type: numeric(15, 2)
@@ -52,8 +52,7 @@ models:
           R$. O liquidado fica fora de propósito: o relatório só traz o do exercício, sem
           o RAP, e não é comparável (nos TEDs de 2023, liquidado de R$ 27,85 mi e pago
           total de R$ 47,71 mi). Não inclui instrumento mesclado (vl_pago_compartilhado).
-          Nulo quando ds_origem_execucao = 'sem_dado'. As NEs do CNPq em dólar (ver
-          vl_empenhado) também afetam esta coluna.
+          Nulo quando ds_origem_execucao = 'sem_dado'.
 
       - name: vl_credito_liquido
         data_type: numeric(15, 2)

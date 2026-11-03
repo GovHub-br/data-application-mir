@@ -19,8 +19,8 @@
   Não se rateia: fica fora de vl_empenhado e vl_pago dos TEDs e aparece inteiro em cada
   um nas colunas de compartilhado.
 
-  Não converte moeda: as NEs da UG 364150 do CNPq estão em dólar em 2023-25 até a
-  reextração no Tesouro Gerencial (ver a descrição de vl_empenhado).
+  Não converte moeda aqui: as NEs da UG 364150 do CNPq já saem em R$ de ppa_tesouro (ver a
+  descrição de vl_empenhado).
 #}
 with
     gold as (
