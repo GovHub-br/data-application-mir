@@ -42,12 +42,12 @@ with
             resultado_eof_nome::text as resultado_eof_nome,
             grupo_despesa::integer as grupo_despesa,
             grupo_despesa_desc::text as grupo_despesa_desc,
-            round({{ parse_financial_value("dotacao_atualizada") }} * coalesce(cambio.taxa_cambio, 1), 2) as dotacao_atualizada,
-            round({{ parse_financial_value("despesas_empenhadas") }} * coalesce(cambio.taxa_cambio, 1), 2) as despesas_empenhadas,
-            round({{ parse_financial_value("despesas_liquidadas") }} * coalesce(cambio.taxa_cambio, 1), 2) as despesas_liquidadas,
-            round({{ parse_financial_value("despesas_pagas") }} * coalesce(cambio.taxa_cambio, 1), 2) as despesas_pagas,
-            round({{ parse_financial_value("restos_a_pagar_inscritos") }} * coalesce(cambio.taxa_cambio, 1), 2) as restos_a_pagar_inscritos,
-            round({{ parse_financial_value("restos_a_pagar_pagos") }} * coalesce(cambio.taxa_cambio, 1), 2) as restos_a_pagar_pagos,
+            round({{ parse_financial_value("dotacao_atualizada") }} * coalesce(cambio.taxa_cambio, 1), 2)::numeric(15, 2) as dotacao_atualizada,
+            round({{ parse_financial_value("despesas_empenhadas") }} * coalesce(cambio.taxa_cambio, 1), 2)::numeric(15, 2) as despesas_empenhadas,
+            round({{ parse_financial_value("despesas_liquidadas") }} * coalesce(cambio.taxa_cambio, 1), 2)::numeric(15, 2) as despesas_liquidadas,
+            round({{ parse_financial_value("despesas_pagas") }} * coalesce(cambio.taxa_cambio, 1), 2)::numeric(15, 2) as despesas_pagas,
+            round({{ parse_financial_value("restos_a_pagar_inscritos") }} * coalesce(cambio.taxa_cambio, 1), 2)::numeric(15, 2) as restos_a_pagar_inscritos,
+            round({{ parse_financial_value("restos_a_pagar_pagos") }} * coalesce(cambio.taxa_cambio, 1), 2)::numeric(15, 2) as restos_a_pagar_pagos,
             (dt_ingest || '-03:00')::timestamptz as dt_ingest
         from {{ source("siafi", "ne_tesouro_ppa") }}
         -- NE em dólar carregada com a métrica "Moeda Origem" (ver o seed): converte

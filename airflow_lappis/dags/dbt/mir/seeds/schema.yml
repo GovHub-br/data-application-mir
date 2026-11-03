@@ -52,6 +52,11 @@ seeds:
       exercícios fechados (4,8413 / 6,1923 / 5,5024 reproduzem ao centavo o oficial do
       CNPq). Vale para as linhas dos anexos até ate_exercicio_anexo; o anexo de 2026 já
       vem em R$. Quando 2023-25 forem reextraídos em R$, apague as linhas deste seed.
+      A chave (ug_emitente, ano_emissao) é única, e ate_exercicio_anexo é o mesmo
+      valor em todas as linhas por construção (depende da data de troca da métrica,
+      não do par UG×ano): repetir o par duplica as linhas de NE no join de
+      ppa_tesouro, que alimenta a cascata e a gold. O teste singular
+      test_cambio_fechamento_exercicio_chave_unica vigia isso.
     config:
       column_types:
         ug_emitente: text

@@ -1,3 +1,6 @@
+-- Nao converte moeda: NE do CNPq (364150) dos anexos 2023-25 fica em dolar aqui,
+-- ao contrario de ppa_tesouro (seed cambio_fechamento_exercicio). Este modelo
+-- esta sucedido por ppa_tesouro; use aquele para valores.
 {{ config(materialized="table") }}
 
 
