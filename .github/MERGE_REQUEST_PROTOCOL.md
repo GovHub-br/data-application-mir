@@ -178,12 +178,13 @@ Closes #42
 
 ### Times de Revisão
 
-O repositório usa dois times do GitHub para direcionar revisões:
+O repositório usa os seguintes times do GitHub para direcionar revisões:
 
 | Time | Escopo principal |
 | --- | --- |
 | `@GovHub-br/mir` | Pipelines, modelos dbt e integrações vinculadas ao MIR |
 | `@GovHub-br/infra` | Infraestrutura e CI, de forma transversal |
+| `@GovHub-br/oss` | Contribuições externas, documentação pública, governança de colaboração open source e PRs originados na disciplina GCES |
 
 Os nomes acima usam os slugs dos times no GitHub.
 
@@ -218,6 +219,7 @@ Labels são a referência para o roteamento automático de revisores:
 
 - `team:mir`
 - `team:infra`
+- `team:oss`
 
 Se uma label indicar um domínio diferente dos arquivos alterados, o autor deve justificar no PR ou ajustar a label antes do merge.
 
@@ -235,7 +237,7 @@ Para adicionar um novo projeto, ministério ou disciplina ao fluxo de revisão:
 
 ### Número Mínimo de Aprovações
 
-- PRs de código: solicitar revisão ao time MIR ou Infra, conforme a mudança, e obter **1 aprovação** que conte para a proteção da branch
+- PRs de código: solicitar revisão ao time MIR, Infra ou OSS, conforme a mudança, e obter **1 aprovação** que conte para a proteção da branch
 - PRs de documentação: solicitar revisão ao time responsável e obter **1 aprovação** que conte para a proteção da branch
 - PRs críticos, sensíveis ou com impacto em produção: recomendado exigir **2 aprovações**
 

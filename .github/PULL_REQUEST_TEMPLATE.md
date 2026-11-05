@@ -19,6 +19,7 @@ Closes #
 
 - [ ] MIR
 - [ ] Infra
+- [ ] OSS
 
 ## Como testar / validar
 

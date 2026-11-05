@@ -27,6 +27,7 @@ jobs:
             const teamByLabel = {
               "team:infra": "infra",
               "team:mir": "mir",
+              "team:oss": "oss",
             };
 
             const currentLabels = new Set(
