@@ -178,25 +178,24 @@ Closes #42
 
 ### Times de Revisão
 
-O repositório usa times do GitHub para direcionar revisões por domínio de atuação. Os times configurados na organização são:
+O repositório usa os seguintes times do GitHub para direcionar revisões:
 
 | Time | Escopo principal |
 | --- | --- |
-| `@GovHub-br/ipea` | Pipelines, modelos dbt e integrações vinculadas ao IPEA |
 | `@GovHub-br/mir` | Pipelines, modelos dbt e integrações vinculadas ao MIR |
-| `@GovHub-br/mcid` | Pipelines e integrações vinculadas ao MCid |
-| `@GovHub-br/minc` | Pipelines, modelos dbt e integrações vinculadas ao MinC, quando houver paths correspondentes neste repositório |
+| `@GovHub-br/infra` | Infraestrutura e CI, de forma transversal |
 | `@GovHub-br/oss` | Contribuições externas, documentação pública, governança de colaboração open source e PRs originados na disciplina GCES |
 
-Os nomes acima usam os slugs dos times no GitHub. O time pode aparecer visualmente como `MCid`, `MinC` ou `OSS`, mas automações e revisões devem usar o slug configurado na organização. Não há um time separado para GCES; a label `team:gces` existe para triagem e também solicita revisão do time `@GovHub-br/oss`.
+Os nomes acima usam os slugs dos times no GitHub.
 
 ### Estratégia de Revisão Automática
 
 A estratégia adotada para domínios de dados é **GitHub Actions + labels `team:*`**:
 
 - A label `team:*` deve ser adicionada manualmente ao PR conforme o domínio principal da mudança.
-- A workflow `Request team review` roda quando uma label é adicionada ao PR.
+- A workflow `Request team review` roda quando uma label é adicionada ao PR ou quando um PR com label sai de draft.
 - A workflow não cria nem aplica labels automaticamente; ela apenas solicita revisão dos times correspondentes às labels já presentes no PR.
+- Labels `team:*` usadas em issues não disparam solicitação de revisão; o gatilho é exclusivo de PRs.
 
 Essa escolha evita manter listas frágeis de caminhos na automação, reduz falsos positivos e deixa a decisão do domínio explícita no PR.
 
@@ -218,11 +217,8 @@ Quando um PR alterar arquivos de um domínio, o autor ou mantenedor deve aplicar
 
 Labels são a referência para o roteamento automático de revisores:
 
-- `team:ipea`
 - `team:mir`
-- `team:mcid`
-- `team:minc`
-- `team:gces`
+- `team:infra`
 - `team:oss`
 
 Se uma label indicar um domínio diferente dos arquivos alterados, o autor deve justificar no PR ou ajustar a label antes do merge.
@@ -241,15 +237,17 @@ Para adicionar um novo projeto, ministério ou disciplina ao fluxo de revisão:
 
 ### Número Mínimo de Aprovações
 
-- PRs de código: mínimo de **1 aprovação** de uma pessoa revisora do domínio alterado
-- PRs de documentação: mínimo de **1 aprovação** de uma pessoa responsável pelo tipo de documentação
+- PRs de código: solicitar revisão ao time MIR, Infra ou OSS, conforme a mudança, e obter **1 aprovação** que conte para a proteção da branch
+- PRs de documentação: solicitar revisão ao time responsável e obter **1 aprovação** que conte para a proteção da branch
 - PRs críticos, sensíveis ou com impacto em produção: recomendado exigir **2 aprovações**
+
+Solicitar revisão a um time não equivale a obter aprovação. Para contar na regra de aprovação da branch, a pessoa revisora precisa ter acesso de escrita ao repositório.
 
 ### Configuração Recomendada no GitHub
 
 Para aplicar essas regras automaticamente, o repositório usa a workflow `Request team review`.
 
-Caso o GitHub recuse a solicitação automática de review de um time, a workflow deve registrar um aviso sem bloquear o PR. Se a solicitação de reviewers por time continuar falhando, configure o secret `TEAM_REVIEW_TOKEN` com um token autorizado a solicitar reviewers no repositório e ler times da organização.
+O secret `TEAM_REVIEW_TOKEN` deve estar disponível ao repositório e autorizado a solicitar reviewers e ler os times da organização. Sem ele, ou se o GitHub recusar a solicitação, o job falha para tornar o problema visível; um mantenedor deve solicitar a revisão manualmente até a configuração ser corrigida. O job só bloqueia o merge se for configurado como check obrigatório na proteção da branch.
 
 Além da workflow, a branch `main` deve manter as seguintes proteções habilitadas:
 

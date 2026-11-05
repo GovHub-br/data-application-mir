@@ -1,7 +1,7 @@
 ## Descrição
 <!-- O que esse PR faz? Por que essa mudança é necessária? -->
 
-> Antes de abrir este PR, consulte o [Protocolo de Aprovação de Pull Requests](https://github.com/GovHub-br/data-application-gov-hub/blob/main/.github/MERGE_REQUEST_PROTOCOL.md).
+> Antes de abrir este PR, consulte o [Protocolo de Aprovação de Pull Requests](https://github.com/GovHub-br/data-application-mir/blob/main/.github/MERGE_REQUEST_PROTOCOL.md).
 
 ## Tipo de mudança
 - [ ] Nova funcionalidade / pipeline
@@ -15,15 +15,11 @@
 Closes #
 
 ## Domínio de revisão
-<!-- Marque o domínio/time principal impactado por este PR. Use labels team:* quando ajudar na triagem. -->
+<!-- Adicione a label correspondente ao PR para solicitar revisao automatica. -->
 
-- [ ] GCES / OSS
-- [ ] IPEA
 - [ ] MIR
-- [ ] MCid
-- [ ] MinC
+- [ ] Infra
 - [ ] OSS
-- [ ] Múltiplos domínios: ___
 
 ## Como testar / validar
 
