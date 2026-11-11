@@ -1,5 +1,5 @@
-sg_unidade,no_unidade,cd_siorg,nr_cnpj
-MIR,Ministério da Igualdade Racial,308823,06064438000110
-SENAPIR-MIR,Secretaria de Gestão do Sistema Nacional de Promoção da Igualdade Racial,73235,06064438000110
-SEPAR,"Secretaria de Políticas de Ações Afirmativas, Combate e Superação do Racismo",309941,06064438000110
-SQPT,"Secretaria de Polít. p/ Quilombolas, Povos e Comunidades Tradic de Mat. Africana, Povos de Terreiros e Ciganos",309949,06064438000110
+sg_unidade,no_unidade,cd_siorg,cd_ug,nr_cnpj
+MIR,Ministério da Igualdade Racial,308823,810008,06064438000110
+SENAPIR-MIR,Secretaria de Gestão do Sistema Nacional de Promoção da Igualdade Racial,73235,810008,06064438000110
+SEPAR,"Secretaria de Políticas de Ações Afirmativas, Combate e Superação do Racismo",309941,810008,06064438000110
+SQPT,"Secretaria de Polít. p/ Quilombolas, Povos e Comunidades Tradic de Mat. Africana, Povos de Terreiros e Ciganos",309949,810008,06064438000110

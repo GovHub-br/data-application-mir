@@ -24,11 +24,20 @@ seeds:
       a razão social antiga: Secretaria de Políticas de Promoção da Igualdade Racial.
       O consultarUasg do Compras.gov dá outro CNPJ para a UASG 810008 (o do órgão 81000,
       ao qual ela está ligada), que não é o do MIR.
+      UG, conferida em 2026-11-11 nas notas de crédito carregadas (nc_unificado,
+      relatorio = 'enviadas'): as quatro unidades descentralizam pela UG 810008 (MIR -
+      IGUALDADE RACIAL) — SEPAR em 43 TEDs, SQPT em 29, SENAPIR-MIR em 27 e MIR em 1,
+      nenhum por outra UG. As UGs próprias das secretarias em ugs_mir (238022 SENAPIR,
+      238023 SQPT, 238024 SEPAR, 238021 CNPIR) não aparecem como emitentes de NC em
+      nenhuma linha: no recorte do MIR, só 810008 (103 transferências), 238012 (Setorial
+      Financeira, operações internas) e 238018 (folha) emitem. Por isso a coluna repete
+      810008, como nr_cnpj repete o CNPJ do ministério.
     config:
       column_types:
         sg_unidade: text
         no_unidade: text
         cd_siorg: text
+        cd_ug: text
         nr_cnpj: text
     columns:
       - name: sg_unidade
@@ -40,5 +49,7 @@ seeds:
         description: "Nome da unidade no Siorg."
       - name: cd_siorg
         description: "Código da unidade no Siorg: só o número, sem a URL que a API devolve."
+      - name: cd_ug
+        description: "UG do SIAFI que descentraliza, com 6 dígitos. 810008 nas quatro linhas (ver acima)."
       - name: nr_cnpj
         description: "CNPJ com 14 dígitos, sem máscara. Fica vazio se não houver fonte oficial."
