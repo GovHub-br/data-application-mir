@@ -692,3 +692,75 @@ models:
           nome_tabela: 'siconv_dbt.meta_crono_fisico'
           nome_coluna: 'data_inicio_meta'
           tipo_esperado: 'date'
+  - name: etapa_crono_fisico
+    description: >
+      Tabela da camada bronze contendo as etapas das metas do cronograma físico de
+      convênios do SICONV. Liga à meta por id_meta.
+    columns:
+      - name: id_meta
+        description: "Identificador da meta a que a etapa pertence (meta_crono_fisico.id_meta)."
+      - name: id_etapa
+        description: "Identificador único da etapa."
+      - name: nr_etapa
+        description: "Número da etapa dentro da meta."
+      - name: desc_etapa
+        description: "Descrição da etapa."
+      - name: data_inicio_etapa
+        description: "Data de início da etapa."
+      - name: data_fim_etapa
+        description: "Data de fim da etapa."
+      - name: uf_etapa
+        description: "UF da etapa."
+      - name: municipio_etapa
+        description: "Município da etapa."
+      - name: endereco_etapa
+        description: "Endereço da etapa."
+      - name: cep_etapa
+        description: "CEP da etapa."
+      - name: qtd_etapa
+        description: "Quantidade da etapa."
+      - name: und_fornecimento_etapa
+        description: "Unidade de fornecimento da etapa."
+      - name: vl_etapa
+        description: "Valor da etapa."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siconv_dbt.etapa_crono_fisico'
+          nome_coluna: 'id_etapa'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siconv_dbt.etapa_crono_fisico'
+          nome_coluna: 'vl_etapa'
+          tipo_esperado: 'numeric'
+      - verificacao_tipagem:
+          nome_tabela: 'siconv_dbt.etapa_crono_fisico'
+          nome_coluna: 'data_inicio_etapa'
+          tipo_esperado: 'date'
+
+  - name: justificativas_proposta
+    description: >
+      Tabela da camada bronze contendo as justificativas do plano de trabalho das
+      propostas do SICONV. Só as propostas do MIR (órgão superior 67000): a ingestão
+      filtra o arquivo nacional.
+    columns:
+      - name: id_proposta
+        description: "Identificador da proposta."
+      - name: caracterizacao_interesses_reci
+        description: "Caracterização dos interesses recíprocos."
+      - name: publico_alvo
+        description: "Público-alvo."
+      - name: problema_a_ser_resolvido
+        description: "Problema a ser resolvido."
+      - name: resultados_esperados
+        description: "Resultados esperados."
+      - name: relacao_proposta_objetivos_pro
+        description: "Relação entre a proposta e os objetivos do programa."
+      - name: capacidade_tecnica
+        description: "Capacidade técnica e gerencial do proponente."
+      - name: justificativa
+        description: "Justificativa da proposta."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siconv_dbt.justificativas_proposta'
+          nome_coluna: 'id_proposta'
+          tipo_esperado: 'integer'

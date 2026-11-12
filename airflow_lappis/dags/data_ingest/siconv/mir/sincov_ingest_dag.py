@@ -3,13 +3,16 @@ from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 import psycopg2
 from postgres_helpers import get_postgres_conn
+from schedule_loader import get_dynamic_schedule
 from cliente_postgres import ClientPostgresDB
 from cliente_siconv import ClienteSiconv
 from tabelas_siconv import TABELAS_SICONV
 
 
 @dag(
-    schedule_interval=None,
+    # A fonte carrega às 06:30; às 08:00 o dado do dia entra no mir_cosmos_dag da
+    # madrugada seguinte.
+    schedule_interval=get_dynamic_schedule("siconv_ingestao_dag", default="0 8 * * *"),
     start_date=datetime(2024, 1, 1),
     catchup=False,
     default_args={
@@ -22,14 +25,7 @@ from tabelas_siconv import TABELAS_SICONV
 def siconv_ingestao_dag() -> None:
 
     @task
-    def baixar_siconv() -> str:
-        cliente = ClienteSiconv()
-        cliente.baixar_zip()
-        return cliente.ZIP_PATH
-
-    @task
     def ingerir_tabela(
-        zip_path: str,
         nome_tabela: str,
         nome_csv: str,
         conflict_fields: list,
@@ -37,7 +33,9 @@ def siconv_ingestao_dag() -> None:
         skip_rows: int,
         colunas: list,
         truncate_before_insert: bool = False,
+        filtro_ids_sql: str = None,
     ) -> None:
+        import os
 
         postgres_conn_str = get_postgres_conn("postgres_mir")
 
@@ -46,9 +44,7 @@ def siconv_ingestao_dag() -> None:
         db = ClientPostgresDB(postgres_conn_str)
         cliente = ClienteSiconv()
 
-        gerador_registros = cliente.ler_csv(
-            nome_csv, skip_rows, colunas_esperadas=colunas
-        )
+        zip_path = cliente.baixar_zip(nome_csv)
 
         lote = []
         tamanho_lote = 5000
@@ -56,6 +52,22 @@ def siconv_ingestao_dag() -> None:
 
         conn = psycopg2.connect(postgres_conn_str)
         try:
+            gerador_registros = cliente.ler_csv(
+                zip_path, nome_csv, skip_rows, colunas_esperadas=colunas
+            )
+
+            # Tabela grande demais para guardar inteira: só entram as linhas cuja
+            # primeira coluna está no resultado da consulta.
+            if filtro_ids_sql:
+                with conn.cursor() as cursor:
+                    cursor.execute(filtro_ids_sql)
+                    ids = {str(linha[0]) for linha in cursor.fetchall()}
+                logging.info(f"Filtro de {nome_tabela}: {len(ids)} ids")
+                chave = colunas[0].lower()
+                gerador_registros = (
+                    r for r in gerador_registros if r[chave] in ids
+                )
+
             if truncate_before_insert:
                 logging.info(f"Truncando tabela siconv.{nome_tabela}...")
                 with conn.cursor() as cursor:
@@ -107,6 +119,7 @@ def siconv_ingestao_dag() -> None:
             conn.commit()
         finally:
             conn.close()
+            os.remove(zip_path)
 
         if total_inserido == 0:
             logging.warning(f"Nenhum registro processado para {nome_tabela}")
@@ -115,23 +128,10 @@ def siconv_ingestao_dag() -> None:
                 f"Ingestão finalizada: {total_inserido} registros em {nome_tabela}"
             )
 
-    @task
-    def deletar_zip(zip_path: str) -> None:
-        import os
-
-        if os.path.exists(zip_path):
-            os.remove(zip_path)
-            logging.info(f"Arquivo {zip_path} deletado com sucesso")
-        else:
-            logging.warning(f"Arquivo {zip_path} não encontrado")
-
-    path_zip = baixar_siconv()
-
-    ultima_task = path_zip
+    ultima_task = None
 
     for tabela in TABELAS_SICONV:
         task_atual = ingerir_tabela.override(task_id=f"ingerir_{tabela['nome_tabela']}")(
-            zip_path=path_zip,
             nome_tabela=tabela["nome_tabela"],
             nome_csv=tabela["nome_csv"],
             conflict_fields=tabela["conflict_fields"],
@@ -139,12 +139,12 @@ def siconv_ingestao_dag() -> None:
             skip_rows=tabela["skip_rows"],
             colunas=tabela["colunas"],
             truncate_before_insert=tabela.get("truncate_before_insert", False),
+            filtro_ids_sql=tabela.get("filtro_ids_sql"),
         )
 
-        ultima_task >> task_atual
+        if ultima_task is not None:
+            ultima_task >> task_atual
         ultima_task = task_atual
-
-    ultima_task >> deletar_zip(path_zip)
 
 
 siconv_ingestao_dag()
