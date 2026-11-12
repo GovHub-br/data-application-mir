@@ -99,8 +99,9 @@ with
         group by p.id_plano_acao, n.programa_governo
     ),
 
-    -- Um programa por TED: vigente primeiro, depois o do ano mais recente, depois o de
-    -- maior crédito; o código desempata por último para o valor não depender da ordem.
+    -- Um programa por TED: vigente primeiro, depois os com valor executado,
+    -- em seguida o maior valor líquido, depois o ano mais recente; o código
+    -- desempata por último para o valor não depender da ordem.
     programa as (
         select distinct
             on (c.id_plano_acao)
@@ -112,8 +113,9 @@ with
         order by
             c.id_plano_acao,
             (v.codigo is not null) desc,
-            c.aa_emissao desc,
+            (c.vl_liquido > 0) desc,
             c.vl_liquido desc nulls last,
+            c.aa_emissao desc,
             c.cd_programa
     )
 
