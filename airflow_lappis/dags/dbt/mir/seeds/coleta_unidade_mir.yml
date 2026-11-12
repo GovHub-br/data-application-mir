@@ -37,8 +37,8 @@ seeds:
         sg_unidade: text
         no_unidade: text
         cd_siorg: text
-        cd_ug: text
         nr_cnpj: text
+        cd_ug: text
     columns:
       - name: sg_unidade
         description: "Sigla da unidade, como o portal TED a escreve."
