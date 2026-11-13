@@ -1,0 +1,149 @@
+version: 2
+
+models:
+
+  - name: coleta_convenio_fonte
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para o item 3.5 do formulário de convênios (origem e fonte
+      dos recursos): o empenho de cada convênio de coleta_convenio, uma linha por ano do
+      empenho, PTRES, fonte, natureza de despesa e emenda. Fonte: empenhos do siconv;
+      programa, ação e UO do relatório de execução do PPA (ppa_tesouro); emenda e autor
+      de numero_transferencia.
+
+      A soma de vl_empenhado de um convênio é o empenho líquido dele no siconv. Nos
+      convênios anteriores a 2023 o siconv pode não ter todos os empenhos (em 11/2026, 7
+      deles tinham mais desembolso que empenho), programa, ação e UO ficam nulos porque
+      o relatório do PPA só cobre os empenhos recentes, e a NE de emenda pode não ter o
+      número da emenda (tipo de emenda com cd_emenda = 'sem_emenda').
+
+      Convênio sem linha quer dizer que o siconv ainda não tem empenho dele.
+
+      Lido pelo Coleta MIR: mudar o nome, o tipo ou o significado de uma coluna quebra o
+      consumidor. Coluna nova é segura. A chave e os formatos de cd_fonte e cd_emenda são
+      constraints: um build que os viole falha antes de trocar a tabela, e o Coleta
+      continua lendo a versão anterior.
+    constraints:
+      - type: primary_key
+        columns:
+          - nr_convenio
+          - aa_emissao
+          - cd_ptres
+          - cd_fonte
+          - cd_natureza_despesa
+          - cd_emenda
+    columns:
+      - name: nr_convenio
+        data_type: text
+        constraints:
+          - type: not_null
+        description: "Convênio da linha (coleta_convenio.nr_convenio). Parte da chave."
+        tests:
+          - relationships:
+              to: ref('coleta_convenio')
+              field: nr_convenio
+
+      - name: aa_emissao
+        data_type: integer
+        constraints:
+          - type: not_null
+        description: >
+          Ano da NE, o do número dela (2025NE000069 → 2025); o ano da emissão se o número
+          vier fora do padrão. O reforço de empenho tem NE própria e fica no ano dela.
+          Parte da chave.
+
+      - name: cd_programa
+        data_type: text
+        description: >
+          Código do programa orçamentário (ex.: 5804), do relatório de execução do PPA.
+          Nulo quando o relatório não tem o convênio naquele ano e PTRES (convênios
+          anteriores a 2023).
+
+      - name: no_programa
+        data_type: text
+        description: "Nome do programa orçamentário."
+
+      - name: cd_acao
+        data_type: text
+        description: "Código da ação orçamentária (ex.: 21FC). Nulo junto com cd_programa."
+
+      - name: no_acao
+        data_type: text
+        description: "Nome da ação orçamentária."
+
+      - name: cd_uo
+        data_type: text
+        description: "Unidade orçamentária (67101 = MIR). Nulo junto com cd_programa."
+
+      - name: cd_ptres
+        data_type: text
+        constraints:
+          - type: not_null
+        description: "PTRES (programa de trabalho resumido) do empenho. Parte da chave."
+
+      - name: cd_fonte
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: check
+            expression: "cd_fonte ~ '^([0-9]{4}|[0-9A-Z]{10})$'"
+        description: >
+          Fonte de recursos do empenho, com 10 caracteres (ex.: 1000000000), sem o zero
+          a mais que o siconv põe à esquerda desde 2019. Desde 2022 há fontes com letras
+          no detalhamento (ex.: 1000A0001X). Os empenhos até 2011 trazem a fonte antiga,
+          com 4 dígitos (ex.: 0100). Parte da chave.
+
+      - name: no_fonte
+        data_type: text
+        description: "Nome da fonte de recursos, pelo código no relatório de execução do PPA. Nulo se o código não aparece lá (fontes antigas)."
+
+      - name: cd_natureza_despesa
+        data_type: text
+        constraints:
+          - type: not_null
+        description: "Natureza de despesa do empenho, com 6 dígitos (ex.: 334041); 8 em empenhos antigos. Parte da chave."
+
+      - name: no_natureza_despesa
+        data_type: text
+        description: "Nome da natureza de despesa, pelo código no relatório de execução do PPA."
+
+      - name: tp_origem
+        data_type: text
+        description: >
+          "Origem da programação orçamentária" do formulário: Emenda parlamentar
+          individual, de bancada ou de comissão (pelo resultado primário 6, 7 ou 8 das
+          NEs da emenda), Programação própria do MIR (RP 2 sem emenda) ou Outra (outro
+          resultado primário). Nulo quando a NE não traz resultado primário (empenhos
+          antigos).
+        tests:
+          - accepted_values:
+              values:
+                - Emenda parlamentar individual
+                - Emenda parlamentar de bancada
+                - Emenda parlamentar de comissão
+                - Programação própria do MIR
+                - Outra
+
+      - name: cd_emenda
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: check
+            expression: "cd_emenda ~ '^([0-9]{8}|[0-9]{12}|sem_emenda)$'"
+        description: >
+          Número da emenda, com 12 dígitos (ano, autor e sequencial; ex.: 202400000001),
+          ou 'sem_emenda'. Com 8 dígitos (sem o ano) quando a NE só descreve a emenda e
+          nenhuma outra NE do convênio dá o código completo
+          (test_coleta_convenio_fonte_emenda_8_digitos avisa). Parte da chave.
+
+      - name: no_autor_emenda
+        data_type: text
+        description: "Autor da emenda, como o SIAFI escreve. Nulo sem emenda."
+
+      - name: vl_empenhado
+        data_type: numeric(15, 2)
+        constraints:
+          - type: not_null
+        description: "Empenho líquido da linha, em R$. Pode ser 0 (NE emitida e anulada)."
