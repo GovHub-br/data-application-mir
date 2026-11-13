@@ -11,8 +11,9 @@ models:
       previstos no plano de trabalho): uma linha por meta e uma por etapa de cada
       convênio de coleta_convenio. A meta é o produto pactuado; as etapas são as ações
       previstas dentro dela. Fonte: cronograma físico do siconv (meta_crono_fisico e
-      etapa_crono_fisico). Mesmas colunas de coleta_ted_produto, com vl_item no lugar
-      de vl_unitario e a localização da meta ou etapa.
+      etapa_crono_fisico). Segue o desenho de coleta_ted_produto, com nr_convenio no
+      lugar de id_plano_acao, vl_item (total) no lugar de vl_unitario, e a UF e o
+      município da meta ou etapa.
 
       Se o plano de trabalho for refeito no Transferegov e as metas ganharem ids novos,
       as linhas antigas somem e entram outras; quem consome deve ligar as respostas a
