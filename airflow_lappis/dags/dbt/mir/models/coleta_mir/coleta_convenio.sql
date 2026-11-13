@@ -50,7 +50,8 @@ with
 
     -- Último aditivo: pela data de assinatura e, no mesmo dia, pelo ano e número do TA
     -- como inteiros. O número sozinho não ordena: há "3/2023" assinado depois de
-    -- "4/2023" e "2/2026" assinado em 2025.
+    -- "4/2023" e "2/2026" assinado em 2025. Número fora do padrão "N/AAAA" fica por
+    -- último, em vez de derrubar o build no cast.
     aditivo as (
         select
             nr_convenio,
@@ -61,8 +62,14 @@ with
                 partition by nr_convenio
                 order by
                     dt_assinatura_ta desc nulls last,
-                    nullif(split_part(numero_ta, '/', 2), '')::integer desc nulls last,
-                    nullif(split_part(numero_ta, '/', 1), '')::integer desc nulls last
+                    case
+                        when split_part(numero_ta, '/', 2) ~ '^[0-9]+$'
+                        then split_part(numero_ta, '/', 2)::integer
+                    end desc nulls last,
+                    case
+                        when split_part(numero_ta, '/', 1) ~ '^-?[0-9]+$'
+                        then split_part(numero_ta, '/', 1)::integer
+                    end desc nulls last
             ) as ordem
         from {{ ref("termo_aditivo") }}
         where nr_convenio in (select nr_convenio from convenio)
@@ -157,7 +164,9 @@ select
 from convenio as c
 left join aditivo as a on a.nr_convenio = c.nr_convenio and a.ordem = 1
 left join secretaria as s on s.nr_convenio = c.nr_convenio
-inner join
+-- Left join: se a linha do MIR sumir do seed, o not_null do contrato derruba o build em
+-- vez de o convênio sumir da tabela.
+left join
     {{ ref("coleta_unidade_mir") }} as u on u.sg_unidade = coalesce(s.sg_unidade, 'MIR')
 left join {{ ref("justificativas_proposta") }} as j on j.id_proposta = c.id_proposta
 cross join posicao as p

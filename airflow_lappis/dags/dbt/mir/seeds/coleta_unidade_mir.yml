@@ -30,6 +30,9 @@ seeds:
       O consultarUasg do Compras.gov dá outro CNPJ para a UASG 810008 (o do órgão 81000,
       ao qual ela está ligada), que não é o do MIR.
     config:
+      # Sempre recriada: o Cosmos roda dbt seed sem --full-refresh, e uma coluna nova
+      # no CSV faria o seed falhar contra a tabela antiga.
+      full_refresh: true
       column_types:
         sg_unidade: text
         no_unidade: text
