@@ -8,6 +8,11 @@ seeds:
       não traz. Lista manual, com as siglas de coleta_ted; uma sigla nova no portal
       precisa de uma linha aqui (test_coleta_unidade_sigla_do_ted avisa).
 
+      cd_ug é a UG da unidade no SIAFI, a que os convênios trazem como UG responsável
+      nos empenhos (seed ugs_mir). coleta_convenio acha a unidade concedente por ela;
+      uma UG nova do MIR nos empenhos precisa de uma linha aqui
+      (test_coleta_convenio_ug_fora_do_seed avisa).
+
       Siorg, conferido em 2026-11-02 na API pública
       (https://estruturaorganizacional.dados.gov.br/doc/estrutura-organizacional/resumida?codigoPoder=1&codigoEsfera=1):
       as quatro unidades têm codigoOrgaoEntidade 308823 (MIR). A sigla SEPAR também
@@ -30,6 +35,7 @@ seeds:
         no_unidade: text
         cd_siorg: text
         nr_cnpj: text
+        cd_ug: text
     columns:
       - name: sg_unidade
         description: "Sigla da unidade, como o portal TED a escreve."
@@ -42,3 +48,10 @@ seeds:
         description: "Código da unidade no Siorg: só o número, sem a URL que a API devolve."
       - name: nr_cnpj
         description: "CNPJ com 14 dígitos, sem máscara. Fica vazio se não houver fonte oficial."
+      - name: cd_ug
+        description: >
+          UG da unidade no SIAFI, com 6 dígitos. 810008 é a UG do ministério; as das
+          secretarias aparecem como UG responsável nos empenhos dos convênios.
+        tests:
+          - unique
+          - not_null
