@@ -7,7 +7,9 @@ O download é simulado (``requests.get``); a leitura usa um zip real gravado em
 import os
 import zipfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+import glob
+import tempfile
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -24,12 +26,24 @@ def _zip(tmp_path: Path, nome_csv: str, *linhas: str) -> str:
     return str(caminho)
 
 
-def _resposta(conteudo: bytes = b"PK", status: int = 200) -> Mock:
-    resposta = Mock()
+def _resposta(
+    conteudo: bytes = b"PK", status: int = 200, tamanho_anunciado: int = None
+) -> MagicMock:
+    resposta = MagicMock()
+    resposta.__enter__.return_value = resposta
     resposta.iter_content.return_value = [conteudo]
+    resposta.headers = {
+        "Content-Length": str(
+            len(conteudo) if tamanho_anunciado is None else tamanho_anunciado
+        )
+    }
     if status >= 400:
         resposta.raise_for_status.side_effect = requests.HTTPError(f"{status}")
     return resposta
+
+
+def _temporarios() -> set:
+    return set(glob.glob(os.path.join(tempfile.gettempdir(), "siconv_*.zip")))
 
 
 def test_url_zip_troca_extensao_do_csv():
@@ -93,6 +107,31 @@ def test_baixar_zip_propaga_erro_http(mock_get):
 
     with pytest.raises(requests.HTTPError):
         ClienteSiconv().baixar_zip("siconv_convenio.csv")
+
+
+@patch("cliente_siconv.requests.get")
+def test_baixar_zip_apaga_arquivo_se_a_conexao_cai(mock_get):
+    resposta = _resposta()
+    resposta.iter_content.side_effect = requests.exceptions.ChunkedEncodingError()
+    mock_get.return_value = resposta
+    antes = _temporarios()
+
+    with pytest.raises(requests.exceptions.ChunkedEncodingError):
+        ClienteSiconv().baixar_zip("siconv_convenio.csv")
+
+    assert _temporarios() == antes
+
+
+@patch("cliente_siconv.requests.get")
+def test_baixar_zip_recusa_download_incompleto(mock_get):
+    # O requests não acusa a conexão fechada antes do Content-Length.
+    mock_get.return_value = _resposta(b"PK", tamanho_anunciado=100_000)
+    antes = _temporarios()
+
+    with pytest.raises(IOError, match="incompleto"):
+        ClienteSiconv().baixar_zip("siconv_convenio.csv")
+
+    assert _temporarios() == antes
 
 
 def test_ler_csv_seleciona_colunas_esperadas_em_minusculas(tmp_path):
