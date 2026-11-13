@@ -1,0 +1,98 @@
+version: 2
+
+models:
+
+  - name: coleta_tedinho
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para os tedinhos: as descentralizações de crédito do MIR que
+      não são registradas no TransfereGov, uma linha por processo administrativo. Fonte: o
+      seed tedinhos_identificados_mir (levantamento manual na transparência ativa do
+      gov.br, 2023 a 2026), com a atribuição no SIAFI e a execução vindas de
+      ted_tedinho_gov_br e ted_execucao_por_instrumento quando existem.
+
+      Fica em contrato próprio, e não em linhas de coleta_ted, porque tedinho não tem
+      id_plano_acao, cd_ted nem nr_transferencia — as três colunas not_null do contrato de
+      coleta_ted. Pôr tedinho lá exigiria afrouxar as três e furaria os testes
+      relationships de coleta_ted_produto, coleta_ted_fonte e coleta_ted_execucao, que
+      ligam por id_plano_acao. Separado, nada no consumidor atual muda.
+
+      Lido pelo Coleta MIR: mudar o nome, o tipo ou o significado de uma coluna quebra o
+      consumidor. Coluna nova é segura.
+    columns:
+      - name: nr_processo_sei
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: primary_key
+        description: >
+          Chave do contrato: o número do processo administrativo (SEI) como o MIR o
+          publica, ex.: 21290.002680/2025-14. É o que o Coleta deve guardar para ligar as
+          respostas ao tedinho, no papel que id_plano_acao tem nos TEDs.
+
+          É o único identificador estável publicado para esses instrumentos. O número
+          sequencial do instrumento só existe em 3 dos 23 casos, e o instrumento do SIAFI
+          (ds_instrumento_siafi) sai de casamento por valor, que muda quando chega NC
+          nova — nenhum dos dois serve de chave.
+
+      - name: aa_publicacao
+        data_type: integer
+        constraints:
+          - type: not_null
+        description: "Ano da página de transparência em que o tedinho foi publicado."
+
+      - name: sg_parceiro
+        data_type: text
+        description: "Sigla do órgão que recebeu o crédito, como publicada (ex.: INCRA, FIOCRUZ, IFNMG)."
+
+      - name: nr_instrumento
+        data_type: text
+        description: >
+          Número sequencial "N/AAAA" do instrumento, quando o MIR publicou um. Nulo na
+          maioria (3 de 23 têm): a identificação confiável é o processo.
+
+      - name: ds_objeto
+        data_type: text
+        description: "Objeto do tedinho, como resumido na página de transparência."
+
+      - name: vl_total
+        data_type: numeric(15, 2)
+        description: "Valor total do instrumento conforme publicado na página de transparência, em R$."
+
+      - name: ds_instrumento_siafi
+        data_type: text
+        description: >
+          Instrumento (ou instrumentos) do SIAFI atribuídos ao processo em
+          ted_tedinho_gov_br, separados por '; '. A página não traz a NC: o vínculo é por
+          valor, e um processo pode ficar com duas NCs quando nenhuma delas tem o valor
+          sozinha (ex.: 21290.001553/2025-06, com 2025NC000449 e 2026NC000044 — é um
+          instrumento administrativo só, partido entre dois exercícios).
+
+          Nulo quando o casamento por valor não resolveu (4 dos 23 em 2026-11-12): valor
+          repetido em instrumentos diferentes fica sem vínculo.
+
+      - name: vl_empenhado
+        data_type: numeric(15, 2)
+        description: >
+          Empenhado das NEs atribuídas ao instrumento do tedinho, em R$, somando todos os
+          exercícios. Nulo quando ds_instrumento_siafi é nulo — sem instrumento, não há
+          NE para somar.
+
+      - name: vl_pago
+        data_type: numeric(15, 2)
+        description: >
+          Pago total (pago do exercício mais restos a pagar pagos) das mesmas NEs, em R$,
+          na mesma regra de nulo de vl_empenhado.
+
+      - name: ds_observacao
+        data_type: text
+        description: >
+          Nota de investigação do levantamento, quando houver — ex.: processo
+          compartilhado com um TED formal, ou rótulo inconsistente na publicação. Vem do
+          seed e é o que avisa o leitor de que o caso precisa de confirmação com a CGPO.
+
+      - name: ds_fonte_url
+        data_type: text
+        description: "URL da página de transparência de onde o tedinho foi levantado."

@@ -17,23 +17,38 @@
 
   Instrumento mesclado da gold ("A + B") é a junção que o crédito não permite separar.
   Não se rateia: fica fora de vl_empenhado e vl_pago dos TEDs e aparece inteiro em cada
-  um nas colunas de compartilhado.
+  um nas colunas de compartilhado. O liquidado e as três de RAP não têm coluna de
+  compartilhado: o TED que só aparece em instrumento mesclado sai com 0 nelas, como já
+  sai em vl_empenhado e vl_pago.
 
   Não converte moeda aqui: as NEs da UG 364150 do CNPq já saem em R$ de ppa_tesouro (ver a
   descrição de vl_empenhado).
 #}
 with
     gold as (
-        select instrumento, empenhado, pago_total
+        select
+            instrumento,
+            empenhado,
+            pago_total,
+            liquidado,
+            rap_inscrito,
+            pago_rap,
+            rap_a_pagar
         from {{ ref("ted_execucao_por_instrumento") }}
         where tipo_instrumento = 'TED'
     ),
 
+    -- rap_inscrito soma entre anos porque execucao_ted_ne já conta a inscrição uma vez
+    -- por NE (no exercício seguinte ao da emissão), e não a reinscrição anual.
     oficial as (
         select
             instrumento as nr_transferencia,
             sum(empenhado) as vl_empenhado,
-            sum(pago_total) as vl_pago
+            sum(pago_total) as vl_pago,
+            sum(liquidado) as vl_liquidado,
+            sum(rap_inscrito) as vl_rap_inscrito,
+            sum(pago_rap) as vl_rap_pago,
+            sum(rap_a_pagar) as vl_rap_a_pagar
         from gold
         where instrumento not like '% + %'
         group by instrumento
@@ -68,14 +83,27 @@ with
         group by c.id_plano_acao, n.favorecido_doc, n.ptres
     ),
 
+    -- Último exercício do relatório, para o RAP que falta pagar. Sai de ppa_tesouro
+    -- inteiro, e não das linhas abaixo: é a posição do relatório, não destes TEDs.
+    ultimo_exercicio as (
+        select max(right(emissao_mes, 4)::integer) as aa
+        from {{ ref("ppa_tesouro") }}
+        where ne_ccor <> '-9'
+    ),
+
     -- Só exercício a partir da primeira NC: a mesma célula pode ter NEs mais antigas de
     -- outro instrumento. As NEs que a consulta oficial já traz não entram, para não
     -- contar duas vezes. ne_ccor = '-9' são as linhas de dotação.
-    nota_de_empenho as (
+    ne_linha as (
         select
             c.id_plano_acao,
-            sum(p.despesas_empenhadas) as vl_empenhado,
-            sum(p.despesas_pagas + p.restos_a_pagar_pagos) as vl_pago
+            p.ne_ccor_ano_emissao as aa_ne,
+            right(p.emissao_mes, 4)::integer as aa_exercicio,
+            p.despesas_empenhadas,
+            p.despesas_liquidadas,
+            p.despesas_pagas,
+            p.restos_a_pagar_inscritos,
+            p.restos_a_pagar_pagos
         from celula as c
         join
             {{ ref("ppa_tesouro") }} as p
@@ -90,7 +118,28 @@ with
                 from {{ ref("execucao_ted_ne_vinculo") }} as v
                 where v.ne_ccor = p.ne_ccor
             )
-        group by c.id_plano_acao
+    ),
+
+    -- Mesma aritmética de execucao_ted_ne para o RAP, porque ppa_tesouro não traz "RAP a
+    -- pagar": a NE não paga é reinscrita a cada exercício, então o inscrito conta uma vez
+    -- só (no exercício seguinte ao da emissão) e o que falta pagar é o inscrito menos o
+    -- pago no último exercício do relatório.
+    nota_de_empenho as (
+        select
+            l.id_plano_acao,
+            sum(l.despesas_empenhadas) as vl_empenhado,
+            sum(l.despesas_pagas + l.restos_a_pagar_pagos) as vl_pago,
+            sum(l.despesas_liquidadas) as vl_liquidado,
+            sum(l.restos_a_pagar_inscritos) filter (
+                where l.aa_exercicio = l.aa_ne + 1
+            ) as vl_rap_inscrito,
+            sum(l.restos_a_pagar_pagos) as vl_rap_pago,
+            sum(l.restos_a_pagar_inscritos - l.restos_a_pagar_pagos) filter (
+                where l.aa_exercicio = u.aa and l.aa_exercicio > l.aa_ne
+            ) as vl_rap_a_pagar
+        from ne_linha as l
+        cross join ultimo_exercicio as u
+        group by l.id_plano_acao
     ),
 
     credito as (
@@ -104,6 +153,10 @@ with
             c.id_plano_acao,
             coalesce(o.vl_empenhado, n.vl_empenhado, 0) as vl_empenhado,
             coalesce(o.vl_pago, n.vl_pago, 0) as vl_pago,
+            coalesce(o.vl_liquidado, n.vl_liquidado, 0) as vl_liquidado,
+            coalesce(o.vl_rap_inscrito, n.vl_rap_inscrito, 0) as vl_rap_inscrito,
+            coalesce(o.vl_rap_pago, n.vl_rap_pago, 0) as vl_rap_pago,
+            coalesce(o.vl_rap_a_pagar, n.vl_rap_a_pagar, 0) as vl_rap_a_pagar,
             s.vl_empenhado as vl_empenhado_compartilhado,
             s.vl_pago as vl_pago_compartilhado,
             s.ds_instrumento as ds_instrumento_compartilhado,
@@ -138,6 +191,18 @@ select
     e.vl_empenhado_compartilhado::numeric(15, 2) as vl_empenhado_compartilhado,
     e.vl_pago_compartilhado::numeric(15, 2) as vl_pago_compartilhado,
     e.ds_instrumento_compartilhado::text as ds_instrumento_compartilhado,
-    e.ds_origem_execucao::text as ds_origem_execucao
+    e.ds_origem_execucao::text as ds_origem_execucao,
+    case
+        when e.ds_origem_execucao <> 'sem_dado' then e.vl_liquidado::numeric(15, 2)
+    end as vl_liquidado,
+    case
+        when e.ds_origem_execucao <> 'sem_dado' then e.vl_rap_inscrito::numeric(15, 2)
+    end as vl_rap_inscrito,
+    case
+        when e.ds_origem_execucao <> 'sem_dado' then e.vl_rap_pago::numeric(15, 2)
+    end as vl_rap_pago,
+    case
+        when e.ds_origem_execucao <> 'sem_dado' then e.vl_rap_a_pagar::numeric(15, 2)
+    end as vl_rap_a_pagar
 from execucao as e
 left join credito as cr on cr.id_plano_acao = e.id_plano_acao
