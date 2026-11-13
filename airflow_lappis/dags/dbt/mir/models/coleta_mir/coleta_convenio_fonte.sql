@@ -5,10 +5,12 @@
   recursos): o empenho de cada convênio de coleta_convenio, aberto por ano, PTRES, fonte,
   natureza de despesa e emenda.
 
-  Fonte: os empenhos do siconv. valor_empenho já é o valor líquido da NE (a anulação de
-  empenho vem negativa e a de pré-empenho, positiva), então soma direto, sem olhar o tipo
-  da nota; test_coleta_convenio_fonte_tipo_nota derruba o build se aparecer um tipo
-  novo. O siconv não traz programa, ação nem UO: vêm do relatório de execução do PPA
+  Fonte: os empenhos do siconv. Desde 2021 o siconv só usa os tipos Ordinário, Global e
+  Estimativo, e valor_empenho é o valor líquido da NE; soma direto. Nos tipos antigos (até
+  2020) a anulação de empenho vem negativa, mas a anulação de pré-empenho vem positiva e
+  inflaria a soma: test_coleta_convenio_fonte_tipo_nota acende (erro) se um tipo fora da
+  lista aparecer num convênio do universo. O teste roda depois da troca da tabela, então
+  avisa, mas não segura o valor. O siconv não traz programa, ação nem UO: vêm do relatório de execução do PPA
   (ppa_tesouro), pelo convênio que a NE cita, o ano e o PTRES. Ligar pela NE não serve,
   porque o mesmo número de NE se repete em outras UGs.
 
@@ -29,7 +31,11 @@ with
             e.natureza_despesa,
             e.valor_empenho,
             nullif(trim(e.resultado_primario), '') as rp,
-            left(e.nr_empenho, 4)::integer as aa_emissao,
+            case
+                when e.nr_empenho ~ '^[0-9]{4}NE'
+                then left(e.nr_empenho, 4)::integer
+                else extract(year from e.data_emissao)::integer
+            end as aa_emissao,
             -- Desde 2019 o siconv grava a fonte com um zero a mais à esquerda.
             case
                 when e.fonte_recurso ~ '^0[0-9]{10}$'
@@ -68,9 +74,10 @@ with
 
     -- Código de 12 dígitos das emendas do convênio, para resolver os de 8.
     emenda_convenio as (
-        select distinct nr_convenio, cd_emenda_12, no_autor
+        select nr_convenio, cd_emenda_12, max(no_autor) as no_autor
         from ligado
         where cd_emenda_12 is not null
+        group by nr_convenio, cd_emenda_12
     ),
 
     resolvido as (
@@ -177,7 +184,9 @@ select
     max(f.no_fonte)::text as no_fonte,
     c.natureza_despesa::text as cd_natureza_despesa,
     max(n.no_natureza_despesa)::text as no_natureza_despesa,
-    c.tp_origem::text as tp_origem,
+    -- Fora do group by: NEs do mesmo grão com e sem resultado primário (legados) dariam
+    -- duas linhas com a mesma chave.
+    min(c.tp_origem)::text as tp_origem,
     coalesce(c.cd_emenda, 'sem_emenda')::text as cd_emenda,
     max(c.no_autor_emenda)::text as no_autor_emenda,
     sum(c.valor_empenho)::numeric(15, 2) as vl_empenhado
@@ -200,5 +209,4 @@ group by
     c.ptres,
     c.cd_fonte,
     c.natureza_despesa,
-    c.tp_origem,
     c.cd_emenda

@@ -50,8 +50,9 @@ models:
         constraints:
           - type: not_null
         description: >
-          Ano da NE, o do número dela (2025NE000069 → 2025). A anulação ou o reforço
-          registrado depois fica no ano da NE original. Parte da chave.
+          Ano da NE, o do número dela (2025NE000069 → 2025); o ano da emissão se o número
+          vier fora do padrão. O reforço de empenho tem NE própria e fica no ano dela.
+          Parte da chave.
 
       - name: cd_programa
         data_type: text
@@ -87,11 +88,12 @@ models:
         constraints:
           - type: not_null
           - type: check
-            expression: "cd_fonte ~ '^([0-9]{4}|[0-9]{10})$'"
+            expression: "cd_fonte ~ '^([0-9]{4}|[0-9A-Z]{10})$'"
         description: >
-          Fonte de recursos do empenho, com 10 dígitos (ex.: 1000000000), sem o zero a
-          mais que o siconv põe à esquerda desde 2019. Os empenhos até 2011 trazem a
-          fonte antiga, com 4 dígitos (ex.: 0100). Parte da chave.
+          Fonte de recursos do empenho, com 10 caracteres (ex.: 1000000000), sem o zero
+          a mais que o siconv põe à esquerda desde 2019. Desde 2022 há fontes com letras
+          no detalhamento (ex.: 1000A0001X). Os empenhos até 2011 trazem a fonte antiga,
+          com 4 dígitos (ex.: 0100). Parte da chave.
 
       - name: no_fonte
         data_type: text
@@ -101,7 +103,7 @@ models:
         data_type: text
         constraints:
           - type: not_null
-        description: "Natureza de despesa do empenho, com 6 dígitos (ex.: 334041). Parte da chave."
+        description: "Natureza de despesa do empenho, com 6 dígitos (ex.: 334041); 8 em empenhos antigos. Parte da chave."
 
       - name: no_natureza_despesa
         data_type: text
