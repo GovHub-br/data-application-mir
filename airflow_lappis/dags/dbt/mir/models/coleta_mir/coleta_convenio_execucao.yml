@@ -1,0 +1,48 @@
+version: 2
+
+models:
+
+  - name: coleta_convenio_execucao
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para o Bloco 1 do formulário de convênios ("Valor liberado
+      / desembolsado") e para a contrapartida aportada (sugestão do item 4.3): uma linha
+      por convênio de coleta_convenio, com o acumulado desde a assinatura. Fonte:
+      siconv (desembolso e ingresso_contrapartida).
+
+      Os valores são 0, não nulos, quando não há desembolso ou ingresso: no siconv a
+      ausência quer dizer que ainda não houve. Se a carga do siconv parar, 0 pode estar
+      velho; coleta_convenio.dt_posicao diz a data do retrato.
+
+      Lido pelo Coleta MIR: mudar o nome, o tipo ou o significado de uma coluna quebra o
+      consumidor. Coluna nova é segura.
+    columns:
+      - name: nr_convenio
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: primary_key
+        description: "Convênio da linha (coleta_convenio.nr_convenio). Chave do contrato."
+        tests:
+          - relationships:
+              to: ref('coleta_convenio')
+              field: nr_convenio
+
+      - name: vl_desembolsado
+        data_type: numeric(15, 2)
+        constraints:
+          - type: not_null
+        description: >
+          "Valor liberado / desembolsado" do formulário: soma dos desembolsos da União
+          para a conta do convênio, em R$. 0 quando ainda não houve desembolso.
+
+      - name: vl_contrapartida_aportada
+        data_type: numeric(15, 2)
+        constraints:
+          - type: not_null
+        description: >
+          Contrapartida que o convenente já depositou na conta do convênio, em R$: soma
+          dos ingressos de contrapartida. 0 quando ainda não houve. Comparar com
+          coleta_convenio.vl_contrapartida (pactuada).
