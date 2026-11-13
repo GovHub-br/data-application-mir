@@ -85,6 +85,8 @@ sources:
       - name: historico_situacao
       - name: cronograma_desembolso
       - name: meta_crono_fisico
+      - name: etapa_crono_fisico
+      - name: justificativas_proposta
   - name: compras_gov
     schema: compras_gov
     tables:

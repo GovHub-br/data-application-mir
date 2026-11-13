@@ -261,4 +261,35 @@ TABELAS_SICONV = [
             "QTD_META", "UND_FORNECIMENTO_META", "VL_META",
         ],
     },
+    {
+        "nome_tabela": "etapa_crono_fisico",
+        "nome_csv": "siconv_etapa_crono_fisico.csv",
+        "conflict_fields": ["id_etapa"],
+        "primary_key": ["id_etapa"],
+        "truncate_before_insert": True,
+        "skip_rows": 0,
+        "colunas": [
+            "ID_META", "ID_ETAPA", "NR_ETAPA", "DESC_ETAPA", "DATA_INICIO_ETAPA",
+            "DATA_FIM_ETAPA", "UF_ETAPA", "MUNICIPIO_ETAPA", "ENDERECO_ETAPA",
+            "CEP_ETAPA", "QTD_ETAPA", "UND_FORNECIMENTO_ETAPA", "VL_ETAPA",
+        ],
+    },
+    {
+        # O arquivo nacional tem 717 MB de texto livre: só entram as propostas do
+        # MIR (órgão superior 67000), lidas de siconv.proposta, que é ingerida antes.
+        "nome_tabela": "justificativas_proposta",
+        "nome_csv": "siconv_justificativas_proposta.csv",
+        "conflict_fields": ["id_proposta"],
+        "primary_key": ["id_proposta"],
+        "truncate_before_insert": True,
+        "skip_rows": 0,
+        "filtro_ids_sql": (
+            "SELECT id_proposta FROM siconv.proposta WHERE cod_orgao_sup = '67000'"
+        ),
+        "colunas": [
+            "ID_PROPOSTA", "CARACTERIZACAO_INTERESSES_RECI", "PUBLICO_ALVO",
+            "PROBLEMA_A_SER_RESOLVIDO", "RESULTADOS_ESPERADOS",
+            "RELACAO_PROPOSTA_OBJETIVOS_PRO", "CAPACIDADE_TECNICA", "JUSTIFICATIVA",
+        ],
+    },
 ]
