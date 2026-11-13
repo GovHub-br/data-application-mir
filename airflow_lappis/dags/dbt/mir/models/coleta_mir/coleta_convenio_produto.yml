@@ -1,0 +1,104 @@
+version: 2
+
+models:
+
+  - name: coleta_convenio_produto
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para o item 5.2 do formulário de convênios (produtos
+      previstos no plano de trabalho): uma linha por meta e uma por etapa de cada
+      convênio de coleta_convenio. A meta é o produto pactuado; as etapas são as ações
+      previstas dentro dela. Fonte: cronograma físico do siconv (meta_crono_fisico e
+      etapa_crono_fisico). Segue o desenho de coleta_ted_produto, com nr_convenio no
+      lugar de id_plano_acao, vl_item (total) no lugar de vl_unitario, e a UF e o
+      município da meta ou etapa.
+
+      Se o plano de trabalho for refeito no Transferegov e as metas ganharem ids novos,
+      as linhas antigas somem e entram outras; quem consome deve ligar as respostas a
+      id_origem e tratar a ausência como produto retirado do plano.
+
+      Lido pelo Coleta MIR: mudar o nome, o tipo ou o significado de uma coluna quebra o
+      consumidor. Coluna nova é segura.
+    columns:
+      - name: id_origem
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: primary_key
+        description: >
+          Chave da linha: 'meta:' ou 'etapa:' seguido do id da meta ou da etapa no
+          siconv. É o que a resposta do Coleta deve guardar.
+
+      - name: nr_convenio
+        data_type: text
+        constraints:
+          - type: not_null
+        description: "Convênio da linha (coleta_convenio.nr_convenio)."
+        tests:
+          - relationships:
+              to: ref('coleta_convenio')
+              field: nr_convenio
+
+      - name: tp_nivel
+        data_type: text
+        description: "'meta' (produto pactuado) ou 'etapa' (ação prevista dentro da meta)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['meta', 'etapa']
+
+      - name: id_origem_pai
+        data_type: text
+        description: "Na etapa, o id_origem da meta a que ela pertence. Nulo na meta."
+
+      - name: nr_meta
+        data_type: integer
+        description: "Número da meta no plano de trabalho. Na etapa, o número da meta a que ela pertence."
+
+      - name: nr_etapa
+        data_type: integer
+        description: "Número da etapa dentro da meta. Nulo na meta."
+
+      - name: no_item
+        data_type: text
+        description: >
+          Nome da meta ou da etapa. Sempre nulo: o siconv só tem a descrição (ds_item).
+          Fica para alinhar com coleta_ted_produto.
+
+      - name: ds_item
+        data_type: text
+        description: "Descrição da meta ou da etapa."
+
+      - name: ds_unidade
+        data_type: text
+        description: "Unidade de fornecimento (ex.: UNIDADE), como o convenente digitou."
+
+      - name: qt_prevista
+        data_type: numeric
+        description: "Quantidade prevista."
+
+      - name: vl_item
+        data_type: numeric(15, 2)
+        description: >
+          Valor total previsto da meta ou da etapa, em R$. Não é unitário, ao contrário
+          de coleta_ted_produto.vl_unitario. A soma das etapas de uma meta deveria dar o
+          valor da meta (test_coleta_convenio_produto_etapas_somam_meta avisa quando não
+          dá).
+
+      - name: dt_inicio
+        data_type: date
+        description: "Início previsto da meta ou da etapa."
+
+      - name: dt_fim
+        data_type: date
+        description: "Fim previsto da meta ou da etapa."
+
+      - name: sg_uf
+        data_type: text
+        description: "UF onde a meta ou a etapa será executada. Nulo quando o plano não indica."
+
+      - name: no_municipio
+        data_type: text
+        description: "Município onde a meta ou a etapa será executada, só o nome (a fonte não traz código IBGE). Nulo quando o plano não indica."
