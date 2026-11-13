@@ -7,9 +7,11 @@ models:
       contract:
         enforced: true
     description: >
-      Contrato do Coleta MIR para o Bloco 2 do formulário de TEDs: código Siorg e CNPJ da
-      unidade descentralizadora responsável, uma linha por unidade do MIR. Liga com
-      coleta_ted por coleta_ted.sg_unidade_acompanhamento = coleta_unidade.sg_unidade.
+      Contrato do Coleta MIR para o Bloco 2 dos formulários de TEDs e de convênios:
+      código Siorg e CNPJ da unidade descentralizadora responsável (TED) ou concedente
+      (convênio), uma linha por unidade do MIR. Liga com coleta_ted por
+      coleta_ted.sg_unidade_acompanhamento = coleta_unidade.sg_unidade e com
+      coleta_convenio por coleta_convenio.sg_unidade_concedente = coleta_unidade.sg_unidade.
 
       Vem do seed coleta_unidade_mir, uma lista manual. Uma sigla nova no portal TED fica
       sem linha até entrar no seed: use left join para não perder o TED.
@@ -44,3 +46,14 @@ models:
           CNPJ com 14 dígitos, sem máscara. É o do ministério também nas linhas das
           secretarias, porque é o que os termos de TED declaram para o órgão
           descentralizador. Nulo se não houver fonte oficial para a unidade.
+
+      - name: cd_ug
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: unique
+          - type: check
+            expression: "cd_ug ~ '^[0-9]{6}$'"
+        description: >
+          UG da unidade no SIAFI. Ex.: 810008 (MIR), 238024 (SEPAR). É por ela que
+          coleta_convenio acha a unidade concedente nos empenhos.

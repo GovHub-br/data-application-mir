@@ -1,0 +1,233 @@
+version: 2
+
+models:
+
+  - name: coleta_convenio
+    config:
+      contract:
+        enforced: true
+    description: >
+      Contrato do Coleta MIR para os Blocos 1 e 2 do formulário de convênios: um registro
+      por convênio ou contrato de repasse do MIR, com os campos que o formulário preenche
+      sozinho. Fonte: siconv (convenio, proposta, termo_aditivo, empenho,
+      justificativas_proposta e historico_situacao).
+
+      Entra todo convênio ou contrato de repasse assinado do órgão 67000 que não foi
+      anulado nem cancelado, desde que assinado a partir de 2023 ou com a prestação de
+      contas ainda não encerrada. Termo de fomento fica fora. A tabela é refeita a cada
+      carga: um convênio sai dela quando a prestação de contas de um convênio anterior a
+      2023 é concluída, aprovada ou rejeitada, ou quando é anulado ou cancelado.
+
+      Os dados do siconv são o retrato do dia da carga, não o histórico: ler junto com
+      dt_posicao.
+
+      Lido pelo Coleta MIR: mudar o nome, o tipo ou o significado de uma coluna quebra o
+      consumidor. Coluna nova é segura. As regras de nr_convenio e id_proposta são
+      constraints: um build que as viole falha antes de trocar a tabela, e o Coleta
+      continua lendo a versão anterior.
+    columns:
+      - name: nr_convenio
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: primary_key
+          - type: check
+            expression: "nr_convenio ~ '^[0-9A-Z]{6}$'"
+        description: >
+          Chave do contrato: o número do convênio no Transferegov, com 6 caracteres. É o
+          que o Coleta deve guardar para ligar as respostas ao convênio. Numérico até
+          2025 (ex.: 965040); alfanumérico nos convênios novos de 2026 (ex.: 7AAXYZ).
+
+      - name: id_proposta
+        data_type: integer
+        constraints:
+          - type: not_null
+          - type: unique
+        description: "Id da proposta no Transferegov. Liga o convênio às metas e etapas (coleta_convenio_produto)."
+
+      - name: tp_instrumento
+        data_type: text
+        description: "Tipo de instrumento: CONVENIO ou CONTRATO DE REPASSE."
+        tests:
+          - accepted_values:
+              values: ['CONVENIO', 'CONTRATO DE REPASSE']
+
+      - name: nr_processo
+        data_type: text
+        description: >
+          Número SEI do processo de formalização. Quando a fonte traz os 17 dígitos do
+          SEI, sai com a máscara NNNNN.NNNNNN/AAAA-DD, como nos TEDs; senão, como veio
+          (os convênios antigos trazem o número de processo anterior ao SEI). Nulo quando
+          a fonte não traz.
+
+      - name: ds_objeto
+        data_type: text
+        description: "Objeto do convênio, como está na proposta."
+
+      - name: dt_assinatura
+        data_type: date
+        constraints:
+          - type: not_null
+        description: "Data de assinatura do convênio."
+
+      - name: dt_publicacao
+        data_type: date
+        description: "Data de publicação do extrato no DOU."
+
+      - name: dt_inicio_vigencia
+        data_type: date
+        description: "Início da vigência."
+
+      - name: dt_fim_vigencia
+        data_type: date
+        description: "Fim da vigência vigente, já com os aditivos e prorrogações de ofício."
+
+      - name: dt_fim_vigencia_original
+        data_type: date
+        description: "Fim da vigência pactuado na assinatura, antes de aditivos."
+
+      - name: qt_aditivos
+        data_type: integer
+        constraints:
+          - type: not_null
+        description: >
+          Quantidade de termos aditivos registrados ("Existem termos aditivos?" do
+          formulário: sim quando maior que 0).
+
+      - name: nr_ultimo_aditivo
+        data_type: text
+        description: >
+          Número do último termo aditivo, como a fonte escreve (ex.: 2/2025). O último é
+          o de assinatura mais recente; no mesmo dia, o de maior ano e número. Nulo sem
+          aditivo.
+
+      - name: dt_ultimo_aditivo
+        data_type: date
+        description: "Data de assinatura do último termo aditivo. Nulo sem aditivo."
+
+      - name: vl_repasse
+        data_type: numeric(15, 2)
+        description: "Valor do repasse da União, vigente (com aditivos), em R$."
+
+      - name: vl_contrapartida
+        data_type: numeric(15, 2)
+        description: "Valor da contrapartida do convenente, vigente (com aditivos), em R$."
+
+      - name: vl_global
+        data_type: numeric(15, 2)
+        description: "Valor global, vigente (com aditivos), em R$: repasse mais contrapartida."
+
+      - name: ds_situacao
+        data_type: text
+        description: >
+          Situação do convênio no Transferegov (ex.: Em execução, Aguardando Prestação
+          de Contas, Prestação de Contas em Análise).
+
+      - name: ds_subsituacao
+        data_type: text
+        description: "Subsituação do convênio no Transferegov. Nulo quando não há."
+
+      - name: dt_limite_prestacao_contas
+        data_type: date
+        description: "Prazo final para o convenente apresentar a prestação de contas."
+
+      - name: sg_unidade_concedente
+        data_type: text
+        constraints:
+          - type: not_null
+        description: >
+          Sigla da unidade do MIR concedente (Bloco 2). É a secretaria que aparece como
+          UG responsável nos empenhos do convênio (ex.: SEPAR, SENAPIR-MIR, SQPT); MIR
+          quando os empenhos não indicam secretaria ou indicam mais de uma. Liga com
+          coleta_unidade.sg_unidade, que traz o Siorg e o CNPJ.
+
+      - name: no_unidade_concedente
+        data_type: text
+        description: "Nome da unidade concedente no Siorg."
+
+      - name: cd_ug_concedente
+        data_type: text
+        constraints:
+          - type: not_null
+        description: "UG da unidade concedente no SIAFI (810008 quando é o ministério)."
+
+      - name: nr_cnpj_convenente
+        data_type: text
+        description: "CNPJ do convenente, com 14 dígitos, sem máscara."
+        tests:
+          - not_null:
+              config:
+                severity: warn
+
+      - name: no_convenente
+        data_type: text
+        description: "Nome do convenente."
+
+      - name: ds_natureza_juridica
+        data_type: text
+        description: >
+          Natureza jurídica do convenente como a fonte escreve (ex.: Administração
+          Pública Municipal). Ver tp_natureza_convenente para a opção do formulário.
+
+      - name: tp_natureza_convenente
+        data_type: text
+        description: >
+          "Natureza do convenente" do formulário: Administração pública estadual,
+          distrital ou municipal, Consórcio público ou Entidade privada sem fins
+          lucrativos. A fonte junta estado e DF numa natureza só; o DF sai pela UF.
+          Nulo quando a natureza da fonte não tem opção no formulário (ex.: empresa
+          pública).
+        tests:
+          - not_null:
+              config:
+                severity: warn
+          - accepted_values:
+              values:
+                - Administração pública estadual
+                - Administração pública distrital
+                - Administração pública municipal
+                - Consórcio público
+                - Entidade privada sem fins lucrativos
+
+      - name: sg_uf_convenente
+        data_type: text
+        description: "UF do convenente."
+
+      - name: cd_municipio_convenente
+        data_type: text
+        description: "Código IBGE do município do convenente, com 7 dígitos."
+
+      - name: no_municipio_convenente
+        data_type: text
+        description: "Nome do município do convenente."
+
+      - name: ds_justificativa
+        data_type: text
+        description: >
+          Justificativa da proposta, campo livre da fonte. Só as propostas antigas o
+          preenchem; as recentes usam os campos estruturados abaixo (ds_problema,
+          ds_resultados_esperados, ds_interesses_reciprocos, ds_publico_alvo), que
+          juntos fazem a justificativa do item 3.6 do formulário.
+
+      - name: ds_problema
+        data_type: text
+        description: "Problema a ser resolvido, da justificativa da proposta."
+
+      - name: ds_resultados_esperados
+        data_type: text
+        description: "Resultados esperados, da justificativa da proposta."
+
+      - name: ds_interesses_reciprocos
+        data_type: text
+        description: "Caracterização dos interesses recíprocos, da justificativa da proposta."
+
+      - name: ds_publico_alvo
+        data_type: text
+        description: "Público-alvo, da justificativa da proposta."
+
+      - name: dt_posicao
+        data_type: date
+        description: >
+          Data do retrato do siconv: a do último evento de situação registrado no
+          Transferegov, no país inteiro. Fica um pouco antes do dia da carga. Se estiver
+          velha, a carga parou e os valores e situações podem estar desatualizados.
