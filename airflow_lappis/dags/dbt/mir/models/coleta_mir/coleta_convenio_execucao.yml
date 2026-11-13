@@ -12,9 +12,10 @@ models:
       por convênio de coleta_convenio, com o acumulado desde a assinatura. Fonte:
       siconv (desembolso e ingresso_contrapartida).
 
-      Os valores são 0, não nulos, quando não há desembolso ou ingresso: no siconv a
-      ausência quer dizer que ainda não houve. Se a carga do siconv parar, 0 pode estar
-      velho; coleta_convenio.dt_posicao diz a data do retrato.
+      Os valores são 0, não nulos, quando não há desembolso ou ingresso registrado no
+      siconv. Em geral quer dizer que ainda não houve, mas há convênio com saldo em conta
+      e nenhum registro (o Transferegov também mostra 0). Se a carga do siconv parar, 0
+      pode estar velho; coleta_convenio.dt_posicao diz a data do retrato.
 
       Lido pelo Coleta MIR: mudar o nome, o tipo ou o significado de uma coluna quebra o
       consumidor. Coluna nova é segura.
@@ -43,6 +44,7 @@ models:
         constraints:
           - type: not_null
         description: >
-          Contrapartida que o convenente já depositou na conta do convênio, em R$: soma
-          dos ingressos de contrapartida. 0 quando ainda não houve. Comparar com
+          Contrapartida financeira que o convenente já depositou na conta do convênio, em
+          R$: soma dos ingressos de contrapartida registrados. Não inclui contrapartida em
+          bens e serviços. 0 quando não há registro. Comparar com
           coleta_convenio.vl_contrapartida (pactuada).
