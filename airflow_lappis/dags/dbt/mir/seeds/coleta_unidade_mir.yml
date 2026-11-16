@@ -32,13 +32,23 @@ seeds:
       nenhuma linha: no recorte do MIR, só 810008 (103 transferências), 238012 (Setorial
       Financeira, operações internas) e 238018 (folha) emitem. Por isso a coluna repete
       810008, como nr_cnpj repete o CNPJ do ministério.
+
+      cd_ug_secretaria é a UG própria da secretaria na estrutura do MIR (ugs_mir), vazia
+      na linha do ministério. Serve só para coleta_convenio achar a unidade concedente:
+      nos empenhos dos convênios a secretaria aparece como UG responsável, enquanto a
+      emitente é 810008 ou, nos antigos, 238012. Uma UG de secretaria nova nos empenhos
+      precisa de uma linha aqui (test_coleta_convenio_ug_fora_do_seed avisa).
     config:
+      # Sempre recriada: o Cosmos roda dbt seed sem --full-refresh, e uma coluna nova
+      # no CSV faria o seed falhar contra a tabela antiga.
+      full_refresh: true
       column_types:
         sg_unidade: text
         no_unidade: text
         cd_siorg: text
         nr_cnpj: text
         cd_ug: text
+        cd_ug_secretaria: text
     columns:
       - name: sg_unidade
         description: "Sigla da unidade, como o portal TED a escreve."
@@ -53,3 +63,10 @@ seeds:
         description: "UG do SIAFI que descentraliza, com 6 dígitos. 810008 nas quatro linhas (ver acima)."
       - name: nr_cnpj
         description: "CNPJ com 14 dígitos, sem máscara. Fica vazio se não houver fonte oficial."
+      - name: cd_ug_secretaria
+        description: >
+          UG da secretaria no SIAFI, com 6 dígitos (238022 SENAPIR, 238023 SQPT, 238024
+          SEPAR), a que aparece como UG responsável nos empenhos dos convênios. Vazia na
+          linha do MIR.
+        tests:
+          - unique
