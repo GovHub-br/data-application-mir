@@ -2,9 +2,9 @@
 
 {#
   O universo de coleta_convenio é pela proposta (órgão superior 67000). Este teste olha
-  pelo outro lado, o do dinheiro: convênio ou contrato de repasse assinado, com empenho
-  de uma UG do MIR desde 2023 e prestação de contas não encerrada, que ficou fora. Pega
-  mudança de órgão superior na fonte ou de nome de situação ou modalidade.
+  pelo outro lado, o do dinheiro: instrumento assinado (menos termo de parceria), com
+  empenho de uma UG do MIR desde 2023 e prestação de contas não encerrada, que ficou
+  fora. Pega mudança de órgão superior na fonte ou de nome de situação ou modalidade.
 #}
 with
     empenhado as (
@@ -21,7 +21,7 @@ inner join {{ ref("proposta") }} as p on p.id_proposta = c.id_proposta
 left join {{ ref("coleta_convenio") }} as k on k.nr_convenio = c.nr_convenio
 where
     k.nr_convenio is null
-    and p.modalidade not in ('TERMO DE FOMENTO', 'TERMO DE COLABORACAO', 'TERMO DE PARCERIA')
+    and p.modalidade <> 'TERMO DE PARCERIA'
     and c.dia_assin_conv is not null
     and c.sit_convenio not in (
         'Convênio Anulado',

@@ -2,21 +2,28 @@
 
 {#
   Contrato do Coleta MIR, Blocos 1 e 2 do formulário de convênios: um registro por
-  convênio ou contrato de repasse do MIR, com os campos que o formulário preenche
-  sozinho. Fonte: siconv (Transferegov, discricionárias e legais).
+  convênio, contrato de repasse, termo de fomento ou termo de colaboração do MIR, com os
+  campos que o formulário preenche sozinho. Fonte: siconv (Transferegov, discricionárias
+  e legais).
 
-  Universo: propostas do órgão superior 67000 (MIR) nas modalidades CONVENIO e CONTRATO
-  DE REPASSE, já assinadas, menos as anuladas e canceladas. Das assinadas antes de 2023
-  entram só as que ainda não têm prestação de contas encerrada (concluída, aprovada ou
-  rejeitada): em execução, aguardando ou com prestação de contas em análise. Termo de
-  fomento, colaboração ou parceria (MROSC) fica fora: não é convênio no Decreto
-  11.531/2023 e tem regime próprio.
+  Universo: propostas do órgão superior 67000 (MIR) nessas quatro modalidades, já
+  assinadas, menos as anuladas e canceladas. Das assinadas antes de 2023 entram só as que
+  ainda não têm prestação de contas encerrada (concluída, aprovada ou rejeitada): em
+  execução, aguardando ou com prestação de contas em análise. As parcerias do MROSC (Lei
+  13.019/2014: termo de fomento e de colaboração) usam o mesmo formulário dos convênios e
+  as mesmas tabelas do siconv, com os mesmos nomes de situação; o recorte é o mesmo.
+  Termo de parceria (OSCIP, Lei 9.790/1999) fica fora.
 
   Lê as bronzes do siconv direto, sem passar por convenios_consolidados ou
   resumo_convenios, que filtram pela UG 810008 e não pela modalidade.
 
   Os valores (repasse, contrapartida, global) e o fim da vigência são os vigentes, já
-  com os aditivos. O desembolsado está em coleta_convenio_execucao.
+  com os aditivos. O global inclui o rendimento de aplicação que o convenente foi
+  autorizado a usar. O desembolsado está em coleta_convenio_execucao.
+
+  cd_programa_ppa é o programa do PPA do item 3.1, pelas NEs do convênio no relatório
+  de execução do PPA (ppa_tesouro), com a regra de coleta_ted. Não vem de
+  coleta_convenio_fonte, que lê este modelo: referenciá-lo fecharia um ciclo no DAG.
 #}
 with
     convenio as (
@@ -34,7 +41,12 @@ with
         inner join {{ ref("proposta") }} as p on p.id_proposta = c.id_proposta
         where
             p.cod_orgao_sup = 67000
-            and p.modalidade in ('CONVENIO', 'CONTRATO DE REPASSE')
+            and p.modalidade in (
+                'CONVENIO',
+                'CONTRATO DE REPASSE',
+                'TERMO DE FOMENTO',
+                'TERMO DE COLABORACAO'
+            )
             and c.dia_assin_conv is not null
             and c.sit_convenio not in ('Convênio Anulado', 'Cancelado')
             and (
@@ -89,6 +101,64 @@ with
         having count(distinct u.sg_unidade) = 1
     ),
 
+    -- UG concedente: a que emite os empenhos, como no TED a UG descentralizadora é a
+    -- que emite as NCs. Hoje cada convênio tem uma só (810008, ou 238012 nos antigos);
+    -- com mais de uma, fica a de maior valor empenhado.
+    emitente as (
+        select distinct
+            on (e.nr_convenio) e.nr_convenio, e.ug_emitente::text as cd_ug
+        from {{ ref("empenho") }} as e
+        where e.nr_convenio in (select nr_convenio from convenio)
+        group by e.nr_convenio, e.ug_emitente
+        order by e.nr_convenio, sum(e.valor_empenho) desc, e.ug_emitente::text
+    ),
+
+    -- Programas do PPA que a revisão vigente traz, para preferir o programa atual ao do
+    -- PPA anterior (5034, nos empenhos até 2023).
+    programa_vigente as (
+        select distinct codigo
+        from {{ ref("coleta_lista_ppa") }}
+        where nivel = 'programa' and in_vigente
+    ),
+
+    -- Empenho de cada convênio por programa, pelas NEs que o siconv lista, procuradas no
+    -- relatório do PPA pela NE completa (UG, gestão e número).
+    programa_empenho as (
+        select
+            e.nr_convenio,
+            t.programa_governo as cd_programa,
+            max(t.ne_ccor_ano_emissao::integer) as aa_emissao,
+            sum(t.despesas_empenhadas) as vl_liquido
+        from {{ ref("empenho") }} as e
+        inner join
+            {{ ref("ppa_tesouro") }} as t
+            on t.ne_ccor = lpad(e.ug_emitente::text, 6, '0') || '00001' || e.nr_empenho
+        where
+            e.nr_convenio in (select nr_convenio from convenio)
+            and t.programa_governo is not null
+        group by e.nr_convenio, t.programa_governo
+    ),
+
+    -- Um programa por convênio, como em coleta_ted: vigente primeiro, depois os com
+    -- valor empenhado, em seguida o maior valor, depois o ano mais recente; o código
+    -- desempata por último para o valor não depender da ordem.
+    programa as (
+        select distinct
+            on (c.nr_convenio)
+            c.nr_convenio,
+            c.cd_programa,
+            v.codigo is not null as in_vigente
+        from programa_empenho as c
+        left join programa_vigente as v on v.codigo = c.cd_programa
+        order by
+            c.nr_convenio,
+            (v.codigo is not null) desc,
+            (c.vl_liquido > 0) desc,
+            c.vl_liquido desc nulls last,
+            c.aa_emissao desc,
+            c.cd_programa
+    ),
+
     -- Data do último evento do siconv no país inteiro: aproxima a data do retrato, já
     -- que as bronzes do siconv não têm data de carga.
     posicao as (
@@ -129,7 +199,7 @@ select
     c.dia_limite_prest_contas::date as dt_limite_prestacao_contas,
     u.sg_unidade::text as sg_unidade_concedente,
     u.no_unidade::text as no_unidade_concedente,
-    u.cd_ug::text as cd_ug_concedente,
+    coalesce(g.cd_ug, u.cd_ug)::text as cd_ug_concedente,
     c.identif_proponente::text as nr_cnpj_convenente,
     c.nm_proponente::text as no_convenente,
     c.natureza_juridica::text as ds_natureza_juridica,
@@ -159,13 +229,44 @@ select
     nullif(trim(j.caracterizacao_interesses_reci), '')::text
     as ds_interesses_reciprocos,
     nullif(trim(j.publico_alvo), '')::text as ds_publico_alvo,
-    p.dt_posicao::date as dt_posicao
+    p.dt_posicao::date as dt_posicao,
+    coalesce(c.vl_rendimento_aplicacao, 0)::numeric(15, 2) as vl_rendimento_aplicacao,
+    pg.cd_programa::text as cd_programa_ppa,
+    pg.in_vigente::boolean as in_programa_ppa_vigente,
+    -- Opções do formulário do convenente. Inadimplente e as prestações de contas já
+    -- encerradas não têm opção e ficam nulas (test_coleta_convenio_situacao_sem_opcao).
+    case
+        when
+            c.sit_convenio in (
+                'Proposta/Plano de Trabalho Aprovado',
+                'Proposta/Plano de Trabalho Complementado Enviado para Análise',
+                'Assinado',
+                'Assinatura Pendente Registro TV Siafi'
+            )
+        then 'Plano de trabalho aprovado, sem início da execução'
+        when c.sit_convenio = 'Em execução'
+        then 'Em execução'
+        when
+            c.sit_convenio in (
+                'Aguardando Prestação de Contas',
+                'Prestação de Contas enviada para Análise',
+                'Prestação de Contas em Análise',
+                'Prestação de Contas Comprovada em Análise',
+                'Prestação de Contas em Complementação',
+                'Prestação de Contas Iniciada Por Antecipação'
+            )
+        then 'Execução concluída, em prestação de contas'
+        when c.sit_convenio = 'Convênio Rescindido'
+        then 'Extinta / rescindida'
+    end::text as tp_situacao_execucao
 from convenio as c
 left join aditivo as a on a.nr_convenio = c.nr_convenio and a.ordem = 1
 left join secretaria as s on s.nr_convenio = c.nr_convenio
+left join emitente as g on g.nr_convenio = c.nr_convenio
 -- Left join: se a linha do MIR sumir do seed, o not_null do contrato derruba o build em
 -- vez de o convênio sumir da tabela.
 left join
     {{ ref("coleta_unidade_mir") }} as u on u.sg_unidade = coalesce(s.sg_unidade, 'MIR')
 left join {{ ref("justificativas_proposta") }} as j on j.id_proposta = c.id_proposta
+left join programa as pg on pg.nr_convenio = c.nr_convenio
 cross join posicao as p

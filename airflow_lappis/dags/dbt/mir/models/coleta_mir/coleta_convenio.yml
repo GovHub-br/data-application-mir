@@ -8,13 +8,14 @@ models:
         enforced: true
     description: >
       Contrato do Coleta MIR para os Blocos 1 e 2 do formulário de convênios: um registro
-      por convênio ou contrato de repasse do MIR, com os campos que o formulário preenche
-      sozinho. Fonte: siconv (convenio, proposta, termo_aditivo, empenho,
+      por convênio, contrato de repasse, termo de fomento ou termo de colaboração do MIR,
+      com os campos que o formulário preenche sozinho. Os termos do MROSC (Lei
+      13.019/2014) usam o mesmo formulário. Fonte: siconv (convenio, proposta, termo_aditivo, empenho,
       justificativas_proposta e historico_situacao).
 
-      Entra todo convênio ou contrato de repasse assinado do órgão 67000 que não foi
-      anulado nem cancelado, desde que assinado a partir de 2023 ou com a prestação de
-      contas ainda não encerrada. Termo de fomento fica fora. A tabela é refeita a cada
+      Entra todo instrumento dessas quatro modalidades assinado do órgão 67000 que não
+      foi anulado nem cancelado, desde que assinado a partir de 2023 ou com a prestação de
+      contas ainda não encerrada. Termo de parceria (OSCIP) fica fora. A tabela é refeita a cada
       carga: um convênio sai dela quando a prestação de contas de um convênio anterior a
       2023 é concluída, aprovada ou rejeitada, ou quando é anulado ou cancelado.
 
@@ -47,10 +48,12 @@ models:
 
       - name: tp_instrumento
         data_type: text
-        description: "Tipo de instrumento: CONVENIO ou CONTRATO DE REPASSE."
+        description: >
+          Tipo de instrumento, como o siconv escreve: CONVENIO, CONTRATO DE REPASSE,
+          TERMO DE FOMENTO ou TERMO DE COLABORACAO.
         tests:
           - accepted_values:
-              values: ['CONVENIO', 'CONTRATO DE REPASSE']
+              values: ['CONVENIO', 'CONTRATO DE REPASSE', 'TERMO DE FOMENTO', 'TERMO DE COLABORACAO']
 
       - name: nr_processo
         data_type: text
@@ -115,7 +118,10 @@ models:
 
       - name: vl_global
         data_type: numeric(15, 2)
-        description: "Valor global, vigente (com aditivos), em R$: repasse mais contrapartida."
+        description: >
+          Valor global, vigente (com aditivos), em R$: repasse mais contrapartida mais o
+          rendimento de aplicação (vl_rendimento_aplicacao) que o convenente foi
+          autorizado a usar. Em 11/2026 a soma fechava nos 268 instrumentos.
 
       - name: ds_situacao
         data_type: text
@@ -149,7 +155,13 @@ models:
         data_type: text
         constraints:
           - type: not_null
-        description: "UG da unidade concedente no SIAFI (810008 quando é o ministério)."
+        description: >
+          UG concedente no SIAFI (Bloco 2): a UG que emite os empenhos do convênio, como
+          no formulário de TED a UG descentralizadora é a que emite as NCs. 810008 nos
+          convênios recentes e 238012 (Setorial Financeira) nos antigos; com mais de uma,
+          a de maior valor empenhado. Sem empenho, a UG da unidade em coleta_unidade
+          (810008). Não é a UG da secretaria: a secretaria só aparece como UG
+          responsável e serve para achar sg_unidade_concedente.
 
       - name: nr_cnpj_convenente
         data_type: text
@@ -231,3 +243,53 @@ models:
           Data do retrato do siconv: a do último evento de situação registrado no
           Transferegov, no país inteiro. Fica um pouco antes do dia da carga. Se estiver
           velha, a carga parou e os valores e situações podem estar desatualizados.
+
+      - name: vl_rendimento_aplicacao
+        data_type: numeric(15, 2)
+        description: >
+          Rendimento da aplicação financeira dos recursos que o convenente foi autorizado
+          a usar no objeto, em R$; 0 quando não há. Entra no vl_global. Comum nos termos
+          de fomento (29 de 210 em 11/2026).
+
+      - name: cd_programa_ppa
+        data_type: text
+        description: >
+          Programa do PPA a que o instrumento se vincula (item 3.1 do formulário), pelas
+          NEs do convênio no relatório de execução do PPA (ppa_tesouro). Ex.: 5802, 5804.
+
+          Com mais de um programa, a escolha é a de coleta_ted.cd_programa_ppa: primeiro
+          o que está na revisão vigente do PPA (coleta_lista_ppa), depois o com valor
+          empenhado, o de maior valor, o do ano mais recente e, por último, o menor
+          código. Nulo quando nenhuma NE do convênio está no relatório do PPA, o que
+          acontece nos instrumentos anteriores a 2023 e nos sem empenho.
+
+      - name: in_programa_ppa_vigente
+        data_type: boolean
+        description: >
+          cd_programa_ppa está na revisão vigente do PPA (coleta_lista_ppa, nivel =
+          'programa' com in_vigente). Falso quando o instrumento só teve empenho em
+          programa de PPA anterior (5034, até 2023): o código é o certo, mas o Coleta
+          não vai achar o item na lista do PPA. Nulo quando cd_programa_ppa é nulo.
+
+      - name: tp_situacao_execucao
+        data_type: text
+        description: >
+          Situação da execução nas opções do formulário do convenente, a partir de
+          ds_situacao:
+          "Plano de trabalho aprovado, sem início da execução" (plano aprovado ou
+          assinatura pendente), "Em execução", "Execução concluída, em prestação de
+          contas" (aguardando, enviada, em análise, em complementação ou iniciada por
+          antecipação) e "Extinta / rescindida" (Convênio Rescindido). O siconv não tem
+          situação de suspensão: "Suspensa" não sai daqui.
+
+          Nulo quando a situação não tem opção no formulário: Inadimplente e prestação
+          de contas já encerrada (concluída, aprovada ou rejeitada) num instrumento
+          assinado desde 2023. test_coleta_convenio_situacao_sem_opcao avisa.
+        tests:
+          - accepted_values:
+              values:
+                - 'Plano de trabalho aprovado, sem início da execução'
+                - 'Em execução'
+                - 'Execução concluída, em prestação de contas'
+                - 'Suspensa'
+                - 'Extinta / rescindida'
