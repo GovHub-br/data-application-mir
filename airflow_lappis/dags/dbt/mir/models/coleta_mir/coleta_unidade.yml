@@ -44,3 +44,17 @@ models:
           CNPJ com 14 dígitos, sem máscara. É o do ministério também nas linhas das
           secretarias, porque é o que os termos de TED declaram para o órgão
           descentralizador. Nulo se não houver fonte oficial para a unidade.
+
+      - name: cd_ug
+        data_type: text
+        constraints:
+          - type: not_null
+          - type: check
+            expression: "cd_ug ~ '^[0-9]{6}$'"
+        description: >
+          UG (código SIAFI) da unidade descentralizadora, o campo "UG/SIAFI" do Bloco 2.
+          É 810008 (MIR - IGUALDADE RACIAL) também nas linhas das secretarias, pela mesma
+          razão de nr_cnpj: é a UG que emite as notas de crédito de todos os TEDs do MIR,
+          qualquer que seja a secretaria que acompanha. As UGs próprias das secretarias
+          (238022 SENAPIR, 238023 SQPT, 238024 SEPAR, em ugs_mir) são da estrutura
+          organizacional e nunca emitem NC: não são a UG descentralizadora.
