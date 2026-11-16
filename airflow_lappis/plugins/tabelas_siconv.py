@@ -292,4 +292,24 @@ TABELAS_SICONV = [
             "RELACAO_PROPOSTA_OBJETIVOS_PRO", "CAPACIDADE_TECNICA", "JUSTIFICATIVA",
         ],
     },
+    {
+        # Emendas parlamentares de cada proposta. Em 11/2026, 113 mil das 298 mil
+        # linhas vinham sem ID_PROPOSTA e repetiam a chave entre si; o filtro as
+        # descarta junto com as propostas de outros órgãos. Com ID, a chave é única:
+        # a proposta pode ter mais de uma emenda, e a mesma emenda, dois programas.
+        "nome_tabela": "emenda",
+        "nome_csv": "siconv_emenda.csv",
+        "conflict_fields": ["id_proposta", "nr_emenda", "cod_programa_emenda"],
+        "primary_key": ["id_proposta", "nr_emenda", "cod_programa_emenda"],
+        "truncate_before_insert": True,
+        "skip_rows": 0,
+        "filtro_ids_sql": (
+            "SELECT id_proposta FROM siconv.proposta WHERE cod_orgao_sup = '67000'"
+        ),
+        "colunas": [
+            "ID_PROPOSTA", "QUALIF_PROPONENTE", "COD_PROGRAMA_EMENDA", "NR_EMENDA",
+            "NOME_PARLAMENTAR", "BENEFICIARIO_EMENDA", "IND_IMPOSITIVO",
+            "TIPO_PARLAMENTAR", "VALOR_REPASSE_PROPOSTA_EMENDA", "VALOR_REPASSE_EMENDA",
+        ],
+    },
 ]

@@ -764,3 +764,44 @@ models:
           nome_tabela: 'siconv_dbt.justificativas_proposta'
           nome_coluna: 'id_proposta'
           tipo_esperado: 'integer'
+
+  - name: emenda
+    description: >
+      Tabela da camada bronze com as emendas parlamentares de cada proposta do SICONV
+      (siconv_emenda.csv). Só as propostas do MIR (órgão superior 67000): a ingestão
+      filtra o arquivo nacional, que também traz emendas sem proposta. Uma linha por
+      proposta, emenda e programa: a proposta pode ter mais de uma emenda.
+    columns:
+      - name: id_proposta
+        description: "Identificador da proposta (proposta.id_proposta)."
+      - name: qualif_proponente
+        description: "Qualificação do proponente (ex.: BENEFICIARIO_EMENDA_PARLAMENTAR)."
+      - name: cod_programa_emenda
+        description: >
+          Código do programa do SICONV que recebeu a emenda, com 13 dígitos: órgão (5),
+          ano (4) e sequencial (4). Ex.: 6700020230001.
+      - name: nr_emenda
+        description: >
+          Número da emenda com 8 dígitos (autor e sequencial), sem o ano. Nulo nas
+          linhas antigas que trazem 'null'.
+      - name: nome_parlamentar
+        description: "Autor da emenda, em maiúsculas e sem acento."
+      - name: beneficiario_emenda
+        description: "CNPJ do beneficiário da emenda."
+      - name: ind_impositivo
+        description: "SIM quando a emenda é impositiva."
+      - name: tipo_parlamentar
+        description: "INDIVIDUAL, BANCADA, COMISSAO ou RELATOR GERAL."
+      - name: valor_repasse_proposta_emenda
+        description: "Valor de repasse da emenda indicado na proposta."
+      - name: valor_repasse_emenda
+        description: "Valor de repasse da emenda."
+    tests:
+      - verificacao_tipagem:
+          nome_tabela: 'siconv_dbt.emenda'
+          nome_coluna: 'id_proposta'
+          tipo_esperado: 'integer'
+      - verificacao_tipagem:
+          nome_tabela: 'siconv_dbt.emenda'
+          nome_coluna: 'valor_repasse_emenda'
+          tipo_esperado: 'numeric'
