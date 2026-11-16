@@ -24,6 +24,14 @@
   código de 12 dígitos pelas outras NEs do convênio. O tipo da emenda sai do resultado
   primário: 6 individual, 7 bancada, 8 comissão. O reforço sai com RP 2 e herda o tipo
   das outras NEs da emenda; RP 2 sem emenda é programação própria do MIR.
+
+  Por último, a NE de RP 6, 7 ou 8 que não está em numero_transferencia nem descreve a
+  emenda (33 termos de fomento de 2023 em 11/2026) fica com a emenda da proposta no
+  siconv (siconv_emenda.csv), mas só quando a proposta tem uma única emenda do tipo do
+  RP; com duas, fica sem emenda. O número tem 8 dígitos e passa pela mesma resolução
+  pelas outras NEs do convênio; se nenhuma der o código, o ano vem do programa do
+  siconv que recebeu a emenda (6700020230001 → 2023): em 11/2026 ele bateu com o ano
+  de numero_transferencia nas 187 linhas em que a NE e a proposta têm a mesma emenda.
 #}
 with
     -- Empenho líquido de cada NE no SIAFI, somado nas células do relatório.
@@ -36,6 +44,7 @@ with
     empenho as (
         select
             e.nr_convenio,
+            c.id_proposta,
             e.nr_empenho,
             e.ug_emitente,
             e.ptres,
@@ -77,13 +86,49 @@ with
         group by ne_ccor, autor_emendas_orcamento
     ),
 
+    -- Emenda da proposta no siconv, por tipo: só a proposta com uma emenda do tipo.
+    emenda_proposta as (
+        select
+            id_proposta,
+            case
+                tipo_parlamentar
+                when 'INDIVIDUAL'
+                then '6'
+                when 'BANCADA'
+                then '7'
+                when 'COMISSAO'
+                then '8'
+            end as rp,
+            min(substr(cod_programa_emenda, 6, 4) || nr_emenda) as cd_emenda,
+            min(nome_parlamentar) as no_autor
+        from {{ ref("emenda") }}
+        where
+            nr_emenda ~ '^[0-9]{8}$'
+            and cod_programa_emenda ~ '^[0-9]{13}$'
+            and tipo_parlamentar in ('INDIVIDUAL', 'BANCADA', 'COMISSAO')
+        group by 1, 2
+        having count(distinct substr(cod_programa_emenda, 6, 4) || nr_emenda) = 1
+    ),
+
     ligado as (
-        select e.*, n.cd_emenda as cd_emenda_12, n.no_autor
+        select
+            e.*,
+            n.cd_emenda as cd_emenda_12,
+            n.no_autor,
+            p.cd_emenda as cd_emenda_proposta,
+            p.no_autor as no_autor_proposta,
+            coalesce(e.cd_emenda_8, right(p.cd_emenda, 8)) as cd_emenda_8_resolver
         from empenho as e
         left join
             emenda_ne as n
             on n.ne_ccor
             = lpad(e.ug_emitente::text, 6, '0') || '00001' || e.nr_empenho
+        left join
+            emenda_proposta as p
+            on n.ne_ccor is null
+            and e.cd_emenda_8 is null
+            and p.id_proposta = e.id_proposta
+            and p.rp = e.rp
     ),
 
     -- Código de 12 dígitos das emendas do convênio, para resolver os de 8.
@@ -104,10 +149,11 @@ with
                     from emenda_convenio as c
                     where
                         c.nr_convenio = l.nr_convenio
-                        and right(c.cd_emenda_12, 8) = l.cd_emenda_8
+                        and right(c.cd_emenda_12, 8) = l.cd_emenda_8_resolver
                     having count(*) = 1
                 ),
-                l.cd_emenda_8
+                l.cd_emenda_8,
+                l.cd_emenda_proposta
             ) as cd_emenda,
             coalesce(
                 l.no_autor,
@@ -116,10 +162,11 @@ with
                     from emenda_convenio as c
                     where
                         c.nr_convenio = l.nr_convenio
-                        and right(c.cd_emenda_12, 8) = l.cd_emenda_8
+                        and right(c.cd_emenda_12, 8) = l.cd_emenda_8_resolver
                     having count(*) = 1
                 ),
-                l.no_autor_descricao
+                l.no_autor_descricao,
+                l.no_autor_proposta
             ) as no_autor_emenda
         from ligado as l
     ),
