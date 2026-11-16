@@ -27,8 +27,11 @@
 
   Por último, a NE de RP 6, 7 ou 8 que não está em numero_transferencia nem descreve a
   emenda (33 termos de fomento de 2023 em 11/2026) fica com a emenda da proposta no
-  siconv (siconv_emenda.csv), mas só quando a proposta tem uma única emenda do tipo do
-  RP; com duas, fica sem emenda. O número tem 8 dígitos e passa pela mesma resolução
+  siconv (siconv_emenda.csv) quando a proposta tem uma única emenda do tipo do RP. Com
+  mais de uma, vale a emenda cujo valor de repasse é igual ao valor da NE (no SIAFI ou
+  no siconv), se só uma bate; senão, fica sem emenda. Em 11/2026, as 3 propostas com
+  duas emendas tinham uma NE por emenda, cada uma com o valor exato do repasse de uma
+  delas. O número tem 8 dígitos e passa pela mesma resolução
   pelas outras NEs do convênio; se nenhuma der o código, o ano vem do programa do
   siconv que recebeu a emenda (6700020230001 → 2023): em 11/2026 ele bateu com o ano
   de numero_transferencia nas 187 linhas em que a NE e a proposta têm a mesma emenda.
@@ -50,6 +53,7 @@ with
             e.ptres,
             e.natureza_despesa,
             coalesce(s.vl_empenhado, e.valor_empenho) as valor_empenho,
+            e.valor_empenho as vl_siconv,
             nullif(trim(e.resultado_primario), '') as rp,
             case
                 when e.nr_empenho ~ '^[0-9]{4}NE'
@@ -86,8 +90,8 @@ with
         group by ne_ccor, autor_emendas_orcamento
     ),
 
-    -- Emenda da proposta no siconv, por tipo: só a proposta com uma emenda do tipo.
-    emenda_proposta as (
+    -- Emendas da proposta no siconv, com o RP do tipo e o código de 12 dígitos.
+    emenda_proposta_linha as (
         select
             id_proposta,
             case
@@ -99,15 +103,36 @@ with
                 when 'COMISSAO'
                 then '8'
             end as rp,
-            min(substr(cod_programa_emenda, 6, 4) || nr_emenda) as cd_emenda,
-            min(nome_parlamentar) as no_autor
+            substr(cod_programa_emenda, 6, 4) || nr_emenda as cd_emenda,
+            nome_parlamentar as no_autor,
+            valor_repasse_emenda
         from {{ ref("emenda") }}
         where
             nr_emenda ~ '^[0-9]{8}$'
             and cod_programa_emenda ~ '^[0-9]{13}$'
             and tipo_parlamentar in ('INDIVIDUAL', 'BANCADA', 'COMISSAO')
-        group by 1, 2
-        having count(distinct substr(cod_programa_emenda, 6, 4) || nr_emenda) = 1
+    ),
+
+    -- A proposta com uma emenda só do tipo.
+    emenda_proposta as (
+        select id_proposta, rp, min(cd_emenda) as cd_emenda, min(no_autor) as no_autor
+        from emenda_proposta_linha
+        group by id_proposta, rp
+        having count(distinct cd_emenda) = 1
+    ),
+
+    -- Com mais de uma, a emenda pelo valor de repasse, quando só uma tem aquele valor.
+    emenda_proposta_valor as (
+        select
+            id_proposta,
+            rp,
+            valor_repasse_emenda,
+            min(cd_emenda) as cd_emenda,
+            min(no_autor) as no_autor
+        from emenda_proposta_linha
+        where valor_repasse_emenda > 0
+        group by id_proposta, rp, valor_repasse_emenda
+        having count(distinct cd_emenda) = 1
     ),
 
     ligado as (
@@ -115,9 +140,11 @@ with
             e.*,
             n.cd_emenda as cd_emenda_12,
             n.no_autor,
-            p.cd_emenda as cd_emenda_proposta,
-            p.no_autor as no_autor_proposta,
-            coalesce(e.cd_emenda_8, right(p.cd_emenda, 8)) as cd_emenda_8_resolver
+            coalesce(p.cd_emenda, v.cd_emenda) as cd_emenda_proposta,
+            coalesce(p.no_autor, v.no_autor) as no_autor_proposta,
+            coalesce(
+                e.cd_emenda_8, right(coalesce(p.cd_emenda, v.cd_emenda), 8)
+            ) as cd_emenda_8_resolver
         from empenho as e
         left join
             emenda_ne as n
@@ -129,6 +156,20 @@ with
             and e.cd_emenda_8 is null
             and p.id_proposta = e.id_proposta
             and p.rp = e.rp
+        -- O valor da NE (SIAFI ou siconv) tem de bater com uma emenda só; o valor que
+        -- duas emendas da proposta têm já ficou fora de emenda_proposta_valor.
+        left join lateral (
+            select min(x.cd_emenda) as cd_emenda, min(x.no_autor) as no_autor
+            from emenda_proposta_valor as x
+            where
+                n.ne_ccor is null
+                and e.cd_emenda_8 is null
+                and p.id_proposta is null
+                and x.id_proposta = e.id_proposta
+                and x.rp = e.rp
+                and x.valor_repasse_emenda in (e.valor_empenho, e.vl_siconv)
+            having count(distinct x.cd_emenda) = 1
+        ) as v on true
     ),
 
     -- Código de 12 dígitos das emendas do convênio, para resolver os de 8.

@@ -144,10 +144,11 @@ models:
           (test_coleta_convenio_fonte_emenda_8_digitos avisa). Quando a NE de RP 6, 7
           ou 8 não está em numero_transferencia nem descreve a emenda, vale a emenda da
           proposta no siconv, se a proposta tem uma só do tipo do RP (individual,
-          bancada, comissão); o ano vem das outras NEs do convênio ou, sem elas, do
-          programa do siconv que recebeu a emenda. Com duas emendas do tipo, fica
-          'sem_emenda' (test_coleta_convenio_fonte_origem_a_conferir avisa). Parte da
-          chave.
+          bancada, comissão), ou, com mais de uma, a única cujo valor de repasse é
+          igual ao valor da NE; o ano vem das outras NEs do convênio ou, sem elas, do
+          programa do siconv que recebeu a emenda. Sem emenda única nem valor que
+          desempate, fica 'sem_emenda' (test_coleta_convenio_fonte_origem_a_conferir
+          avisa). Parte da chave.
 
       - name: no_autor_emenda
         data_type: text
