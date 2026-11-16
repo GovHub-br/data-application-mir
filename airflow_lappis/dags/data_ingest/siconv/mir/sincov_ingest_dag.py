@@ -10,11 +10,13 @@ from tabelas_siconv import TABELAS_SICONV
 
 
 @dag(
-    # A fonte carrega às 06:30; às 08:00 o dado do dia entra no mir_cosmos_dag da
-    # madrugada seguinte.
-    schedule_interval=get_dynamic_schedule("siconv_ingestao_dag", default="0 8 * * *"),
+    # Os zips do dia são publicados por volta das 08:15 (Last-Modified em 13/11/2026);
+    # às 10:00 o dado do dia já está lá e entra no mir_cosmos_dag da madrugada seguinte.
+    schedule_interval=get_dynamic_schedule("siconv_ingestao_dag", default="0 10 * * *"),
     start_date=datetime(2024, 1, 1),
     catchup=False,
+    # Duas execuções ao mesmo tempo disputariam o TRUNCATE das mesmas tabelas.
+    max_active_runs=1,
     default_args={
         "owner": "Luana",
         "retries": 1,
@@ -50,8 +52,9 @@ def siconv_ingestao_dag() -> None:
         tamanho_lote = 5000
         total_inserido = 0
 
-        conn = psycopg2.connect(postgres_conn_str)
+        conn = None
         try:
+            conn = psycopg2.connect(postgres_conn_str)
             gerador_registros = cliente.ler_csv(
                 zip_path, nome_csv, skip_rows, colunas_esperadas=colunas
             )
@@ -116,9 +119,17 @@ def siconv_ingestao_dag() -> None:
 
                 total_inserido += len(lote)
 
+            # Sem commit, o TRUNCATE é desfeito e a tabela fica com a carga anterior.
+            if truncate_before_insert and total_inserido == 0:
+                raise ValueError(
+                    f"Nenhum registro para siconv.{nome_tabela}; "
+                    "a tabela não foi esvaziada"
+                )
+
             conn.commit()
         finally:
-            conn.close()
+            if conn is not None:
+                conn.close()
             os.remove(zip_path)
 
         if total_inserido == 0:

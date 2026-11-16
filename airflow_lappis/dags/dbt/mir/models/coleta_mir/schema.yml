@@ -84,7 +84,11 @@ models:
 
       - name: nr_processo_sei
         data_type: text
-        description: "Processo SEI de formalização do TED, do termo de execução. Nulo quando o termo não traz."
+        description: >
+          Processo SEI de formalização do TED. Vem do termo de execução; quando o termo
+          não traz, cai para o processo publicado na página de transferências do MIR no
+          gov.br. ds_origem_sei diz qual das duas fontes preencheu a linha. Nulo só
+          quando nenhuma das duas tem o processo.
 
       - name: dt_assinatura
         data_type: date
@@ -138,6 +142,53 @@ models:
         description: >
           Código Siorg do órgão que recebeu o crédito, do beneficiário do programa. Nulo
           quando o programa tem mais de um beneficiário.
+
+      - name: cd_programa_ppa
+        data_type: text
+        description: >
+          Programa do PPA a que o TED se vincula (item 3.1 do formulário), pelo programa
+          que as notas de crédito do TED trazem. Ex.: 5802, 5804.
+
+          Um TED pode ter mais de um programa (24 dos 105 com crédito em 2026-11-11), e
+          esta coluna escolhe um: primeiro o que está na revisão vigente do PPA
+          (coleta_lista_ppa), depois o do ano de emissão mais recente, depois o de maior
+          crédito líquido, e o código por último para o valor não depender da ordem das
+          linhas. Em 16 dos 24 a multiplicidade é a virada de ciclo — TED de 2023 que
+          começou no 5034 (PPA 2020-2023) e seguiu num programa do PPA 2024-2027 — e a
+          regra devolve o programa novo. test_coleta_ted_programa_ppa_unico lista os
+          TEDs em que houve escolha.
+
+          Nulo nos TEDs sem NC carregada (os de 2022, que só têm nota na API de TED): o
+          crédito deles está em coleta_ted_fonte, com ds_origem_credito = 'api_ted', mas
+          a atribuição do programa lá depende de passos que esta coluna não repete.
+          Quem precisa do detalhe por ano, programa, ação e fonte usa coleta_ted_fonte;
+          esta coluna é o valor único que o formulário preenche.
+
+      - name: in_programa_ppa_vigente
+        data_type: boolean
+        description: >
+          cd_programa_ppa está na revisão vigente do PPA, isto é, existe em
+          coleta_lista_ppa como nivel = 'programa' com in_vigente. Falso quando o TED só
+          teve crédito em programa de PPA anterior (5034, em 14 TEDs, e 0032, em 1): o
+          código é o certo, mas o Coleta não vai achar o item na lista do PPA e o campo
+          3.1 fica sem como ser resolvido. Nulo quando cd_programa_ppa é nulo.
+
+      - name: ds_origem_sei
+        data_type: text
+        description: >
+          De onde veio nr_processo_sei. termo_ted: do termo de execução do plano, a fonte
+          de formalização. gov_br: do processo publicado na página de transferências do
+          MIR no gov.br, usado só quando o termo não traz (25 dos 106 TEDs em
+          2026-11-11). Nulo quando nenhuma das duas fontes tem o processo.
+
+          O casamento com a página é só pelo num_transf principal: pelos
+          num_transf_alternativos o processo de um TED vai parar em outro. Mesmo assim a
+          página erra — o TED 978641 (UFRGS) recebe dela o processo do tedinho da
+          UNIVASF, que o seed tedinhos_identificados_mir já registra. Por isso o termo
+          tem precedência e test_coleta_ted_sei_de_tedinho vigia a colisão.
+        tests:
+          - accepted_values:
+              values: ['termo_ted', 'gov_br']
 
   - name: coleta_ted_produto
     config:

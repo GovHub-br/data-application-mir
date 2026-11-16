@@ -8,11 +8,6 @@ seeds:
       não traz. Lista manual, com as siglas de coleta_ted; uma sigla nova no portal
       precisa de uma linha aqui (test_coleta_unidade_sigla_do_ted avisa).
 
-      cd_ug é a UG da unidade no SIAFI, a que os convênios trazem como UG responsável
-      nos empenhos (seed ugs_mir). coleta_convenio acha a unidade concedente por ela;
-      uma UG nova do MIR nos empenhos precisa de uma linha aqui
-      (test_coleta_convenio_ug_fora_do_seed avisa).
-
       Siorg, conferido em 2026-11-02 na API pública
       (https://estruturaorganizacional.dados.gov.br/doc/estrutura-organizacional/resumida?codigoPoder=1&codigoEsfera=1):
       as quatro unidades têm codigoOrgaoEntidade 308823 (MIR). A sigla SEPAR também
@@ -29,6 +24,20 @@ seeds:
       a razão social antiga: Secretaria de Políticas de Promoção da Igualdade Racial.
       O consultarUasg do Compras.gov dá outro CNPJ para a UASG 810008 (o do órgão 81000,
       ao qual ela está ligada), que não é o do MIR.
+      UG, conferida em 2026-11-11 nas notas de crédito carregadas (nc_unificado,
+      relatorio = 'enviadas'): as quatro unidades descentralizam pela UG 810008 (MIR -
+      IGUALDADE RACIAL) — SEPAR em 43 TEDs, SQPT em 29, SENAPIR-MIR em 27 e MIR em 1,
+      nenhum por outra UG. As UGs próprias das secretarias em ugs_mir (238022 SENAPIR,
+      238023 SQPT, 238024 SEPAR, 238021 CNPIR) não aparecem como emitentes de NC em
+      nenhuma linha: no recorte do MIR, só 810008 (103 transferências), 238012 (Setorial
+      Financeira, operações internas) e 238018 (folha) emitem. Por isso a coluna repete
+      810008, como nr_cnpj repete o CNPJ do ministério.
+
+      cd_ug_secretaria é a UG própria da secretaria na estrutura do MIR (ugs_mir), vazia
+      na linha do ministério. Serve só para coleta_convenio achar a unidade concedente:
+      nos empenhos dos convênios a secretaria aparece como UG responsável, enquanto a
+      emitente é 810008 ou, nos antigos, 238012. Uma UG de secretaria nova nos empenhos
+      precisa de uma linha aqui (test_coleta_convenio_ug_fora_do_seed avisa).
     config:
       # Sempre recriada: o Cosmos roda dbt seed sem --full-refresh, e uma coluna nova
       # no CSV faria o seed falhar contra a tabela antiga.
@@ -39,6 +48,7 @@ seeds:
         cd_siorg: text
         nr_cnpj: text
         cd_ug: text
+        cd_ug_secretaria: text
     columns:
       - name: sg_unidade
         description: "Sigla da unidade, como o portal TED a escreve."
@@ -49,12 +59,14 @@ seeds:
         description: "Nome da unidade no Siorg."
       - name: cd_siorg
         description: "Código da unidade no Siorg: só o número, sem a URL que a API devolve."
+      - name: cd_ug
+        description: "UG do SIAFI que descentraliza, com 6 dígitos. 810008 nas quatro linhas (ver acima)."
       - name: nr_cnpj
         description: "CNPJ com 14 dígitos, sem máscara. Fica vazio se não houver fonte oficial."
-      - name: cd_ug
+      - name: cd_ug_secretaria
         description: >
-          UG da unidade no SIAFI, com 6 dígitos. 810008 é a UG do ministério; as das
-          secretarias aparecem como UG responsável nos empenhos dos convênios.
+          UG da secretaria no SIAFI, com 6 dígitos (238022 SENAPIR, 238023 SQPT, 238024
+          SEPAR), a que aparece como UG responsável nos empenhos dos convênios. Vazia na
+          linha do MIR.
         tests:
           - unique
-          - not_null

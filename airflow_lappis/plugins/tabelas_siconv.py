@@ -4,7 +4,7 @@ TABELAS_SICONV = [
         "nome_csv": "siconv_proposta.csv",
         "conflict_fields": ["id_proposta"],
         "primary_key": ["id_proposta"],
-        "truncate_before_insert": False,
+        "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
             "ID_PROPOSTA", "UF_PROPONENTE", "MUNIC_PROPONENTE", "COD_MUNIC_IBGE",
@@ -24,7 +24,7 @@ TABELAS_SICONV = [
         "nome_csv": "siconv_convenio.csv",
         "conflict_fields": ["nr_convenio"],
         "primary_key": ["nr_convenio"],
-        "truncate_before_insert": False,
+        "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
             "NR_CONVENIO", "ID_PROPOSTA", "DIA", "MES", "ANO", "DIA_ASSIN_CONV",
@@ -45,7 +45,7 @@ TABELAS_SICONV = [
         "nome_csv": "siconv_desembolso.csv",
         "conflict_fields": ["id_desembolso"],
         "primary_key": ["id_desembolso"],
-        "truncate_before_insert": False,
+        "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
             "ID_DESEMBOLSO", "NR_CONVENIO", "DT_ULT_DESEMBOLSO", "QTD_DIAS_SEM_DESEMBOLSO",
@@ -83,7 +83,7 @@ TABELAS_SICONV = [
         "nome_csv": "siconv_solicitacao_alteracao.csv",
         "conflict_fields": ["id_solicitacao"],
         "primary_key": ["id_solicitacao"],
-        "truncate_before_insert": False,
+        "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
             "ID_SOLICITACAO", "NR_CONVENIO", "NR_SOLICITACAO", "SITUACAO_SOLICITACAO",
@@ -95,7 +95,7 @@ TABELAS_SICONV = [
         "nome_csv": "siconv_termo_aditivo.csv",
         "conflict_fields": ["nr_convenio", "numero_ta"],
         "primary_key": ["nr_convenio", "numero_ta"],
-        "truncate_before_insert": False,
+        "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
             "NR_CONVENIO", "ID_SOLICITACAO", "NUMERO_TA", "TIPO_TA",
@@ -108,7 +108,7 @@ TABELAS_SICONV = [
         "nome_csv": "siconv_solicitacao_rendimento_aplicacao.csv",
         "conflict_fields": ["id_solicitacao_rend_aplicacao"],
         "primary_key": ["id_solicitacao_rend_aplicacao"],
-        "truncate_before_insert": False,
+        "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
             "ID_SOLICITACAO_REND_APLICACAO", "NR_CONVENIO", "NR_SOLICITACAO_REND_APLICACAO",
@@ -147,7 +147,7 @@ TABELAS_SICONV = [
         "nome_csv": "siconv_pagamento_tributo.csv",
         "conflict_fields": ["nr_convenio", "data_tributo"],
         "primary_key": ["nr_convenio", "data_tributo"],
-        "truncate_before_insert": False,
+        "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
             "NR_CONVENIO", "DATA_TRIBUTO", "VL_PAG_TRIBUTOS",
@@ -158,7 +158,7 @@ TABELAS_SICONV = [
         "nome_csv": "siconv_pagamento.csv",
         "conflict_fields": ["nr_mov_fin"],
         "primary_key": ["nr_mov_fin"],
-        "truncate_before_insert": False,
+        "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
             "NR_MOV_FIN", "NR_CONVENIO", "IDENTIF_FORNECEDOR", "NOME_FORNECEDOR",
@@ -171,7 +171,7 @@ TABELAS_SICONV = [
         "nome_csv": "siconv_licitacao.csv",
         "conflict_fields": ["id_licitacao"],
         "primary_key": ["id_licitacao"],
-        "truncate_before_insert": False,
+        "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
             "ID_LICITACAO", "NR_CONVENIO", "NR_LICITACAO", "MODALIDADE_LICITACAO",
@@ -187,7 +187,7 @@ TABELAS_SICONV = [
         "nome_csv": "siconv_ingresso_contrapartida.csv",
         "conflict_fields": ["nr_convenio", "dt_ingresso_contrapartida"],
         "primary_key": ["nr_convenio", "dt_ingresso_contrapartida"],
-        "truncate_before_insert": False,
+        "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
             "NR_CONVENIO", "DT_INGRESSO_CONTRAPARTIDA", "VL_INGRESSO_CONTRAPARTIDA",
@@ -239,7 +239,7 @@ TABELAS_SICONV = [
         "nome_csv": "siconv_cronograma_desembolso.csv",
         "conflict_fields": ["id_proposta", "nr_convenio", "nr_parcela_crono_desembolso"],
         "primary_key": ["id_proposta", "nr_convenio", "nr_parcela_crono_desembolso"],
-        "truncate_before_insert": False,
+        "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
             "ID_PROPOSTA", "NR_CONVENIO", "NR_PARCELA_CRONO_DESEMBOLSO",
@@ -252,7 +252,7 @@ TABELAS_SICONV = [
         "nome_csv": "siconv_meta_crono_fisico.csv",
         "conflict_fields": ["id_meta"],
         "primary_key": ["id_meta"],
-        "truncate_before_insert": False,
+        "truncate_before_insert": True,
         "skip_rows": 0,
         "colunas": [
             "ID_META", "ID_PROPOSTA", "NR_CONVENIO", "COD_PROGRAMA", "NOME_PROGRAMA",

@@ -19,7 +19,7 @@ models:
       de cada TED.
 
       Lido pelo Coleta MIR: mudar o nome, o tipo ou o significado de uma coluna quebra o
-      consumidor. Coluna nova é segura. A tabela não traz RAP a pagar nem data de carga.
+      consumidor. Coluna nova é segura. A tabela não traz data de carga.
     columns:
       - name: id_plano_acao
         data_type: integer
@@ -49,10 +49,11 @@ models:
         description: >
           "Valor liquidado / pago" do formulário, um campo só: o pago no exercício mais os
           restos a pagar pagos depois (pago_total de ted_execucao_por_instrumento), em
-          R$. O liquidado fica fora de propósito: o relatório só traz o do exercício, sem
-          o RAP, e não é comparável (nos TEDs de 2023, liquidado de R$ 27,85 mi e pago
-          total de R$ 47,71 mi). Não inclui instrumento mesclado (vl_pago_compartilhado).
-          Nulo quando ds_origem_execucao = 'sem_dado'.
+          R$. O liquidado está em vl_liquidado, numa coluna própria, porque não é
+          comparável com este valor: o relatório só traz o liquidado do exercício, sem o
+          RAP (nos TEDs de 2023, liquidado de R$ 27,85 mi contra pago total de R$ 47,71
+          mi). Não inclui instrumento mesclado (vl_pago_compartilhado). Nulo quando
+          ds_origem_execucao = 'sem_dado'.
 
       - name: vl_credito_liquido
         data_type: numeric(15, 2)
@@ -96,3 +97,40 @@ models:
                 - nota_de_empenho
                 - sem_empenho
                 - sem_dado
+
+      - name: vl_liquidado
+        data_type: numeric(15, 2)
+        description: >
+          Liquidado do exercício, em R$, sem os restos a pagar — é só isso que o relatório
+          traz. Fica separado de vl_pago de propósito: os dois não são comparáveis, porque
+          vl_pago inclui o RAP pago. Não inclui instrumento mesclado. Nulo quando
+          ds_origem_execucao = 'sem_dado'; 0 em 'sem_empenho' e nos TEDs que só aparecem
+          em instrumento mesclado.
+
+      - name: vl_rap_inscrito
+        data_type: numeric(15, 2)
+        description: >
+          Restos a pagar inscritos, em R$: o que passou para RAP no fim do exercício de
+          emissão da NE. Soma entre anos porque cada NE é contada uma vez só, no exercício
+          seguinte ao da emissão — a reinscrição anual da NE não paga não entra, senão o
+          valor inflaria a cada exercício. Mesma regra de nulo e 0 de vl_liquidado.
+
+      - name: vl_rap_pago
+        data_type: numeric(15, 2)
+        description: >
+          Restos a pagar pagos, em R$, somados em todos os exercícios seguintes. Já está
+          dentro de vl_pago (que é pago do exercício mais RAP pago): esta coluna é a
+          parcela, para quem precisa separar as duas, e não se soma a vl_pago. Mesma regra
+          de nulo e 0 de vl_liquidado.
+
+      - name: vl_rap_a_pagar
+        data_type: numeric(15, 2)
+        description: >
+          Restos a pagar que faltam pagar, em R$: inscrito menos pago no último exercício
+          do relatório. O relatório não traz o RAP cancelado durante esse exercício, então
+          o valor é o saldo da posição, não um compromisso firme. Mesma regra de nulo e 0
+          de vl_liquidado.
+
+          Nos TEDs de ds_origem_execucao = 'nota_de_empenho', ppa_tesouro não tem coluna
+          de RAP a pagar: o valor é derivado como em execucao_ted_ne (inscrito menos pago
+          no último exercício do relatório, contando só exercício posterior ao da NE).

@@ -7,11 +7,9 @@ models:
       contract:
         enforced: true
     description: >
-      Contrato do Coleta MIR para o Bloco 2 dos formulários de TEDs e de convênios:
-      código Siorg e CNPJ da unidade descentralizadora responsável (TED) ou concedente
-      (convênio), uma linha por unidade do MIR. Liga com coleta_ted por
-      coleta_ted.sg_unidade_acompanhamento = coleta_unidade.sg_unidade e com
-      coleta_convenio por coleta_convenio.sg_unidade_concedente = coleta_unidade.sg_unidade.
+      Contrato do Coleta MIR para o Bloco 2 do formulário de TEDs: código Siorg e CNPJ da
+      unidade descentralizadora responsável, uma linha por unidade do MIR. Liga com
+      coleta_ted por coleta_ted.sg_unidade_acompanhamento = coleta_unidade.sg_unidade.
 
       Vem do seed coleta_unidade_mir, uma lista manual. Uma sigla nova no portal TED fica
       sem linha até entrar no seed: use left join para não perder o TED.
@@ -51,9 +49,12 @@ models:
         data_type: text
         constraints:
           - type: not_null
-          - type: unique
           - type: check
             expression: "cd_ug ~ '^[0-9]{6}$'"
         description: >
-          UG da unidade no SIAFI. Ex.: 810008 (MIR), 238024 (SEPAR). É por ela que
-          coleta_convenio acha a unidade concedente nos empenhos.
+          UG (código SIAFI) da unidade descentralizadora, o campo "UG/SIAFI" do Bloco 2.
+          É 810008 (MIR - IGUALDADE RACIAL) também nas linhas das secretarias, pela mesma
+          razão de nr_cnpj: é a UG que emite as notas de crédito de todos os TEDs do MIR,
+          qualquer que seja a secretaria que acompanha. As UGs próprias das secretarias
+          (238022 SENAPIR, 238023 SQPT, 238024 SEPAR, em ugs_mir) são da estrutura
+          organizacional e nunca emitem NC: não são a UG descentralizadora.

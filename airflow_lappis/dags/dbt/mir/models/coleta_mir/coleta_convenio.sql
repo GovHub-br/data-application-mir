@@ -75,17 +75,16 @@ with
         where nr_convenio in (select nr_convenio from convenio)
     ),
 
-    -- Unidade concedente: a secretaria que aparece como UG responsável nos empenhos.
-    -- Os empenhos são emitidos pela UG 810008 (ou pela 238012, nos antigos); a
-    -- secretaria só aparece na UG responsável. Sem secretaria, ou com mais de uma, fica
-    -- o ministério.
+    -- Unidade concedente: a secretaria que aparece como UG responsável nos empenhos,
+    -- pela UG própria dela (cd_ug_secretaria do seed). Os empenhos são emitidos pela UG
+    -- 810008 (ou pela 238012, nos antigos); a secretaria só aparece na UG responsável.
+    -- Sem secretaria, ou com mais de uma, fica o ministério.
     secretaria as (
         select e.nr_convenio, min(u.sg_unidade) as sg_unidade
         from {{ ref("empenho") }} as e
         inner join
             {{ ref("coleta_unidade_mir") }} as u
-            on u.cd_ug = e.ug_responsavel::text
-            and u.cd_ug <> '810008'
+            on u.cd_ug_secretaria = e.ug_responsavel::text
         group by e.nr_convenio
         having count(distinct u.sg_unidade) = 1
     ),

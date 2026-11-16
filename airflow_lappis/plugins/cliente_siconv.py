@@ -18,15 +18,30 @@ class ClienteSiconv:
         return f"{self.URL_BASE}/{nome_zip}"
 
     def baixar_zip(self, nome_csv: str) -> str:
-        """Baixa o zip da tabela para um arquivo temporário e devolve o caminho."""
+        """Baixa o zip da tabela para um arquivo temporário e devolve o caminho.
+
+        Se o download falhar ou vier menor que o Content-Length, apaga o arquivo e
+        levanta erro: a conexão que cai no meio não gera exceção no requests.
+        """
         url = self.url_zip(nome_csv)
         logging.info(f"[cliente_siconv.py] Baixando {url}...")
-        response = requests.get(url, stream=True, timeout=(30, 300))
-        response.raise_for_status()
-        fd, zip_path = tempfile.mkstemp(prefix="siconv_", suffix=".zip")
-        with os.fdopen(fd, "wb") as f:
-            for chunk in response.iter_content(chunk_size=1024 * 1024):
-                f.write(chunk)
+        with requests.get(url, stream=True, timeout=(30, 300)) as response:
+            response.raise_for_status()
+            esperado = response.headers.get("Content-Length")
+            fd, zip_path = tempfile.mkstemp(prefix="siconv_", suffix=".zip")
+            try:
+                with os.fdopen(fd, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=1024 * 1024):
+                        f.write(chunk)
+                recebido = os.path.getsize(zip_path)
+                if esperado is not None and recebido != int(esperado):
+                    raise IOError(
+                        f"[cliente_siconv.py] Download incompleto de {url}: "
+                        f"{recebido} de {esperado} bytes"
+                    )
+            except BaseException:
+                os.remove(zip_path)
+                raise
         logging.info("[cliente_siconv.py] Download concluído")
         return zip_path
 
