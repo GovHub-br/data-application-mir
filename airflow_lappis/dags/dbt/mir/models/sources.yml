@@ -87,6 +87,7 @@ sources:
       - name: meta_crono_fisico
       - name: etapa_crono_fisico
       - name: justificativas_proposta
+      - name: emenda
   - name: compras_gov
     schema: compras_gov
     tables:
