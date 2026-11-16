@@ -9,11 +9,15 @@ models:
     description: >
       Contrato do Coleta MIR para o item 3.5 do formulário de convênios (origem e fonte
       dos recursos): o empenho de cada convênio de coleta_convenio, uma linha por ano do
-      empenho, PTRES, fonte, natureza de despesa e emenda. Fonte: empenhos do siconv;
-      programa, ação e UO do relatório de execução do PPA (ppa_tesouro); emenda e autor
-      de numero_transferencia.
+      empenho, PTRES, fonte, natureza de despesa e emenda. Fonte: empenhos do siconv, com
+      o valor de cada NE do SIAFI quando ela está no relatório de execução do PPA
+      (ppa_tesouro), de onde vêm também programa, ação e UO; emenda e autor de
+      numero_transferencia.
 
-      A soma de vl_empenhado de um convênio é o empenho líquido dele no siconv. Nos
+      A soma de vl_empenhado de um convênio é o empenho líquido das NEs dele que o
+      siconv lista. O valor da NE é o do SIAFI, porque o siconv grava 0 ou menos em parte
+      das NEs dos termos de fomento (41 de 202 desde 2023, em 11/2026); nas NEs fora do
+      relatório do PPA (as antigas) é o do siconv. Nos
       convênios anteriores a 2023 o siconv pode não ter todos os empenhos (em 11/2026, 7
       deles tinham mais desembolso que empenho), programa, ação e UO ficam nulos porque
       o relatório do PPA só cobre os empenhos recentes, e a NE de emenda pode não ter o
@@ -146,4 +150,6 @@ models:
         data_type: numeric(15, 2)
         constraints:
           - type: not_null
-        description: "Empenho líquido da linha, em R$. Pode ser 0 (NE emitida e anulada)."
+        description: >
+          Empenho líquido da linha, em R$: do SIAFI (ppa_tesouro) quando a NE está lá,
+          senão do siconv. Pode ser 0 (NE emitida e anulada).

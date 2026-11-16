@@ -5,8 +5,12 @@
   recursos): o empenho de cada convênio de coleta_convenio, aberto por ano, PTRES, fonte,
   natureza de despesa e emenda.
 
-  Fonte: os empenhos do siconv. Desde 2021 o siconv só usa os tipos Ordinário, Global e
-  Estimativo, e valor_empenho é o valor líquido da NE; soma direto. Nos tipos antigos (até
+  Fonte: os empenhos do siconv. O valor da NE vem do SIAFI (ppa_tesouro, pela NE completa:
+  UG, gestão e número) quando ela está lá: o siconv grava 0 ou menos que o SIAFI em parte
+  das NEs dos termos de fomento (41 de 202 desde 2023, R$ 14,4 mi a menos em 11/2026) e
+  o desembolso passava do empenho. As NEs antigas, fora do relatório do PPA, ficam com o
+  valor do siconv. Desde 2021 o siconv só usa os tipos Ordinário, Global e Estimativo, e
+  valor_empenho é o valor líquido da NE; soma direto. Nos tipos antigos (até
   2020) a anulação de empenho vem negativa, mas a anulação de pré-empenho vem positiva e
   inflaria a soma: test_coleta_convenio_fonte_tipo_nota acende (erro) se um tipo fora da
   lista aparecer num convênio do universo. O teste roda depois da troca da tabela, então
@@ -22,6 +26,13 @@
   das outras NEs da emenda; RP 2 sem emenda é programação própria do MIR.
 #}
 with
+    -- Empenho líquido de cada NE no SIAFI, somado nas células do relatório.
+    empenho_siafi as (
+        select ne_ccor, sum(despesas_empenhadas) as vl_empenhado
+        from {{ ref("ppa_tesouro") }}
+        group by ne_ccor
+    ),
+
     empenho as (
         select
             e.nr_convenio,
@@ -29,7 +40,7 @@ with
             e.ug_emitente,
             e.ptres,
             e.natureza_despesa,
-            e.valor_empenho,
+            coalesce(s.vl_empenhado, e.valor_empenho) as valor_empenho,
             nullif(trim(e.resultado_primario), '') as rp,
             case
                 when e.nr_empenho ~ '^[0-9]{4}NE'
@@ -50,6 +61,9 @@ with
             as no_autor_descricao
         from {{ ref("empenho") }} as e
         inner join {{ ref("coleta_convenio") }} as c on c.nr_convenio = e.nr_convenio
+        left join
+            empenho_siafi as s
+            on s.ne_ccor = lpad(e.ug_emitente::text, 6, '0') || '00001' || e.nr_empenho
     ),
 
     -- O mesmo autor aparece com grafias diferentes (caixa, espaço no fim).
