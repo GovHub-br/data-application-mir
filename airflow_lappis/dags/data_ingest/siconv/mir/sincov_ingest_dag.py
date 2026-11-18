@@ -17,10 +17,14 @@ from tabelas_siconv import TABELAS_SICONV
     catchup=False,
     # Duas execuções ao mesmo tempo disputariam o TRUNCATE das mesmas tabelas.
     max_active_runs=1,
+    # O servidor do Transferegov derruba conexões (SSL EOF, RemoteDisconnected) e
+    # costuma voltar em minutos: 3 tentativas, com espera crescente de até 20 min.
     default_args={
         "owner": "Luana",
-        "retries": 1,
+        "retries": 3,
         "retry_delay": timedelta(minutes=5),
+        "retry_exponential_backoff": True,
+        "max_retry_delay": timedelta(minutes=20),
     },
     tags=["siconv", "MIR"],
 )
@@ -139,10 +143,19 @@ def siconv_ingestao_dag() -> None:
                 f"Ingestão finalizada: {total_inserido} registros em {nome_tabela}"
             )
 
+    @task
+    def conferir_cargas() -> None:
+        """Fica upstream_failed se alguma tabela falhou, e o run sai como falho."""
+
+    # Em fila, para não baixar e inserir duas tabelas grandes ao mesmo tempo, mas cada
+    # tabela tem o seu TRUNCATE e commit: a falha de uma não impede as seguintes.
     ultima_task = None
+    cargas = []
 
     for tabela in TABELAS_SICONV:
-        task_atual = ingerir_tabela.override(task_id=f"ingerir_{tabela['nome_tabela']}")(
+        task_atual = ingerir_tabela.override(
+            task_id=f"ingerir_{tabela['nome_tabela']}", trigger_rule="all_done"
+        )(
             nome_tabela=tabela["nome_tabela"],
             nome_csv=tabela["nome_csv"],
             conflict_fields=tabela["conflict_fields"],
@@ -156,6 +169,9 @@ def siconv_ingestao_dag() -> None:
         if ultima_task is not None:
             ultima_task >> task_atual
         ultima_task = task_atual
+        cargas.append(task_atual)
+
+    cargas >> conferir_cargas()
 
 
 siconv_ingestao_dag()
